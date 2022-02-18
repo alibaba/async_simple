@@ -88,8 +88,8 @@ public:
     // should guarantee that the func would be executed.
     virtual bool schedule(Func func) = 0;
     // Return true if caller runs in the executor.
-    virtual bool currentThreadInExecutor() const = 0;
-    virtual ExecutorStat stat() const = 0;
+    virtual bool currentThreadInExecutor() const { return false; }
+    virtual ExecutorStat stat() const { return async_simple::ExecutorStat(); }
 
     // checkout() return current "Context", which defined by executor
     // implementation, then checkin(func, "Context") should schdule func to the
@@ -119,7 +119,7 @@ public:
 
     // IOExecutor accepts IO read/write requests.
     // Return nullptr if the exeuctor doesn't offer an IOExecutor.
-    virtual IOExecutor *getIOExecutor() = 0;
+    virtual IOExecutor *getIOExecutor() { return nullptr; }
 
     // This method will block current thread until func complete.
     // Return false if it fails to schedule func. Return true
