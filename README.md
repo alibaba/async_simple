@@ -63,7 +63,7 @@ make install # sudo if required
 
 # Get Started
 
-After installing and reading [Lazy](./docs/Lazy.md) to get familiar with API, here is a [demo](./docs/GetStarted.md) use Lazy to count char in a file.
+After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with API, here is a [demo](./docs/docs.en/GetStarted.md) use Lazy to count char in a file.
 
 # License
 
