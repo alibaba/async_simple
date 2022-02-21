@@ -1,3 +1,5 @@
+[中文文档入口](https://github.com/alibaba/async_simple/tree/main/docs/docs.cn)
+
 The async_simple is a library offering simple, light-weight and easy-to-use 
 components to write asynchronous codes. The components offered include the Lazy
 (based on C++20 stackless coroutine), the Uthread (based on stackful coroutine)
@@ -64,6 +66,11 @@ make install # sudo if required
 # Get Started
 
 After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with API, here is a [demo](./docs/docs.en/GetStarted.md) use Lazy to count char in a file.
+
+# How to Contribute
+1. Create a PR, fill in the PR template.
+2. Choose one or more reviewers from contributors: (ChuanqiXu9, RainMark, foreverhy, qicosmos).
+3. Approved and merged.
 
 # License
 
