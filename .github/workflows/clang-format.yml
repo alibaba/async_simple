@@ -1,0 +1,28 @@
+name: Clang Format Diff
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with: 
+       fetch-depth: 0
+    - name: install clang-format
+      run:  sudo apt install clang-format
+    - name: check-diff
+      run: |
+           diff=`git-clang-format --diff HEAD^`
+           if ! [ "$diff" = "no modified files to format" ]; then
+               echo "The diff you sent is not formatted correctly."
+               echo "The suggested format is"
+               echo "$diff"
+               exit 1
+           fi
