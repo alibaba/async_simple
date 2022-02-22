@@ -48,8 +48,8 @@ async_simple::coro::Lazy<void> session(tcp::socket sock) {
 }
 
 async_simple::coro::Lazy<void> start_server(asio::io_context& io_context,
-                                           unsigned short port,
-                                           async_simple::Executor* E) {
+                                            unsigned short port,
+                                            async_simple::Executor* E) {
     tcp::acceptor a(io_context, tcp::endpoint(tcp::v4(), port));
     std::cout << "Listen port " << port << " successfully.\n";
     for (;;) {
@@ -71,7 +71,8 @@ int main(int argc, char* argv[]) {
             io_context.run();
         });
         AsioExecutor executor(io_context);
-        async_simple::coro::syncAwait(start_server(io_context, 9980, &executor));
+        async_simple::coro::syncAwait(
+            start_server(io_context, 9980, &executor));
         thd.join();
     } catch (std::exception& e) {
         std::cerr << "Exception: " << e.what() << "\n";

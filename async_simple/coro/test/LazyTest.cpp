@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2022, Alibaba Group Holding Limited;
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -1145,8 +1145,7 @@ Lazy<int> getValue(A x) {
         ValueAwaiter(int v) : value(v) {}
 
         bool await_ready() { return false; }
-        void await_suspend(
-            STD_CORO::coroutine_handle<> continuation) noexcept {
+        void await_suspend(STD_CORO::coroutine_handle<> continuation) noexcept {
             std::thread([c = std::move(continuation)]() mutable {
                 c.resume();
             }).detach();

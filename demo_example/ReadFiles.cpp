@@ -1,27 +1,27 @@
 /*
  * Copyright (c) 2022, Alibaba Group Holding Limited;
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "async_simple/coro/Lazy.h"
-#include "async_simple/Future.h"
-#include "async_simple/executors/SimpleExecutor.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
+#include "async_simple/Future.h"
+#include "async_simple/coro/Lazy.h"
+#include "async_simple/executors/SimpleExecutor.h"
 
 using namespace async_simple;
 using namespace async_simple::coro;
@@ -58,18 +58,17 @@ uint64_t CountCharInFiles(const std::vector<FileName> &Files, char c) {
 template <typename Iterator>
 struct SubRange {
     Iterator B, E;
-    SubRange(Iterator begin, Iterator end) 
-        : B(begin), E(end) {}
+    SubRange(Iterator begin, Iterator end) : B(begin), E(end) {}
 
     Iterator begin() { return B; }
     Iterator end() { return E; }
 };
 
-template< class T >
-concept Range = requires(T& t) {
-  t.begin();
-  t.end();
-};
+template <class T>
+concept Range = requires(T &t) {
+                    t.begin();
+                    t.end();
+                };
 
 // It is not travial to implement an asynchronous do_for_each.
 template <Range RangeTy, typename Callable>
@@ -88,8 +87,10 @@ Future<Unit> do_for_each(RangeTy &&Range, Callable &&func) {
 
         if (!F.hasResult())
             return std::move(F).thenTry(
-                [func = std::forward<Callable>(func), Begin = std::move(Begin), End = std::move(End)](auto&&) mutable {
-                    return do_for_each(SubRange(Begin, End), std::forward<Callable>(func));
+                [func = std::forward<Callable>(func), Begin = std::move(Begin),
+                 End = std::move(End)](auto &&) mutable {
+                    return do_for_each(SubRange(Begin, End),
+                                       std::forward<Callable>(func));
                 });
     }
 }
@@ -105,17 +106,24 @@ Future<uint64_t> CountCharInFileAsyncImpl(const FileName &File, char c) {
     return makeReadyFuture(std::move(Ret));
 }
 
-Future<uint64_t> CountCharInFilesAsync(const std::vector<FileName> &Files, char c) {
+Future<uint64_t> CountCharInFilesAsync(const std::vector<FileName> &Files,
+                                       char c) {
     // std::shared_ptr is necessary here. Since ReadSize may be used after
     // CountCharInFilesAsync function ends.
     auto ReadSize = std::make_shared<uint64_t>(0);
     // We need to introduce another API `do_for_each` here.
-    return do_for_each(std::move(Files), [ReadSize, c](auto &&File){
-        return CountCharInFileAsyncImpl(File, c).thenValue([ReadSize](auto &&Size) {
-            *ReadSize += Size;
-            return makeReadyFuture(Unit());
+    return do_for_each(std::move(Files),
+                       [ReadSize, c](auto &&File) {
+                           return CountCharInFileAsyncImpl(File, c).thenValue(
+                               [ReadSize](auto &&Size) {
+                                   *ReadSize += Size;
+                                   return makeReadyFuture(Unit());
+                               });
+                       })
+        .thenTry([ReadSize](auto &&) {
+            return makeReadyFuture<uint64_t>(*ReadSize);
         });
-    }).thenTry([ReadSize] (auto&&) { return makeReadyFuture<uint64_t>(*ReadSize); });;
+    ;
 }
 
 /////////////////////////////////////////
@@ -133,7 +141,8 @@ Lazy<uint64_t> CountCharFileCoroImpl(const FileName &File, char c) {
     co_return Ret;
 }
 
-Lazy<uint64_t> CountCharInFilesCoro(const std::vector<FileName> &Files, char c) {
+Lazy<uint64_t> CountCharInFilesCoro(const std::vector<FileName> &Files,
+                                    char c) {
     uint64_t ReadSize = 0;
     for (const auto &File : Files)
         ReadSize += co_await CountCharFileCoroImpl(File, c);
@@ -142,16 +151,11 @@ Lazy<uint64_t> CountCharInFilesCoro(const std::vector<FileName> &Files, char c) 
 
 int main() {
     std::vector<FileName> Files = {
-        "demo_example/Input/1.txt",
-        "demo_example/Input/2.txt",
-        "demo_example/Input/3.txt",
-        "demo_example/Input/4.txt",
-        "demo_example/Input/5.txt",
-        "demo_example/Input/6.txt",
-        "demo_example/Input/7.txt",
-        "demo_example/Input/8.txt",
-        "demo_example/Input/9.txt",
-        "demo_example/Input/10.txt",
+        "demo_example/Input/1.txt", "demo_example/Input/2.txt",
+        "demo_example/Input/3.txt", "demo_example/Input/4.txt",
+        "demo_example/Input/5.txt", "demo_example/Input/6.txt",
+        "demo_example/Input/7.txt", "demo_example/Input/8.txt",
+        "demo_example/Input/9.txt", "demo_example/Input/10.txt",
     };
 
     std::cout << "Calculating char counts synchronously.\n";
@@ -163,7 +167,7 @@ int main() {
     auto future = p.getFuture();
 
     std::cout << "Calculating char counts asynchronously by future.\n";
-    auto f = std::move(future).via(&executor).thenTry([&Files](auto&&){
+    auto f = std::move(future).via(&executor).thenTry([&Files](auto &&) {
         return CountCharInFilesAsync(Files, 'x').thenValue([](auto &&Value) {
             std::cout << "Files contain " << Value << " 'x' chars.\n";
         });
