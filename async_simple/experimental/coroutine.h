@@ -45,8 +45,9 @@ template <class P> struct hash<coroutine_handle<P>>;
 
  */
 
-#if __cplusplus > 201703L
-// Use <version> to detect standard library. It is only available in C++20 and later.
+#if __has_include(<version>)
+// Use <version> to detect standard library. In case libstdc++ doesn't implement
+// <version>, it shouldn't own <coroutine> too.
 #include <version>
 #endif
 
