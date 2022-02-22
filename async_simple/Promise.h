@@ -49,6 +49,7 @@ public:
         _sharedState->attachPromise();
     }
     Promise& operator=(const Promise& other) {
+        this->~Promise();
         _sharedState = other._sharedState;
         _hasFuture = other._hasFuture;
         _sharedState->attachPromise();
@@ -103,9 +104,8 @@ public:
     }
 
 private:
-private:
-    FutureState<T>* _sharedState;
-    bool _hasFuture;
+    FutureState<T>* _sharedState = nullptr;
+    bool _hasFuture = false;
 };
 
 }  // namespace async_simple
