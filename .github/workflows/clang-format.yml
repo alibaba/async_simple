@@ -20,7 +20,7 @@ jobs:
     - name: check-diff
       run: |
            diff=`git-clang-format --diff HEAD^`
-           if ! [ "$diff" = "no modified files to format" ]; then
+           if ! [[ "$diff" = "no modified files to format" || "$diff" = "clang-format did not modify any files" ]]; then
                echo "The diff you sent is not formatted correctly."
                echo "The suggested format is"
                echo "$diff"
