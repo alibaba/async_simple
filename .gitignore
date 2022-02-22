@@ -11,6 +11,7 @@ _external/
 core.*
 \#*\#
 !.gitignore
+!.clang-format
 *.so
 *.a
 vgcore.*
