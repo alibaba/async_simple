@@ -36,9 +36,8 @@ endif()
 
 # set CXXFALGS
 set(CXX_FLAGS
-    -std=c++2a
+    -std=c++20
     -D_GLIBCXX_USE_CXX11_ABI=1
-    -fcoroutines-ts
     -Wno-deprecated-register
     -D_FILE_OFFSET_BITS=64
     -fPIC
