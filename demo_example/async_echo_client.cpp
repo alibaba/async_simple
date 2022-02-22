@@ -21,7 +21,7 @@
 using asio::ip::tcp;
 
 async_simple::coro::Lazy<void> start(asio::io_context& io_context,
-                                    std::string host, std::string port) {
+                                     std::string host, std::string port) {
     auto [ec, socket] = co_await async_connect(io_context, host, port);
     if (ec) {
         std::cout << "Connect error: " << ec.message() << '\n';

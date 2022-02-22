@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2022, Alibaba Group Holding Limited;
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -45,8 +45,7 @@ public:
     struct Awaiter {
         constexpr bool await_ready() const noexcept { return true; }
         void await_suspend(
-            STD_CORO::coroutine_handle<> continuation) const noexcept {
-        }
+            STD_CORO::coroutine_handle<> continuation) const noexcept {}
         FL_INLINE T await_resume() noexcept {
             return std::move(task->stealValue());
         }
@@ -65,7 +64,7 @@ public:
             _value.~T();
         }
     }
-    Task(Task && other)
+    Task(Task&& other)
         : _coro(std::exchange(other._coro, nullptr)),
           _hasValue(std::exchange(other._hasValue, false)) {
         new (std::addressof(_value)) T(std::move(other._value));
@@ -77,12 +76,12 @@ public:
     Task& operator=(Task&&) = delete;
 
 public:
-    auto coAwait(Executor * ex) { return Awaiter(this); }
+    auto coAwait(Executor* ex) { return Awaiter(this); }
     auto operator co_await() { return Awaiter(this); }
 
 private:
     template <typename C>
-    FL_INLINE void setValue(C && v) noexcept {
+    FL_INLINE void setValue(C&& v) noexcept {
         new (std::addressof(_value)) T(std::forward<C>(v));
         _hasValue = true;
     }
@@ -111,30 +110,28 @@ public:
     struct Awaiter {
         constexpr bool await_ready() const noexcept { return true; }
         void await_suspend(
-            STD_CORO::coroutine_handle<> continuation) const noexcept {
-        }
+            STD_CORO::coroutine_handle<> continuation) const noexcept {}
         FL_INLINE void await_resume() const noexcept {}
         Awaiter() = default;
     };
 
 public:
     Task() = default;
-    Task(Task &&) = default;
+    Task(Task&&) = default;
 
     Task(const Task&) = delete;
     Task& operator=(const Task&) = delete;
     Task& operator=(Task&&) = delete;
 
 public:
-    auto coAwait(Executor * ex) { return Awaiter(); }
+    auto coAwait(Executor* ex) { return Awaiter(); }
     auto operator co_await() { return Awaiter(); }
 };
 
 namespace detail {
 
 struct TaskPromiseBase {
-    constexpr STD_CORO::suspend_never initial_suspend() const
-        noexcept {
+    constexpr STD_CORO::suspend_never initial_suspend() const noexcept {
         return {};
     }
     constexpr STD_CORO::suspend_never final_suspend() const noexcept {

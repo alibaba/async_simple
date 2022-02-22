@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2022, Alibaba Group Holding Limited;
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -49,9 +49,7 @@ public:
         void return_void() noexcept {}
         void unhandled_exception() const noexcept { assert(false); }
 
-        STD_CORO::suspend_always initial_suspend() const noexcept {
-            return {};
-        }
+        STD_CORO::suspend_always initial_suspend() const noexcept { return {}; }
         FinalAwaiter final_suspend() noexcept { return FinalAwaiter(_ctx); }
 
         struct FinalAwaiter {
@@ -82,8 +80,7 @@ public:
         Executor::Context _ctx;
     };
 
-    ViaCoroutine(STD_CORO::coroutine_handle<promise_type> coro)
-        : _coro(coro) {}
+    ViaCoroutine(STD_CORO::coroutine_handle<promise_type> coro) : _coro(coro) {}
     ~ViaCoroutine() {
         if (_coro) {
             _coro.destroy();
@@ -124,22 +121,24 @@ private:
 };
 
 inline ViaCoroutine ViaCoroutine::promise_type::get_return_object() noexcept {
-    return ViaCoroutine(STD_CORO::coroutine_handle<
-                        ViaCoroutine::promise_type>::from_promise(*this));
+    return ViaCoroutine(
+        STD_CORO::coroutine_handle<ViaCoroutine::promise_type>::from_promise(
+            *this));
 }
 
 // used by co_await non-Lazy object
 template <typename Awaiter>
 struct [[nodiscard]] ViaAsyncAwaiter {
     template <typename Awaitable>
-    ViaAsyncAwaiter(Executor * ex, Awaitable && awaitable)
+    ViaAsyncAwaiter(Executor* ex, Awaitable&& awaitable)
         : _ex(ex),
           _awaiter(detail::getAwaiter(std::forward<Awaitable>(awaitable))),
           _viaCoroutine(ViaCoroutine::create(ex)) {}
 
     using HandleType = STD_CORO::coroutine_handle<>;
-    using AwaitSuspendResultType = decltype(
-        std::declval<Awaiter&>().await_suspend(std::declval<HandleType>()));
+    using AwaitSuspendResultType =
+        decltype(std::declval<Awaiter&>().await_suspend(
+            std::declval<HandleType>()));
     bool await_ready() { return _awaiter.await_ready(); }
 
     AwaitSuspendResultType await_suspend(HandleType continuation) {
@@ -183,8 +182,8 @@ template <
     std::enable_if_t<!detail::HasCoAwaitMethod<std::decay_t<Awaitable>>::value,
                      int> = 0>
 inline auto coAwait(Executor* ex, Awaitable&& awaitable) {
-    using AwaiterType = std::decay_t<decltype(
-        detail::getAwaiter(std::forward<Awaitable>(awaitable)))>;
+    using AwaiterType = std::decay_t<decltype(detail::getAwaiter(
+        std::forward<Awaitable>(awaitable)))>;
     return ViaAsyncAwaiter<AwaiterType>(ex, std::forward<Awaitable>(awaitable));
 }
 

@@ -309,7 +309,7 @@ struct suspend_always {
     void await_resume() const noexcept {}
 };
 
-}  // namespace std
+}  // namespace STD_CORO
 
 namespace std {
 
