@@ -45,7 +45,20 @@ template <class P> struct hash<coroutine_handle<P>>;
 
  */
 
-#if __has_include(<coroutine>)
+#if __cplusplus > 201703L
+// Use <version> to detect standard library. It is only available in C++20 and later.
+#include <version>
+#endif
+
+// clang couldn't compile <coroutine> in libstdc++. In this case,
+// we could only use self-provided coroutine header.
+// Note: the <coroutine> header in libc++ is available for both clang and gcc.
+// And the outdated <experimental/coroutine> is available for clang only.
+#if (__cplusplus <= 201703L) || (defined(__clang__) && defined(__GLIBCXX__))
+#define USE_SELF_DEFINED_COROUTINE
+#endif
+
+#if __has_include(<coroutine>) && !defined(USE_SELF_DEFINED_COROUTINE)
 #include <coroutine>
 #define STD_CORO std
 #elif __has_include(<experimental/coroutine>)
