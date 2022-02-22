@@ -68,9 +68,10 @@ make install # sudo if required
 After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with API, here is a [demo](./docs/docs.en/GetStarted.md) use Lazy to count char in a file.
 
 # How to Contribute
-1. Create a PR, fill in the PR template.
-2. Choose one or more reviewers from contributors: (ChuanqiXu9, RainMark, foreverhy, qicosmos).
-3. Approved and merged.
+1. Read the [How to fix issue](./docs/docs.en/HowToFixIssue.md) document firstly.
+2. Create a PR, fill in the PR template.
+3. Choose one or more reviewers from contributors: (ChuanqiXu9, RainMark, foreverhy, qicosmos).
+4. Approved and merged.
 
 # License
 
