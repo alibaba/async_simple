@@ -474,17 +474,4 @@ TEST_F(FutureTest, testReadyFuture) {
         [](int v) mutable { ASSERT_EQ(3, v); });
 }
 
-TEST_F(FutureTest, testPromiseCopy) {
-    auto promise1 = std::make_unique<Promise<int>>();
-    auto promise2 = std::make_unique<Promise<int>>();
-    promise2->setValue(0);
-    auto future = promise1->getFuture();
-    *promise1 = *promise2;
-    promise1.reset();
-    ASSERT_THROW(future.value(), std::runtime_error);
-    auto promise3 = *promise2;
-    promise2.reset();
-    EXPECT_EQ(0, promise3.getFuture().value());
-}
-
 }  // namespace async_simple

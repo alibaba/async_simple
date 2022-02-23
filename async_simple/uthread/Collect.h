@@ -70,7 +70,7 @@ collectAll(Iterator first, Iterator last, Executor* ex) {
         Promise<std::vector<ResultType>> promise;
 
         Context(std::size_t n, Promise<std::vector<ResultType>>&& pr)
-            : tasks(n), result(n), promise(pr) {}
+            : tasks(n), result(n), promise(std::move(pr)) {}
     };
 
     return await<std::vector<ResultType>>(
@@ -107,7 +107,8 @@ collectAll(Iterator first, Iterator last, Executor* ex) {
         std::atomic<std::size_t> tasks;
         Promise<bool> promise;
 
-        Context(std::size_t n, Promise<bool>&& pr) : tasks(n), promise(pr) {}
+        Context(std::size_t n, Promise<bool>&& pr)
+            : tasks(n), promise(std::move(pr)) {}
     };
 
     await<bool>(ex, [first, last, ex](Promise<bool>&& pr) mutable {

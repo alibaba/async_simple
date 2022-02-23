@@ -35,7 +35,7 @@ template <typename T>
 class Promise {
 public:
     Promise() : _sharedState(new FutureState<T>()), _hasFuture(false) {
-        _sharedState->attachPromise();
+        _sharedState->attachOne();
     }
     ~Promise() {
         if (_sharedState) {
@@ -43,18 +43,10 @@ public:
         }
     }
 
-    Promise(const Promise& other) {
-        _sharedState = other._sharedState;
-        _hasFuture = other._hasFuture;
-        _sharedState->attachPromise();
-    }
-    Promise& operator=(const Promise& other) {
-        this->~Promise();
-        _sharedState = other._sharedState;
-        _hasFuture = other._hasFuture;
-        _sharedState->attachPromise();
-        return *this;
-    }
+    // std::function require captured objects be copyable
+    // use MoveWrapper to workaround
+    Promise(const Promise& other) = delete;
+    Promise& operator=(const Promise& other) = delete;
 
     Promise(Promise<T>&& other)
         : _sharedState(other._sharedState), _hasFuture(other._hasFuture) {
