@@ -69,7 +69,7 @@ After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with
 
 # How to Contribute
 1. Read the [How to fix issue](./docs/docs.en/HowToFixIssue.md) document firstly.
-2. Run tests and `diff-clang-format HEAD^` locally for the change.
+2. Run tests and `git-clang-format HEAD^` locally for the change.
 3. Create a PR, fill in the PR template.
 4. Choose one or more reviewers from contributors: (ChuanqiXu9, RainMark, foreverhy, qicosmos).
 5. Get approved and merged.
