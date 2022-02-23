@@ -57,7 +57,7 @@ std::pair<std::error_code, asio::ip::tcp::socket> connect(
 
 class AsioExecutor : public async_simple::Executor {
 public:
-    AsioExecutor(asio::io_context& io_context) : io_context_(io_context) {}
+    AsioExecutor(asio::io_context &io_context) : io_context_(io_context) {}
 
     virtual bool schedule(Func func) override {
         asio::post(io_context_, std::move(func));
