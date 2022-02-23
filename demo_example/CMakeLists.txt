@@ -32,3 +32,18 @@ target_link_libraries(http_client async_simple)
 
 add_executable(block_http_server http/block_http/block_http_server.cpp)
 target_link_libraries(block_http_server async_simple)
+
+SET(ENABLE_SSL OFF)
+
+if (ENABLE_SSL)
+    find_package(OpenSSL REQUIRED)
+    add_definitions(-DENABLE_SSL)
+    message(STATUS "Use SSL")
+endif()
+
+add_executable(smtp_client smtp/smtp_client.cpp)
+if (ENABLE_SSL)
+    target_link_libraries(smtp_client async_simple OpenSSL::SSL)
+else()
+    target_link_libraries(smtp_client async_simple)
+endif()

@@ -20,9 +20,10 @@
 
 using asio::ip::tcp;
 
-async_simple::coro::Lazy<void> start(asio::io_context& io_context,
+async_simple::coro::Lazy<void> start(asio::io_context &io_context,
                                      std::string host, std::string port) {
-    auto [ec, socket] = co_await async_connect(io_context, host, port);
+    asio::ip::tcp::socket socket(io_context);
+    auto ec = co_await async_connect(io_context, socket, host, port);
     if (ec) {
         std::cout << "Connect error: " << ec.message() << '\n';
         throw asio::system_error(ec);
@@ -100,7 +101,7 @@ async_simple::coro::Lazy<void> start(asio::io_context& io_context,
 // Copy the the file async_simple/demo_example/http/index.html to http server
 // directory before run the http client, otherwise you will get 404 not found
 // error message.
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     try {
         asio::io_context io_context;
         std::thread thd([&io_context] {
@@ -111,7 +112,7 @@ int main(int argc, char* argv[]) {
         io_context.stop();
         thd.join();
         std::cout << "Finished ok, client quit.\n";
-    } catch (std::exception& e) {
+    } catch (std::exception &e) {
         std::cerr << "Exception: " << e.what() << "\n";
     }
 }
