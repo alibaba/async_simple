@@ -116,6 +116,7 @@ public:
           _continuationRef(0),
           _executor(nullptr),
           _context(Executor::NULLCTX),
+          _promiseRef(0),
           _forceSched(false) {}
     ~FutureState() {}
 
@@ -149,8 +150,14 @@ public:
             delete this;
         }
     }
+    inline __attribute__((__always_inline__)) void attachPromise() {
+        _promiseRef.fetch_add(1, std::memory_order_relaxed);
+        attachOne();
+    }
     inline __attribute__((__always_inline__)) void detachPromise() {
-        if (!hasResult()) {
+        auto old = _promiseRef.fetch_sub(1, std::memory_order_relaxed);
+        assert(old >= 1u);
+        if (!hasResult() && old == 1) {
             try {
                 throw std::runtime_error("Promise is broken");
             } catch (...) {
@@ -319,6 +326,7 @@ private:
     };
     Executor* _executor;
     Executor::Context _context;
+    std::atomic<std::size_t> _promiseRef;
     bool _forceSched;
 };
 }  // namespace async_simple

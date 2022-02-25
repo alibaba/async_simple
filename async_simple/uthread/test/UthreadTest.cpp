@@ -111,9 +111,9 @@ TEST_F(UthreadTest, testSwitch) {
         Promise<int> p;
         auto f = p.getFuture().via(&_executor);
         delayedTask(
-            [wrapper = MoveWrapper(std::move(p))]() mutable {
+            [p = std::move(p)]() mutable {
                 auto value = 1024;
-                wrapper.get().setValue(value);
+                p.setValue(value);
             },
             100);
         return f;
@@ -167,9 +167,9 @@ TEST_F(UthreadTest, testScheduleInTwoThread) {
         Promise<int> p;
         auto f = p.getFuture().via(newEx);
         delayedTask(
-            [wrapper = MoveWrapper(std::move(p))]() mutable {
+            [p = std::move(p)]() mutable {
                 auto value = 1024;
-                wrapper.get().setValue(value);
+                p.setValue(value);
             },
             1000);
         return f;
@@ -201,9 +201,9 @@ TEST_F(UthreadTest, testAsync) {
         Promise<int> p;
         auto f = p.getFuture().via(&_executor);
         delayedTask(
-            [wrapper = MoveWrapper(std::move(p))]() mutable {
+            [p = std::move(p)]() mutable {
                 auto value = 1024;
-                wrapper.get().setValue(value);
+                p.setValue(value);
             },
             100);
         return f;
@@ -238,11 +238,11 @@ TEST_F(UthreadTest, testAwait) {
         std::cout << message << "\n";
     };
 
-    auto ioJob = [&](Promise<int>&& p) {
+    auto ioJob = [&](Promise<int> p) {
         delayedTask(
-            [wrapper = MoveWrapper(std::move(p))]() mutable {
+            [p = std::move(p)]() mutable {
                 auto value = 1024;
-                wrapper.get().setValue(value);
+                p.setValue(value);
             },
             100);
     };
@@ -399,9 +399,9 @@ TEST_F(UthreadTest, testCollectAllSlow) {
         Promise<int> p;
         auto f = p.getFuture().via(ex);
         delayedTask(
-            [wrapper = MoveWrapper(std::move(p))]() mutable {
+            [p = std::move(p)]() mutable {
                 auto value = 1024;
-                wrapper.get().setValue(value);
+                p.setValue(value);
             },
             delay_ms);
         return f;
@@ -438,9 +438,9 @@ TEST_F(UthreadTest, testCollectAllSlowSingleThread) {
         Promise<int> p;
         auto f = p.getFuture().via(ex);
         delayedTask(
-            [wrapper = MoveWrapper(std::move(p))]() mutable {
+            [p = std::move(p)]() mutable {
                 auto value = 1024;
-                wrapper.get().setValue(value);
+                p.setValue(value);
             },
             delay_ms);
         return f;
