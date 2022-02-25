@@ -47,6 +47,10 @@ set(CXX_FLAGS
     -g
     )
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    list(APPEND CXX_FLAGS "-fcoroutines")
+endif()
+
 set(HEADERS_PATH
     ${PROJECT_SOURCE_DIR}
     ${GTEST_INCLUDE_DIR}

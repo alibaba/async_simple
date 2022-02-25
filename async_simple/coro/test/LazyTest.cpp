@@ -418,7 +418,7 @@ TEST_F(LazyTest, testCollectAll) {
 }
 
 TEST_F(LazyTest, testCollectAllBatched) {
-    size_t task_num = 5000;
+    int task_num = 5000;
     long total = 0;
     for (auto i = 0; i < task_num; i++) {
         total += i;
@@ -448,7 +448,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         EXPECT_EQ(task_num, out.size());
         co_await CurrentExecutor();
         int sum = 0;
-        for (auto i = 0; i < out.size(); i++) {
+        for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
         }
         co_return sum;
@@ -493,7 +493,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         EXPECT_EQ(task_num, out.size());
         co_await CurrentExecutor();
         int sum = 0;
-        for (auto i = 0; i < out.size(); i++) {
+        for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
         }
         co_return sum;
@@ -538,7 +538,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         CHECK_EXECUTOR(&e3);
         EXPECT_EQ(task_num, out.size());
         int sum = 0;
-        for (auto i = 0; i < out.size(); i++) {
+        for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
         }
         co_return sum;
@@ -580,7 +580,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         EXPECT_EQ(task_num, out.size());
         CHECK_EXECUTOR(&e4);
         int sum = 0;
-        for (auto i = 0; i < out.size(); i++) {
+        for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
         }
         co_return sum;
@@ -613,7 +613,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         CHECK_EXECUTOR(&e6);
         EXPECT_EQ(task_num, out.size());
         int sum = 0;
-        for (auto i = 0; i < out.size(); i++) {
+        for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
         }
         co_return sum;
@@ -667,7 +667,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         CHECK_EXECUTOR(&e6);
         EXPECT_EQ(task_num, out.size());
         int sum = 0;
-        for (auto i = 0; i < out.size(); i++) {
+        for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
         }
         co_return sum;
@@ -721,7 +721,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         CHECK_EXECUTOR(&e6);
         EXPECT_EQ(task_num, out.size());
         int sum = 0;
-        for (auto i = 0; i < out.size(); i++) {
+        for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
         }
         co_return sum;
@@ -780,7 +780,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         CHECK_EXECUTOR(&e6);
         EXPECT_EQ(task_num, out.size());
         int sum = 0;
-        for (auto i = 0; i < out.size(); i++) {
+        for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
         }
         co_return sum;

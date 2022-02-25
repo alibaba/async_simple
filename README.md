@@ -59,8 +59,7 @@ cmake .. && sudo make install
 
 ## Install Clang Compiler
 
-Required Compiler: clang (>= 11.0.1)
-
+Required Compiler: clang (>= 11.0.1) or gcc (>= 10.3)
 ## Demo example dependency
 
 Demo example depends on standalone asio(https://github.com/chriskohlhoff/asio/tree/master/asio), the commit id:f70f65ae54351c209c3a24704624144bfe8e70a3
@@ -69,6 +68,7 @@ Demo example depends on standalone asio(https://github.com/chriskohlhoff/asio/tr
 ```
 $ mkdir build && cd build
 CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug]
+# for gcc, use CXX=g++ CC=gcc
 make -j4
 make test # optional
 make install # sudo if required

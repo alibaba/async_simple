@@ -139,10 +139,8 @@ struct TaskPromiseBase {
     }
     void unhandled_exception() const noexcept {}
 
-    void* operator new(size_t sz) noexcept { return ::operator new(sz); }
-    void operator delete(void* p, size_t sz) noexcept {
-        return ::operator delete(p);
-    }
+    void* operator new(size_t sz) { return ::operator new(sz); }
+    void operator delete(void* p, size_t sz) { return ::operator delete(p); }
 };
 
 template <typename T>
