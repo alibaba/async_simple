@@ -1,4 +1,15 @@
-[中文文档入口](https://github.com/alibaba/async_simple/tree/main/docs/docs.cn)
+<p align="center">
+<h1 align="center">async_simple</h1>
+<h6 align="center">A Simple, Light-Weight Asynchronous C++ Framework</h6>
+</p>
+<p align="center">
+<img alt="license" src="https://img.shields.io/github/license/alibaba/async_simple?style=flat-square">
+<img alt="language" src="https://img.shields.io/github/languages/top/alibaba/async_simple?style=flat-square">
+<img alt="feature" src="https://img.shields.io/badge/c++20-Coroutines-orange?style=flat-square">
+<img alt="last commit" src="https://img.shields.io/github/last-commit/alibaba/async_simple?style=flat-square">
+</p>
+
+English | [中文](./README_CN.md)
 
 The async_simple is a library offering simple, light-weight and easy-to-use 
 components to write asynchronous codes. The components offered include the Lazy

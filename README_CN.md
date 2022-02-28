@@ -1,0 +1,112 @@
+<p align="center">
+<h1 align="center">async_simple</h1>
+<h6 align="center">A Simple, Light-Weight Asynchronous C++ Framework</h6>
+</p>
+<p align="center">
+<img alt="license" src="https://img.shields.io/github/license/alibaba/async_simple?style=flat-square">
+<img alt="language" src="https://img.shields.io/github/languages/top/alibaba/async_simple?style=flat-square">
+<img alt="feature" src="https://img.shields.io/badge/c++20-Coroutines-orange?style=flat-square">
+<img alt="last commit" src="https://img.shields.io/github/last-commit/alibaba/async_simple?style=flat-square">
+</p>
+
+中文 | [English](./README.md)
+
+async\_simple是阿里巴巴开源的轻量级C++异步框架。提供了基于C++20无栈协程（Lazy），有栈协程（Uthread）以及Future/Promise等异步组件。async\_simple诞生于阿里巴巴智能引擎事业部，目前广泛应用于图计算引擎、时序数据库、搜索引擎等在线系统。连续两年经历天猫双十一磨砺，承担了亿级别流量洪峰，具备非常强劲的性能和可靠的稳定性。
+
+# 准备环境
+
+async\_simple涉及C++20协程，对编译器版本有较高要求。需要clang11，gcc10及其以上版本。 其他只依赖gtest和libaio。
+
+## Debian/Ubuntu系列
+
+- 安装clang11及其以上版本。安装方法见：[APT Packages](https://apt.llvm.org/)
+- 安装cmake、libaio。
+
+```bash
+sudo apt install cmake libaio-dev -y
+```
+
+- 安装gtest、gmock。用apt命令安装源代码后再编译安装。
+
+```bash
+sudo apt install libgtest-dev -y
+# gtest
+cd /usr/src/googletest/gtest
+sudo mkdir build && cd build
+sudo cmake .. && sudo make install
+cd .. && sudo rm -rf build
+# gmock
+cd /usr/src/googletest/gmock
+sudo mkdir build && cd build
+sudo cmake .. && sudo make install
+cd .. && sudo rm -rf build
+```
+
+## CentOS/Fedora系列
+
+- 同样是先安装clang11及其以上版本。安装方法见：[Fedora Snapshot Packages](https://copr.fedorainfracloud.org/coprs/g/fedora-llvm-team/llvm-snapshots/)
+- 安装cmake、libaio。
+
+```bash
+sudo yum install cmake libaio-devel -y
+```
+
+- 编译安装gtest、gmock。
+
+```
+git clone git@github.com:google/googletest.git -b v1.8.x
+cd googletest
+mkdir build && cd build
+cmake .. && sudo make install
+```
+
+## 源码依赖
+
+- 如果你不是上述Linux发行版，可以直接源码编译来安装依赖组件。
+
+```bash
+# libaio
+git clone https://pagure.io/libaio.git
+cd libaio
+sudo make install
+# gmock/gtest
+git clone git@github.com:google/googletest.git -b v1.8.x
+cd googletest
+mkdir build && cd build
+cmake .. && sudo make install
+```
+
+# 编译运行
+
+- 准备好编译器和依赖组件后就可以开始编译运行async\_simple。
+- 首先克隆async\_simple代码并进入代码目录，然后执行如下命令编译。
+- 编译成功结束后，运行单元测试以确保能够正常运行。
+
+```bash
+mkdir build && cd build
+CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug]
+make -j4
+make test
+make install
+```
+
+# 更多示例
+
+接下来可以阅读更多API文档，例如C++20协程（[Lazy](./docs/docs.cn/Lazy.md)）。熟悉async\_simple组件，可以先跟着[Demo](./docs/docs.cn/GetStarted.md)用C++20协程来实现异步统计文件字符数功能。
+
+更多文档介绍见目录[docs](./docs/docs.cn)。
+
+# 示例依赖
+
+注意目前示例代码包含了单独[asio](https://github.com/chriskohlhoff/asio/tree/master/asio)代码。对应Commit: f70f65ae54351c209c3a24704624144bfe8e70a3
+
+# 如何贡献
+
+- 提前阅读下文档：[如何修复Issue](./docs/docs.en/HowToFixIssue.md)。
+- 确保修改后单元测试通过，代码格式化通过。（`git-clang-format HEAD^`）
+- 创建并提交Pull Request，选择开发者Review代码。（候选人：ChuanqiXu9, RainMark, foreverhy, qicosmos）
+- 最终意见一致后，代码将会被合并。
+
+# 许可证
+
+async\_simple遵循Apache License (Version 2.0)开源许可证。async\_simple包含的部分第三方组件可能遵循其他开源许可证。相关详细信息可以查看NOTICE文件。
