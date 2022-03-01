@@ -77,7 +77,8 @@ struct CollectAnyAwaiter {
         : _input(std::move(other._input)), _result(std::move(other._result)) {}
 
     bool await_ready() const noexcept {
-        return _input.empty() || (_result && _result->_idx != -1);
+        return _input.empty() ||
+               (_result && _result->_idx != static_cast<size_t>(-1));
     }
 
     void await_suspend(STD_CORO::coroutine_handle<> continuation) {
@@ -91,10 +92,11 @@ struct CollectAnyAwaiter {
         std::vector<LazyType, InAlloc> input(std::move(_input));
         auto result = std::make_shared<ResultType>();
         auto event = std::make_shared<detail::CountEvent>(input.size());
-        size_t i = 0;
 
         _result = result;
-        for (i = 0; i < input.size() && (result->_idx == -1); ++i) {
+        for (size_t i = 0;
+             i < input.size() && (result->_idx == static_cast<size_t>(-1));
+             ++i) {
             if (!input[i]._coro.promise()._executor) {
                 input[i]._coro.promise()._executor = executor;
             }

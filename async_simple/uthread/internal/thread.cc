@@ -43,7 +43,7 @@ size_t get_base_stack_size() {
     auto env = std::getenv(uthread_stack_size.data());
     if (env) {
         auto kb = std::strtoll(env, nullptr, 10);
-        if (kb > 0 && kb < std::numeric_limits<size_t>::max()) {
+        if (kb > 0 && kb < std::numeric_limits<int64_t>::max()) {
             stack_size = 1024 * kb;
             return stack_size;
         }

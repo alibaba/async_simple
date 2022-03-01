@@ -235,7 +235,7 @@ inline ThreadPool::ERROR_TYPE ThreadPool::scheduleById(std::function<void()> fn,
     if (-1 == id) {
         id = rand() % _threadNum;
     }
-    assert(id >= 0 && id < _threadNum);
+    assert(id >= 0 && static_cast<size_t>(id) < _threadNum);
     WorkItem *item = new WorkItem(std::move(fn));
     if (!_push) {
         return ERROR_POOL_HAS_STOP;

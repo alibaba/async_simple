@@ -370,7 +370,7 @@ TEST_F(UthreadTest, testCollectAllSimple) {
     Executor* ex = &_executor;
     std::atomic<std::size_t> n = kMaxTask;
     std::vector<std::function<void()>> fs;
-    for (auto i = 0; i < kMaxTask; ++i) {
+    for (size_t i = 0; i < kMaxTask; ++i) {
         fs.emplace_back([i, &n]() {
             std::this_thread::sleep_for(
                 std::chrono::milliseconds(kMaxTask - i));
@@ -408,7 +408,7 @@ TEST_F(UthreadTest, testCollectAllSlow) {
     };
 
     std::vector<std::function<std::size_t()>> fs;
-    for (auto i = 0; i < kMaxTask; ++i) {
+    for (size_t i = 0; i < kMaxTask; ++i) {
         fs.emplace_back([i, &ioJob]() -> std::size_t {
             return i + ioJob(kMaxTask - i).get();
         });
@@ -419,7 +419,7 @@ TEST_F(UthreadTest, testCollectAllSlow) {
         [&running, ex, fs = std::move(fs)]() mutable {
             auto res = collectAll<Launch::Schedule>(fs.begin(), fs.end(), ex);
             EXPECT_EQ(kMaxTask, res.size());
-            for (auto i = 0; i < kMaxTask; ++i) {
+            for (size_t i = 0; i < kMaxTask; ++i) {
                 EXPECT_EQ(i + 1024, res[i]);
             }
             running--;
@@ -447,7 +447,7 @@ TEST_F(UthreadTest, testCollectAllSlowSingleThread) {
     };
 
     std::vector<std::function<std::size_t()>> fs;
-    for (auto i = 0; i < kMaxTask; ++i) {
+    for (size_t i = 0; i < kMaxTask; ++i) {
         fs.emplace_back([i, &ioJob]() -> std::size_t {
             return i + ioJob(kMaxTask - i).get();
         });
@@ -458,7 +458,7 @@ TEST_F(UthreadTest, testCollectAllSlowSingleThread) {
         [&running, ex, fs = std::move(fs)]() mutable {
             auto res = collectAll<Launch::Current>(fs.begin(), fs.end(), ex);
             EXPECT_EQ(kMaxTask, res.size());
-            for (auto i = 0; i < kMaxTask; ++i) {
+            for (size_t i = 0; i < kMaxTask; ++i) {
                 EXPECT_EQ(i + 1024, res[i]);
             }
             running--;
@@ -475,7 +475,7 @@ TEST_F(UthreadTest, testLatch) {
 
     Latch latch(kMaxTask);
     std::vector<std::function<void()>> fs;
-    for (auto i = 0; i < kMaxTask; ++i) {
+    for (size_t i = 0; i < kMaxTask; ++i) {
         fs.emplace_back([i, latchPtr = &latch]() {
             std::this_thread::sleep_for(std::chrono::milliseconds(i));
             latchPtr->downCount();
@@ -485,7 +485,7 @@ TEST_F(UthreadTest, testLatch) {
     std::atomic<int> running = 1;
     async<Launch::Schedule>(
         [&running, ex, fs = std::move(fs), latchPtr = &latch]() mutable {
-            for (auto i = 0; i < kMaxTask; ++i) {
+            for (size_t i = 0; i < kMaxTask; ++i) {
                 async<Launch::Schedule>(std::move(fs[i]), ex);
             }
             latchPtr->await(ex);
@@ -504,7 +504,7 @@ TEST_F(UthreadTest, testLatchThreadSafe) {
     executors::SimpleExecutor taskEx(6);
     executors::SimpleExecutor taskNotify(8);
 
-    for (auto i = 0; i < kMaxTask; ++i) {
+    for (size_t i = 0; i < kMaxTask; ++i) {
         async<Launch::Schedule>(
             [&taskEx, &taskNotify, &runningTask]() mutable {
                 auto f = [&taskEx, &taskNotify]() mutable {
