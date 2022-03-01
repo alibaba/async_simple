@@ -49,7 +49,7 @@ public:
 
 TEST_F(SimpleIOExecutorTest, testNormal) {
     std::string expect(4096, '0');
-    auto fd = open(kTestFile, O_RDWR | O_DIRECT | O_CREAT);
+    auto fd = open(kTestFile, O_RDWR | O_DIRECT | O_CREAT, 0600);
     auto output = memalign(4096, kBufferSize);
     memcpy((char*)output, expect.data(), expect.length());
     _executor->submitIO(
