@@ -17,7 +17,6 @@
 #define ASYNC_SIMPLE_TRY_H
 
 #include <async_simple/Common.h>
-#include <async_simple/Invoke.h>
 #include <async_simple/Unit.h>
 #include <cassert>
 #include <exception>
@@ -208,10 +207,10 @@ private:
 
 // T is Non void
 template <typename F, typename... Args>
-std::enable_if_t<!(std::is_same<invoke_result_t<F, Args...>, void>::value),
-                 Try<invoke_result_t<F, Args...>>>
+std::enable_if_t<!(std::is_same<std::invoke_result_t<F, Args...>, void>::value),
+                 Try<std::invoke_result_t<F, Args...>>>
 makeTryCall(F&& f, Args&&... args) {
-    using T = invoke_result_t<F, Args...>;
+    using T = std::invoke_result_t<F, Args...>;
     try {
         return Try<T>(std::forward<F>(f)(std::forward<Args>(args)...));
     } catch (...) {
@@ -221,7 +220,7 @@ makeTryCall(F&& f, Args&&... args) {
 
 // T is void
 template <typename F, typename... Args>
-std::enable_if_t<std::is_same<invoke_result_t<F, Args...>, void>::value,
+std::enable_if_t<std::is_same<std::invoke_result_t<F, Args...>, void>::value,
                  Try<void>>
 makeTryCall(F&& f, Args&&... args) {
     try {

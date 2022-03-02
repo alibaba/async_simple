@@ -17,7 +17,6 @@
 #define ASYNC_SIMPLE_CORO_LAZY_H
 
 #include <async_simple/Common.h>
-#include <async_simple/Invoke.h>
 #include <async_simple/Try.h>
 #include <async_simple/coro/CoAwait.h>
 #include <async_simple/coro/Util.h>
