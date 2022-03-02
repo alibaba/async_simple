@@ -7,7 +7,6 @@ This product contains various third-party components under other open source lic
 This section summarizes those components and their licenses.
 Apache Software Foundation License 2.0
 --------------------------------------
-async_simple/Invoke.h
 async_simple/MoveWrapper.h
 async_simple/Try.h
 async_simple/uthread/internal/thread.cc  

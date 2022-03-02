@@ -43,14 +43,14 @@ struct IsFuture<Future<T>> : std::true_type {
 
 template <typename T, typename F>
 struct TryCallableResult {
-    using Result = invoke_result_t<F, Try<T>&&>;
+    using Result = std::invoke_result_t<F, Try<T>&&>;
     using ReturnsFuture = IsFuture<Result>;
     static constexpr bool isTry = true;
 };
 
 template <typename T, typename F>
 struct ValueCallableResult {
-    using Result = invoke_result_t<F, T&&>;
+    using Result = std::invoke_result_t<F, T&&>;
     using ReturnsFuture = IsFuture<Result>;
     static constexpr bool isTry = false;
 };

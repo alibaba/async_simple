@@ -17,7 +17,6 @@
 #define ASYNC_SIMPLE_CORO_LAZY_HELPER_H
 
 #include <async_simple/Common.h>
-#include <async_simple/Invoke.h>
 #include <async_simple/experimental/coroutine.h>
 #include <exception>
 
