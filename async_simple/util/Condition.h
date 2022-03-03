@@ -19,56 +19,32 @@
 #ifndef ASYNC_SIMPLE_UTIL_CONDITION_H
 #define ASYNC_SIMPLE_UTIL_CONDITION_H
 
-#include <async_simple/Common.h>
-#include <exception>
-
-#include <linux/futex.h>
-#include <sys/syscall.h>
-#include <sys/time.h>
-#include <unistd.h>
 #include <atomic>
+#include <condition_variable>
+#include <mutex>
 
 namespace async_simple {
 namespace util {
 
-inline int32_t futexWake(int32_t* uaddr, int32_t n) {
-    return syscall(__NR_futex, uaddr, FUTEX_WAKE, n, nullptr, nullptr, 0);
-}
-
-inline int32_t futexWait(int32_t* uaddr, int32_t val) {
-    return syscall(__NR_futex, uaddr, FUTEX_WAIT, val, nullptr, nullptr, 0);
-}
-
 class Condition {
 public:
-    Condition() : _value(0) {}
+    void release() {
+        std::lock_guard lock(_mutex);
+        ++_count;
+        _condition.notify_one();
+    }
 
-public:
-    void set();
-    void wait();
+    void acquire() {
+        std::unique_lock lock(_mutex);
+        _condition.wait(lock, [this] { return _count > 0; });
+        --_count;
+    }
 
 private:
-    std::atomic<int32_t> _value;
+    std::mutex _mutex;
+    std::condition_variable _condition;
+    size_t _count = 0;
 };
-
-inline void Condition::set() {
-    _value.store(1, std::memory_order_release);
-    [[maybe_unused]] auto ret = futexWake(reinterpret_cast<int32_t*>(&_value),
-                                          std::numeric_limits<int32_t>::max());
-}
-
-inline void Condition::wait() {
-    auto oldValue = _value.load(std::memory_order_acquire);
-    while (oldValue == 0) {
-        auto ret = futexWait(reinterpret_cast<int32_t*>(&_value), 0);
-        if (ret != 0) {
-            logicAssert(errno == EAGAIN || errno == EINTR ||
-                            errno == ETIMEDOUT || errno == EWOULDBLOCK,
-                        "futex wait error");
-        }
-        oldValue = _value.load(std::memory_order_acquire);
-    }
-}
 
 }  // namespace util
 }  // namespace async_simple
