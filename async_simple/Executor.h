@@ -134,12 +134,12 @@ public:
         util::Condition cond;
         auto ret = schedule([f = std::move(func), &cond]() {
             f();
-            cond.set();
+            cond.release();
         });
         if (!ret) {
             return false;
         }
-        cond.wait();
+        cond.acquire();
         return true;
     }
 

@@ -44,9 +44,9 @@ inline auto syncAwait(LazyType&& lazy) ->
     std::move(std::forward<LazyType>(lazy))
         .start([&cond, &value](Try<ValueType> result) {
             value = std::move(result);
-            cond.set();
+            cond.release();
         });
-    cond.wait();
+    cond.acquire();
     return std::move(value).value();
 }
 
