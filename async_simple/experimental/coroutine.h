@@ -67,7 +67,15 @@ template <class P> struct hash<coroutine_handle<P>>;
 #define STD_CORO std::experimental
 #else
 
+#if defined(__cpp_lib_three_way_comparison) && \
+    defined(__cpp_impl_three_way_comparison)
+#define HAS_THREE_WAY_COMPARISON
+#endif
+
 #include <cassert>
+#if defined(HAS_THREE_WAY_COMPARISON)
+#include <compare>
+#endif
 #include <cstddef>
 #include <functional>
 #include <memory>  // for hash<T*>
@@ -115,70 +123,73 @@ class coroutine_handle;
 template <>
 class coroutine_handle<void> {
 public:
-    constexpr coroutine_handle() noexcept : __handle_(nullptr) {}
+    // [coroutine.handle.con], construct/reset
+    constexpr coroutine_handle() noexcept = default;
 
-    constexpr coroutine_handle(std::nullptr_t) noexcept : __handle_(nullptr) {}
+    constexpr coroutine_handle(nullptr_t) noexcept {}
 
-    coroutine_handle& operator=(std::nullptr_t) noexcept {
+    coroutine_handle& operator=(nullptr_t) noexcept {
         __handle_ = nullptr;
         return *this;
     }
 
+    // [coroutine.handle.export.import], export/import
     constexpr void* address() const noexcept { return __handle_; }
 
-    constexpr explicit operator bool() const noexcept { return __handle_; }
-
-    void operator()() { resume(); }
-
-    void resume() {
-        assert(__is_suspended());
-        assert(!done());
-        __builtin_coro_resume(__handle_);
-    }
-
-    void destroy() {
-        assert(__is_suspended());
-        __builtin_coro_destroy(__handle_);
-    }
-
-    bool done() const {
-        assert(__is_suspended());
-        return __builtin_coro_done(__handle_);
-    }
-
-public:
-    static coroutine_handle from_address(void* __addr) noexcept {
+    static constexpr coroutine_handle from_address(void* __addr) noexcept {
         coroutine_handle __tmp;
         __tmp.__handle_ = __addr;
         return __tmp;
     }
 
-    // FIXME: Should from_address(nullptr) be allowed?
-
-    static coroutine_handle from_address(std::nullptr_t) noexcept {
-        return coroutine_handle(nullptr);
+    // [coroutine.handle.observers], observers
+    constexpr explicit operator bool() const noexcept {
+        return __handle_ != nullptr;
     }
 
-    template <class _Tp, bool _CallIsValid = false>
-    static coroutine_handle from_address(_Tp*) {
-        static_assert(
-            _CallIsValid,
-            "coroutine_handle<void>::from_address cannot be called with "
-            "non-void pointers");
+    bool done() const {
+        assert(__is_suspended() &&
+               "done() can be called only on suspended coroutines");
+        return __builtin_coro_done(__handle_);
+    }
+
+    // [coroutine.handle.resumption], resumption
+    void operator()() const { resume(); }
+
+    void resume() const {
+        assert(__is_suspended() &&
+               "resume() can be called only on suspended coroutines");
+        assert(!done() &&
+               "resume() has undefined behavior when the coroutine is done");
+        __builtin_coro_resume(__handle_);
+    }
+
+    void destroy() const {
+        assert(__is_suspended() &&
+               "destroy() can be called only on suspended coroutines");
+        __builtin_coro_destroy(__handle_);
     }
 
 private:
-    bool __is_suspended() const noexcept {
+    bool __is_suspended() const {
         // FIXME actually implement a check for if the coro is suspended.
-        return __handle_;
+        return __handle_ != nullptr;
     }
 
-    template <class _PromiseT>
-    friend class coroutine_handle;
-    void* __handle_;
+    void* __handle_ = nullptr;
 };
 
-// 18.11.2.7 comparison operators:
+// [coroutine.handle.compare]
+#if defined(HAS_THREE_WAY_COMPARISON)
+inline constexpr bool operator==(coroutine_handle<> __x,
+                                 coroutine_handle<> __y) noexcept {
+    return __x.address() == __y.address();
+}
+inline constexpr strong_ordering operator<=>(coroutine_handle<> __x,
+                                             coroutine_handle<> __y) noexcept {
+    return compare_three_way()(__x.address(), __y.address());
+}
+#else
 inline bool operator==(coroutine_handle<> __x,
                        coroutine_handle<> __y) noexcept {
     return __x.address() == __y.address();
@@ -201,112 +212,165 @@ inline bool operator>=(coroutine_handle<> __x,
                        coroutine_handle<> __y) noexcept {
     return !(__x < __y);
 }
+#endif  // HAS_THREE_WAY_COMPARISON
 
 template <typename _Promise>
-class coroutine_handle : public coroutine_handle<> {
-    using _Base = coroutine_handle<>;
-
+class coroutine_handle {
 public:
-    // 18.11.2.1 construct/reset
-    using coroutine_handle<>::coroutine_handle;
+    // [coroutine.handle.con], construct/reset
+    constexpr coroutine_handle() noexcept = default;
 
-    coroutine_handle& operator=(std::nullptr_t) noexcept {
-        _Base::operator=(nullptr);
-        return *this;
-    }
+    constexpr coroutine_handle(nullptr_t) noexcept {}
 
-    _Promise& promise() const {
-        return *static_cast<_Promise*>(
-            __builtin_coro_promise(this->__handle_, alignof(_Promise), false));
-    }
-
-public:
-    static coroutine_handle from_address(void* __addr) noexcept {
-        coroutine_handle __tmp;
-        __tmp.__handle_ = __addr;
-        return __tmp;
-    }
-
-    // NOTE: this overload isn't required by the standard but is needed so
-    // the deleted _Promise* overload doesn't make from_address(nullptr)
-    // ambiguous.
-    // FIXME: should from_address work with nullptr?
-
-    static coroutine_handle from_address(std::nullptr_t) noexcept {
-        return coroutine_handle(nullptr);
-    }
-
-    template <class _Tp, bool _CallIsValid = false>
-    static coroutine_handle from_address(_Tp*) {
-        static_assert(_CallIsValid,
-                      "coroutine_handle<promise_type>::from_address cannot be "
-                      "called with "
-                      "non-void pointers");
-    }
-
-    template <bool _CallIsValid = false>
-    static coroutine_handle from_address(_Promise*) {
-        static_assert(
-            _CallIsValid,
-            "coroutine_handle<promise_type>::from_address cannot be used with "
-            "pointers to the coroutine's promise type; use 'from_promise' "
-            "instead");
-    }
-
-    static coroutine_handle from_promise(_Promise& __promise) noexcept {
-        typedef typename std::remove_cv<_Promise>::type _RawPromise;
+    static coroutine_handle from_promise(_Promise& __promise) {
+        using _RawPromise = typename remove_cv<_Promise>::type;
         coroutine_handle __tmp;
         __tmp.__handle_ = __builtin_coro_promise(
             std::addressof(const_cast<_RawPromise&>(__promise)),
             alignof(_Promise), true);
         return __tmp;
     }
-};
 
-#if __has_builtin(__builtin_coro_noop)
-struct noop_coroutine_promise {};
+    coroutine_handle& operator=(nullptr_t) noexcept {
+        __handle_ = nullptr;
+        return *this;
+    }
 
-template <>
-class coroutine_handle<noop_coroutine_promise> : public coroutine_handle<> {
-    using _Base = coroutine_handle<>;
-    using _Promise = noop_coroutine_promise;
+    // [coroutine.handle.export.import], export/import
+    constexpr void* address() const noexcept { return __handle_; }
 
-public:
+    static constexpr coroutine_handle from_address(void* __addr) noexcept {
+        coroutine_handle __tmp;
+        __tmp.__handle_ = __addr;
+        return __tmp;
+    }
+
+    // [coroutine.handle.conv], conversion
+    constexpr operator coroutine_handle<>() const noexcept {
+        return coroutine_handle<>::from_address(address());
+    }
+
+    // [coroutine.handle.observers], observers
+    constexpr explicit operator bool() const noexcept {
+        return __handle_ != nullptr;
+    }
+
+    bool done() const {
+        assert(__is_suspended() &&
+               "done() can be called only on suspended coroutines");
+        return __builtin_coro_done(__handle_);
+    }
+
+    // [coroutine.handle.resumption], resumption
+    void operator()() const { resume(); }
+
+    void resume() const {
+        assert(__is_suspended() &&
+               "resume() can be called only on suspended coroutines");
+        assert(!done() &&
+               "resume() has undefined behavior when the coroutine is done");
+        __builtin_coro_resume(__handle_);
+    }
+
+    void destroy() const {
+        assert(__is_suspended() &&
+               "destroy() can be called only on suspended coroutines");
+        __builtin_coro_destroy(__handle_);
+    }
+
+    // [coroutine.handle.promise], promise access
     _Promise& promise() const {
         return *static_cast<_Promise*>(
             __builtin_coro_promise(this->__handle_, alignof(_Promise), false));
     }
 
+private:
+    bool __is_suspended() const {
+        // FIXME actually implement a check for if the coro is suspended.
+        return __handle_ != nullptr;
+    }
+    void* __handle_ = nullptr;
+};
+
+struct noop_coroutine_promise {};
+
+template <>
+class coroutine_handle<noop_coroutine_promise> {
+public:
+    // [coroutine.handle.noop.conv], conversion
+    constexpr operator coroutine_handle<>() const noexcept {
+        return coroutine_handle<>::from_address(address());
+    }
+
+    // [coroutine.handle.noop.observers], observers
     constexpr explicit operator bool() const noexcept { return true; }
     constexpr bool done() const noexcept { return false; }
 
+    // [coroutine.handle.noop.resumption], resumption
     constexpr void operator()() const noexcept {}
     constexpr void resume() const noexcept {}
     constexpr void destroy() const noexcept {}
 
+    // [coroutine.handle.noop.promise], promise access
+    noop_coroutine_promise& promise() const noexcept {
+        return *static_cast<noop_coroutine_promise*>(__builtin_coro_promise(
+            this->__handle_, alignof(noop_coroutine_promise), false));
+    }
+
+    // [coroutine.handle.noop.address], address
+    constexpr void* address() const noexcept { return __handle_; }
+
 private:
     friend coroutine_handle<noop_coroutine_promise> noop_coroutine() noexcept;
 
+#if __has_builtin(__builtin_coro_noop)
     coroutine_handle() noexcept { this->__handle_ = __builtin_coro_noop(); }
+
+    void* __handle_ = nullptr;
+
+#elif defined(_LIBCPP_COMPILER_GCC)
+    // GCC doesn't implement __builtin_coro_noop().
+    // Construct the coroutine frame manually instead.
+    struct __noop_coroutine_frame_ty_ {
+        static void __dummy_resume_destroy_func() {}
+
+        void (*__resume_)() = __dummy_resume_destroy_func;
+        void (*__destroy_)() = __dummy_resume_destroy_func;
+        struct noop_coroutine_promise __promise_;
+    };
+
+    static __noop_coroutine_frame_ty_ __noop_coroutine_frame_;
+
+    void* __handle_ = &__noop_coroutine_frame_;
+
+    coroutine_handle() noexcept = default;
+
+#endif  // __has_builtin(__builtin_coro_noop)
 };
 
 using noop_coroutine_handle = coroutine_handle<noop_coroutine_promise>;
 
+#if defined(_LIBCPP_COMPILER_GCC)
+inline noop_coroutine_handle::__noop_coroutine_frame_ty_
+    noop_coroutine_handle::__noop_coroutine_frame_{};
+#endif
+
+// [coroutine.noop.coroutine]
 inline noop_coroutine_handle noop_coroutine() noexcept {
     return noop_coroutine_handle();
 }
-#endif  // __has_builtin(__builtin_coro_noop)
 
+// [coroutine.trivial.awaitables]
 struct suspend_never {
-    bool await_ready() const noexcept { return true; }
-    void await_suspend(coroutine_handle<>) const noexcept {}
-    void await_resume() const noexcept {}
+    constexpr bool await_ready() const noexcept { return true; }
+    constexpr void await_suspend(coroutine_handle<>) const noexcept {}
+    constexpr void await_resume() const noexcept {}
 };
 
 struct suspend_always {
-    bool await_ready() const noexcept { return false; }
-    void await_suspend(coroutine_handle<>) const noexcept {}
-    void await_resume() const noexcept {}
+    constexpr bool await_ready() const noexcept { return false; }
+    constexpr void await_suspend(coroutine_handle<>) const noexcept {}
+    constexpr void await_resume() const noexcept {}
 };
 
 }  // namespace STD_CORO

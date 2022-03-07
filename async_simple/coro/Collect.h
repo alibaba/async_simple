@@ -82,9 +82,9 @@ struct CollectAnyAwaiter {
 
     void await_suspend(STD_CORO::coroutine_handle<> continuation) {
         auto promise_type =
-            static_cast<STD_CORO::coroutine_handle<LazyPromiseBase>*>(
-                &continuation)
-                ->promise();
+            STD_CORO::coroutine_handle<LazyPromiseBase>::from_address(
+                continuation.address())
+                .promise();
         auto executor = promise_type._executor;
         // Make local copies to shared_ptr to avoid deleting objects too early
         // if any coroutine finishes before this function.
@@ -158,9 +158,9 @@ struct CollectAllAwaiter {
     inline bool await_ready() const noexcept { return _input.empty(); }
     inline void await_suspend(STD_CORO::coroutine_handle<> continuation) {
         auto promise_type =
-            static_cast<STD_CORO::coroutine_handle<LazyPromiseBase>*>(
-                &continuation)
-                ->promise();
+            STD_CORO::coroutine_handle<LazyPromiseBase>::from_address(
+                continuation.address())
+                .promise();
         auto executor = promise_type._executor;
         for (size_t i = 0; i < _input.size(); ++i) {
             auto& exec = _input[i]._coro.promise()._executor;
