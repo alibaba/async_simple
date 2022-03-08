@@ -10,6 +10,7 @@ build*
 _external/
 core.*
 \#*\#
+!.github
 !.gitignore
 !.clang-format
 *.so
