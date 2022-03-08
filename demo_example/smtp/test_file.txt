@@ -1,2 +1,0 @@
-This file is from async_simple smtp client,
-have fun.
