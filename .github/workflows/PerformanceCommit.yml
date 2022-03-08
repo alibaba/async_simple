@@ -15,11 +15,6 @@ jobs:
     permissions: write-all
     steps:
       - uses: actions/checkout@v2
-      - name: Cache Benchmark library
-        uses: actions/cache@v1
-        with:
-          path: ${{github.workspace}}/benchmarks
-          key: ${{ runner.os }}-googlebenchmark-v1.5.0
       - name: Build benchmark
         run: |
            sudo apt install libaio-dev libgtest-dev -y
@@ -31,13 +26,13 @@ jobs:
            cd ${{github.workspace}} && CXX=clang++ CC=clang cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
            cd ${{github.workspace}}/build/benchmarks && make -j
       - name: Run benchmark
-        run: cd ${{github.workspace}}/build/benchmarks && ./Lazy.bench --benchmark_format=json | tee Lazy_benchmark_result.json
+        run: cd ${{github.workspace}}/build/benchmarks && ./benchmarking --benchmark_format=json | tee ./benchmarking.json
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: C++ Benchmark
           tool: 'googlecpp'
-          output-file-path: ${{github.workspace}}/build/benchmarks/Lazy_benchmark_result.json
+          output-file-path: ${{github.workspace}}/build/benchmarks/benchmarking.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           comment-always: true
           # Show alert with commit comment on detecting possible performance regression
