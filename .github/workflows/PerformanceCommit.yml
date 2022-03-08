@@ -1,8 +1,6 @@
-name: Performance
+name: Performance for commit
 
 on:
-  pull_request:
-    branches: [ main ]
   push:
     branches: [ main ]
 
@@ -10,12 +8,11 @@ env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
 
-permissions: write-all
-
 jobs:
   benchmark:
     name: Performance regression check
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - uses: actions/checkout@v2
       - name: Cache Benchmark library
@@ -44,9 +41,8 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           comment-always: true
           # Show alert with commit comment on detecting possible performance regression
-          alert-threshold: '50%'
-          comment-on-alert: true
-          fail-on-alert: true
+          alert-threshold: '150%'
+          fail-threshold: '200%'
           gh-pages-branch: benchmark-monitoring
           auto-push: true
           benchmark-data-dir-path: benchmark-monitoring
