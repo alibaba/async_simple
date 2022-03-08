@@ -178,18 +178,16 @@ struct [[nodiscard]] ViaAsyncAwaiter {
 // normal_function()`;
 template <
     typename Awaitable,
-    std::enable_if_t<!detail::HasCoAwaitMethod<std::decay_t<Awaitable>>::value,
-                     int> = 0>
+    std::enable_if_t<!detail::HasCoAwaitMethod<Awaitable>::value, int> = 0>
 inline auto coAwait(Executor* ex, Awaitable&& awaitable) {
-    using AwaiterType = std::decay_t<decltype(detail::getAwaiter(
-        std::forward<Awaitable>(awaitable)))>;
-    return ViaAsyncAwaiter<AwaiterType>(ex, std::forward<Awaitable>(awaitable));
+    using AwaiterType =
+        decltype(detail::getAwaiter(std::forward<Awaitable>(awaitable)));
+    return ViaAsyncAwaiter<std::decay_t<AwaiterType>>(
+        ex, std::forward<Awaitable>(awaitable));
 }
 
-template <
-    typename Awaitable,
-    std::enable_if_t<detail::HasCoAwaitMethod<std::decay_t<Awaitable>>::value,
-                     int> = 0>
+template <typename Awaitable,
+          std::enable_if_t<detail::HasCoAwaitMethod<Awaitable>::value, int> = 0>
 inline auto coAwait(Executor* ex, Awaitable&& awaitable) {
     return std::forward<Awaitable>(awaitable).coAwait(ex);
 }
