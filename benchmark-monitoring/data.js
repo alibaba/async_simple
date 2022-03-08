@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1646735787434,
+  "lastUpdate": 1646742127673,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -144,6 +144,42 @@ window.BENCHMARK_DATA = {
             "value": 11473437.421052655,
             "unit": "ns/iter",
             "extra": "iterations: 57\ncpu: 11472580.701754386 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rain.by.zhou@gmail.com",
+            "name": "Rain Mark",
+            "username": "RainMark"
+          },
+          "committer": {
+            "email": "68680648+ChuanqiXu9@users.noreply.github.com",
+            "name": "Chuanqi Xu",
+            "username": "ChuanqiXu9"
+          },
+          "distinct": true,
+          "id": "5591337ac9bcbca6eb309bb01baeefc9a1790119",
+          "message": "[coro] Add FutureAwaiter\n\nSigned-off-by: Rain Mark <rain.by.zhou@gmail.com>",
+          "timestamp": "2022-03-08T20:20:43+08:00",
+          "tree_id": "c7ab113bae70a6c8fc0433da649fbc8a77de94c8",
+          "url": "https://github.com/alibaba/async_simple/commit/5591337ac9bcbca6eb309bb01baeefc9a1790119"
+        },
+        "date": 1646742127066,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 27076.268444133922,
+            "unit": "ns/iter",
+            "extra": "iterations: 25767\ncpu: 27072.026235106925 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 11399409.428571336,
+            "unit": "ns/iter",
+            "extra": "iterations: 63\ncpu: 11396960.31746032 ns\nthreads: 1"
           }
         ]
       }
