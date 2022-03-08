@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1646730824324,
+  "lastUpdate": 1646735787434,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -108,6 +108,42 @@ window.BENCHMARK_DATA = {
             "value": 10692572.636363387,
             "unit": "ns/iter",
             "extra": "iterations: 55\ncpu: 10691978.181818182 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "qicosmos@163.com",
+            "name": "chufeng.qy@antgroup.com",
+            "username": "qicosmos"
+          },
+          "committer": {
+            "email": "68680648+ChuanqiXu9@users.noreply.github.com",
+            "name": "Chuanqi Xu",
+            "username": "ChuanqiXu9"
+          },
+          "distinct": true,
+          "id": "2ec383f1ff78fb88a72c9248c0ca5d4128e788d8",
+          "message": "link fs",
+          "timestamp": "2022-03-08T18:35:05+08:00",
+          "tree_id": "aa3ea98c6ab38d6672bb32354a905e77226d47eb",
+          "url": "https://github.com/alibaba/async_simple/commit/2ec383f1ff78fb88a72c9248c0ca5d4128e788d8"
+        },
+        "date": 1646735786929,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 23590.83096743852,
+            "unit": "ns/iter",
+            "extra": "iterations: 29728\ncpu: 23587.22080193757 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 11473437.421052655,
+            "unit": "ns/iter",
+            "extra": "iterations: 57\ncpu: 11472580.701754386 ns\nthreads: 1"
           }
         ]
       }
