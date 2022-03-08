@@ -85,6 +85,10 @@ After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with
 4. Choose one or more reviewers from contributors: (ChuanqiXu9, RainMark, foreverhy, qicosmos).
 5. Get approved and merged.
 
+# Performance Monitoring
+
+We could monitor the performance change history in: https://alibaba.github.io/async_simple/benchmark-monitoring/index.html.
+
 # License
 
 async_simple is distributed under the Apache License (Version 2.0)

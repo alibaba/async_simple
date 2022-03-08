@@ -107,6 +107,10 @@ make install
 - 创建并提交Pull Request，选择开发者Review代码。（候选人：ChuanqiXu9, RainMark, foreverhy, qicosmos）
 - 最终意见一致后，代码将会被合并。
 
+# 性能监控
+
+我们可在 https://alibaba.github.io/async_simple/benchmark-monitoring/index.html 中检查每个 commit 前后的性能。
+
 # 许可证
 
 async\_simple遵循Apache License (Version 2.0)开源许可证。async\_simple包含的部分第三方组件可能遵循其他开源许可证。相关详细信息可以查看NOTICE文件。
