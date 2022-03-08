@@ -50,28 +50,22 @@ struct HasGlobalCoAwaitOperator<
     T, std::void_t<decltype(operator co_await(std::declval<T>()))>>
     : std::true_type {};
 
-template <
-    typename Awaitable,
-    std::enable_if_t<HasMemberCoAwaitOperator<std::decay_t<Awaitable>>::value,
-                     int> = 0>
+template <typename Awaitable,
+          std::enable_if_t<HasMemberCoAwaitOperator<Awaitable>::value, int> = 0>
 auto getAwaiter(Awaitable&& awaitable) {
     return std::forward<Awaitable>(awaitable).operator co_await();
 }
 
-template <
-    typename Awaitable,
-    std::enable_if_t<HasGlobalCoAwaitOperator<std::decay_t<Awaitable>>::value,
-                     int> = 0>
+template <typename Awaitable,
+          std::enable_if_t<HasGlobalCoAwaitOperator<Awaitable>::value, int> = 0>
 auto getAwaiter(Awaitable&& awaitable) {
     return operator co_await(std::forward<Awaitable>(awaitable));
 }
 
 template <
     typename Awaitable,
-    std::enable_if_t<!HasMemberCoAwaitOperator<std::decay_t<Awaitable>>::value,
-                     int> = 0,
-    std::enable_if_t<!HasGlobalCoAwaitOperator<std::decay_t<Awaitable>>::value,
-                     int> = 0>
+    std::enable_if_t<!HasMemberCoAwaitOperator<Awaitable>::value, int> = 0,
+    std::enable_if_t<!HasGlobalCoAwaitOperator<Awaitable>::value, int> = 0>
 auto getAwaiter(Awaitable&& awaitable) {
     return std::forward<Awaitable>(awaitable);
 }
