@@ -24,8 +24,8 @@
 #ifndef FUTURE_THREAD_POOL_H
 #define FUTURE_THREAD_POOL_H
 
-#include <unistd.h>
 #include <atomic>
+#include <chrono>
 #include <functional>
 #include <queue>
 #include <thread>
@@ -311,11 +311,12 @@ inline std::pair<int32_t, ThreadPool *> *ThreadPool::getCurrent() const {
 }
 
 inline void ThreadPool::waitQueueEmpty() {
+    using namespace std::chrono_literals;
     while (true) {
         if ((size_t)0 == getItemCount()) {
             break;
         }
-        usleep(10000);
+        std::this_thread::sleep_for(10000us);
     }
 }
 

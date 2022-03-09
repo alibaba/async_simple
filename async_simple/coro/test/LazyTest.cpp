@@ -28,8 +28,10 @@
 #include <async_simple/executors/SimpleExecutor.h>
 #include <async_simple/experimental/coroutine.h>
 #include <async_simple/test/unittest.h>
+#include <chrono>
 
 using namespace std;
+using namespace std::chrono_literals;
 
 namespace async_simple {
 namespace coro {
@@ -143,7 +145,8 @@ public:
             void await_suspend(
                 STD_CORO::coroutine_handle<> continuation) noexcept {
                 std::thread([c = continuation]() mutable {
-                    usleep(rand() % 1000 + 1);
+                    std::this_thread::sleep_for(
+                        std::chrono::microseconds(rand() % 1000 + 1));
                     c.resume();
                 }).detach();
             }
@@ -163,7 +166,8 @@ public:
             void await_suspend(
                 STD_CORO::coroutine_handle<> continuation) noexcept {
                 std::thread([c = continuation]() mutable {
-                    usleep(rand() % 1000000 + 1);
+                    std::this_thread::sleep_for(
+                        std::chrono::microseconds(rand() % 1000000 + 1));
                     c.resume();
                 }).detach();
             }
@@ -244,20 +248,20 @@ TEST_F(LazyTest, testYield) {
     };
 
     test1(m1, value1).via(&executor).start([](Try<void> result) {});
-    usleep(100000);
+    std::this_thread::sleep_for(100000us);
     ASSERT_EQ(0, value1);
 
     test2(m2, value2).via(&executor).start([](Try<void> result) {});
-    usleep(100000);
+    std::this_thread::sleep_for(100000us);
     ASSERT_EQ(0, value2);
 
     m1.unlock();
-    usleep(100000);
+    std::this_thread::sleep_for(100000us);
     ASSERT_EQ(0, value1);
     ASSERT_EQ(0, value2);
 
     m2.unlock();
-    usleep(100000);
+    std::this_thread::sleep_for(100000us);
     ASSERT_EQ(1, value1);
     ASSERT_EQ(1, value2);
 
@@ -343,7 +347,7 @@ TEST_F(LazyTest, testDetachedCoroutine) {
     triggerValue(100);
     test().via(&_executor).start([](Try<void> result) {});
     while (value.load() != 111) {
-        usleep(1000);
+        std::this_thread::sleep_for(1000us);
     }
 }
 
@@ -1284,7 +1288,7 @@ TEST_F(LazyTest, testcollectAllParallel) {
 
 std::vector<int> result;
 Lazy<void> makeTest(int value) {
-    usleep(1000);
+    std::this_thread::sleep_for(1000us);
     result.push_back(value);
     co_return;
 }
@@ -1356,7 +1360,7 @@ TEST_F(LazyTest, testBatchedcollectAll) {
     collectAllWindowed(1, true, std::move(input2))
         .via(&e2)
         .start([](auto result) {});
-    usleep(500000);
+    std::this_thread::sleep_for(500000us);
     std::vector<int> expect{1, 5, 2, 6, 3, 7, 4, 8};
     for (size_t i = 0; i < result.size(); ++i) {
         EXPECT_EQ(expect[i], result[i]);

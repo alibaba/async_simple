@@ -319,13 +319,13 @@ TEST_F(FutureTest, testWait) {
     // use doneCallback to know which step future finish.
     // use beginCallback to notify future start callback function.
     auto t = std::thread([&p, &beginCallback, &doneCallback]() {
-        usleep(100000);
+        std::this_thread::sleep_for(100000us);
         // sleep a little time and make sure the future callback do not start.
         EXPECT_EQ(0, doneCallback.load(std::memory_order_acquire));
         p.setValue(100);
         for (size_t i = 5;
              i > 0 && doneCallback.load(std::memory_order_acquire) != 1; i--) {
-            usleep(1000);
+            std::this_thread::sleep_for(1000us);
         }
         // the future callback has started but can not finish.
         EXPECT_EQ(1, doneCallback.load(std::memory_order_acquire));
@@ -333,7 +333,7 @@ TEST_F(FutureTest, testWait) {
         beginCallback.store(true, std::memory_order_release);
         for (size_t i = 500;
              i > 0 && doneCallback.load(std::memory_order_acquire) != 2; i--) {
-            usleep(10000);
+            std::this_thread::sleep_for(10000us);
         }
         // make sure future callback has finished
         EXPECT_EQ(2, doneCallback.load(std::memory_order_acquire));
@@ -357,13 +357,13 @@ TEST_F(FutureTest, testWaitCallback) {
                 auto f = p2.getFuture()
                              .via(&executor2)
                              .thenValue([x = std::move(res).value()](bool y) {
-                                 usleep(10000);
+                                 std::this_thread::sleep_for(10000us);
                                  return x;
                              });
                 return f;
             })
             .thenValue([](int x) {
-                usleep(20000);
+                std::this_thread::sleep_for(20000us);
                 return std::make_pair(x + 1, x);
             })
             .thenValue([&executor2](std::pair<int, int>&& res) {
@@ -372,7 +372,7 @@ TEST_F(FutureTest, testWaitCallback) {
                 Future<int> f = p3.getFuture()
                                     .via(&executor2)
                                     .thenValue([r = std::move(res)](bool y) {
-                                        usleep(30000);
+                                        std::this_thread::sleep_for(30000us);
                                         return r.first * r.second;
                                     });
                 p3.setValue(true);
