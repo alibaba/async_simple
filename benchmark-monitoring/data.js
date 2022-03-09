@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1646742127673,
+  "lastUpdate": 1646805146930,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -180,6 +180,42 @@ window.BENCHMARK_DATA = {
             "value": 11399409.428571336,
             "unit": "ns/iter",
             "extra": "iterations: 63\ncpu: 11396960.31746032 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "383121719@qq.com",
+            "name": "qicosmos",
+            "username": "qicosmos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5b8f035b3d368d1b774d952c4a7e6e3e9e634a59",
+          "message": "[Cross platform]remove usleep (#56)\n\n* remove usleep\r\n\r\n* format\r\n\r\n* use chrono_literals",
+          "timestamp": "2022-03-09T13:41:41+08:00",
+          "tree_id": "383dd35821e2c2e9cd69e171182eb570f13fdfb8",
+          "url": "https://github.com/alibaba/async_simple/commit/5b8f035b3d368d1b774d952c4a7e6e3e9e634a59"
+        },
+        "date": 1646805146369,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 23686.480474862467,
+            "unit": "ns/iter",
+            "extra": "iterations: 29398\ncpu: 23684.430913667595 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 9146079.671428911,
+            "unit": "ns/iter",
+            "extra": "iterations: 70\ncpu: 9144722.85714286 ns\nthreads: 1"
           }
         ]
       }
