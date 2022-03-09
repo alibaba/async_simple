@@ -25,11 +25,11 @@
 #define FUTURE_THREAD_POOL_H
 
 #include <atomic>
+#include <chrono>
 #include <functional>
 #include <queue>
 #include <thread>
 #include <vector>
-#include <chrono>
 
 namespace async_simple {
 

@@ -145,7 +145,8 @@ public:
             void await_suspend(
                 STD_CORO::coroutine_handle<> continuation) noexcept {
                 std::thread([c = continuation]() mutable {
-                    std::this_thread::sleep_for(std::chrono::microseconds(rand() % 1000 + 1));
+                    std::this_thread::sleep_for(
+                        std::chrono::microseconds(rand() % 1000 + 1));
                     c.resume();
                 }).detach();
             }
@@ -165,7 +166,8 @@ public:
             void await_suspend(
                 STD_CORO::coroutine_handle<> continuation) noexcept {
                 std::thread([c = continuation]() mutable {
-                    std::this_thread::sleep_for(std::chrono::microseconds(rand() % 1000000 + 1));
+                    std::this_thread::sleep_for(
+                        std::chrono::microseconds(rand() % 1000000 + 1));
                     c.resume();
                 }).detach();
             }
