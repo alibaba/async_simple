@@ -49,6 +49,9 @@ public:
         _sharedState->attachPromise();
     }
     Promise& operator=(const Promise& other) {
+        if (this == &other) {
+            return *this;
+        }
         this->~Promise();
         _sharedState = other._sharedState;
         _hasFuture = other._hasFuture;
