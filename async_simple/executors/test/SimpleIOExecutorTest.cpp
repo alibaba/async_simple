@@ -18,11 +18,13 @@
 #include <malloc.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
+#include <chrono>
 #include <exception>
 
 #include "async_simple/executors/SimpleIOExecutor.h"
 #include "async_simple/test/unittest.h"
+
+using namespace std::chrono_literals;
 
 namespace async_simple {
 
@@ -55,7 +57,7 @@ TEST_F(SimpleIOExecutorTest, testNormal) {
     _executor->submitIO(
         fd, IOCB_CMD_PWRITE, output, expect.length(), 0,
         [](io_event& event) mutable { EXPECT_EQ(4096, (int32_t)event.res); });
-    usleep(1000 * 300);
+    std::this_thread::sleep_for(300ms);
     memset(output, 0, kBufferSize);
     _executor->submitIO(fd, IOCB_CMD_PREAD, output, kBufferSize, 0,
                         [&expect, output](io_event event) mutable {
@@ -63,7 +65,7 @@ TEST_F(SimpleIOExecutorTest, testNormal) {
                             EXPECT_EQ(expect,
                                       std::string((char*)output, event.res));
                         });
-    usleep(1000 * 300);
+    std::this_thread::sleep_for(300ms);
     close(fd);
     free(output);
     unlink(kTestFile);
@@ -75,7 +77,7 @@ TEST_F(SimpleIOExecutorTest, testException) {
     _executor->submitIO(
         -1, IOCB_CMD_PREAD, output, kBufferSize, 0,
         [](io_event& event) mutable { EXPECT_TRUE((int32_t)event.res < 0); });
-    usleep(1000 * 300);
+    std::this_thread::sleep_for(300ms);
     free(output);
 }
 

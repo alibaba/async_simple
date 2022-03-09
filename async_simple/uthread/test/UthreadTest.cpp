@@ -22,7 +22,6 @@
 #include <async_simple/uthread/Collect.h>
 #include <async_simple/uthread/Latch.h>
 #include <async_simple/uthread/Uthread.h>
-#include <unistd.h>
 #include <exception>
 #include <functional>
 #include <iostream>
@@ -510,7 +509,7 @@ TEST_F(UthreadTest, testLatchThreadSafe) {
                 auto f = [&taskEx, &taskNotify]() mutable {
                     Latch latch(1u);
                     taskNotify.schedule([latchPtr = &latch]() mutable {
-                        usleep(1);
+                        std::this_thread::sleep_for(1us);
                         latchPtr->downCount();
                     });
                     latch.await(&taskEx);
@@ -530,7 +529,7 @@ TEST_F(UthreadTest, testLatchThreadSafe) {
                 runningTask.fetch_sub(1u);
             },
             &taskEx);
-        usleep(10);
+        std::this_thread::sleep_for(10us);
     }
 
     while (runningTask) {

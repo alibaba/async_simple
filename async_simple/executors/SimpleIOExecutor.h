@@ -19,7 +19,6 @@
 #include <async_simple/IOExecutor.h>
 #include <libaio.h>
 #include <sys/syscall.h> /* For SYS_xxx definitions */
-#include <unistd.h>
 #include <thread>
 
 namespace async_simple {

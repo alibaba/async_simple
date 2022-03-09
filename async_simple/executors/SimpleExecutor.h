@@ -16,7 +16,6 @@
 #ifndef FUTURE_SIMPLE_EXECUTOR_H
 #define FUTURE_SIMPLE_EXECUTOR_H
 
-#include <unistd.h>
 #include <functional>
 
 #include <async_simple/Executor.h>

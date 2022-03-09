@@ -24,12 +24,12 @@
 #ifndef FUTURE_THREAD_POOL_H
 #define FUTURE_THREAD_POOL_H
 
-#include <unistd.h>
 #include <atomic>
 #include <functional>
 #include <queue>
 #include <thread>
 #include <vector>
+#include <chrono>
 
 namespace async_simple {
 
@@ -315,7 +315,7 @@ inline void ThreadPool::waitQueueEmpty() {
         if ((size_t)0 == getItemCount()) {
             break;
         }
-        usleep(10000);
+        std::this_thread::sleep_for(std::chrono::microseconds(10000));
     }
 }
 
