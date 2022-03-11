@@ -23,7 +23,6 @@
 #include <iostream>
 
 #include <async_simple/coro/Lazy.h>
-#include <async_simple/coro/Task.h>
 #include <async_simple/coro/test/Time.h>
 #include <async_simple/executors/SimpleExecutor.h>
 #include <async_simple/experimental/coroutine.h>
@@ -1105,25 +1104,6 @@ TEST_F(LazyTest, testContext) {
         auto val = syncAwait(test().via(&e1));
         ASSERT_EQ(103, val);
     }
-}
-
-template <bool Ready>
-typename detail::CoroTypeTraits<int, Ready>::TaskType bar() {
-    co_return 3;
-}
-
-template <bool Ready>
-typename detail::CoroTypeTraits<int, Ready>::TaskType foo() {
-    co_return co_await bar<Ready>() + 1 + co_await bar<!Ready>();
-}
-
-TEST_F(LazyTest, testZ) {
-    auto test = []() -> Lazy<int> {
-        auto a = co_await foo<true>();
-        a += co_await foo<false>();
-        co_return a;
-    };
-    ASSERT_EQ(14, syncAwait(test().via(&_executor)));
 }
 
 struct A {
