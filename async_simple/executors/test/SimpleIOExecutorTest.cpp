@@ -51,13 +51,13 @@ public:
 
 TEST_F(SimpleIOExecutorTest, testNormal) {
     std::string expect(4096, '0');
-    auto fd = open(kTestFile, O_RDWR | O_DIRECT | O_CREAT);
+    auto fd = open(kTestFile, O_RDWR | O_DIRECT | O_CREAT, 0600);
     auto output = memalign(4096, kBufferSize);
     memcpy((char*)output, expect.data(), expect.length());
     _executor->submitIO(
         fd, IOCB_CMD_PWRITE, output, expect.length(), 0,
         [](io_event_t& event) mutable { EXPECT_EQ(4096, (int32_t)event.res); });
-    usleep(1000 * 300);
+    std::this_thread::sleep_for(300ms);
     memset(output, 0, kBufferSize);
     _executor->submitIO(fd, IOCB_CMD_PREAD, output, kBufferSize, 0,
                         [&expect, output](io_event_t event) mutable {
@@ -65,7 +65,7 @@ TEST_F(SimpleIOExecutorTest, testNormal) {
                             EXPECT_EQ(expect,
                                       std::string((char*)output, event.res));
                         });
-    usleep(1000 * 300);
+    std::this_thread::sleep_for(300ms);
     close(fd);
     free(output);
     unlink(kTestFile);
