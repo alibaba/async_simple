@@ -45,7 +45,7 @@ public:
         ~Task() {}
 
     public:
-        void process(io_event& event) { _func(event); }
+        void process(io_event_t& event) { _func(event); }
 
     private:
         AIOCallback _func;
@@ -79,7 +79,9 @@ public:
             }
             for (auto i = 0; i < n; ++i) {
                 auto task = reinterpret_cast<Task*>(events[i].data);
-                task->process(events[i]);
+                io_event_t evt{events[i].data, events[i].obj, events[i].res,
+                               events[i].res2};
+                task->process(evt);
                 delete task;
             }
         }
@@ -100,14 +102,14 @@ public:
         auto r = io_submit(_ioContext, 1, iocbs);
         if (r < 0) {
             auto task = reinterpret_cast<Task*>(iocbs[0]->data);
-            io_event event;
+            io_event_t event;
             event.res = r;
             task->process(event);
             delete task;
             return;
         }
     }
-    void submitIOV(int fd, iocb_cmd cmd, const iovec* iov, size_t count,
+    void submitIOV(int fd, iocb_cmd cmd, const iovec_t* iov, size_t count,
                    off_t offset, AIOCallback cbfn) override {
         iocb io;
         memset(&io, 0, sizeof(iocb));
@@ -121,7 +123,7 @@ public:
         auto r = io_submit(_ioContext, 1, iocbs);
         if (r < 0) {
             auto task = reinterpret_cast<Task*>(iocbs[0]->data);
-            io_event event;
+            io_event_t event;
             event.res = r;
             task->process(event);
             delete task;

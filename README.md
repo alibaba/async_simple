@@ -21,7 +21,9 @@ and the traditional Future/Promise.
 ## Using apt (ubuntu and debian's)
 
 ```
+// note: if "SET(ENABLE_LIBAIO ON)" will require libaio, otherwise no need.
 sudo apt install libaio-dev -y
+
 # Install gtest
 sudo apt install libgtest-dev -y
 sudo apt install cmake -y
@@ -37,7 +39,9 @@ cd .. && sudo rm -rf build
 
 ## Using yum (CentOS and fedora)
 ```
+// note: if "SET(ENABLE_LIBAIO ON)" will require libaio, otherwise no need.
 sudo yum install libaio-devel -y
+
 sudo yum install cmake -y
 # Try to build gtest and gmock from source
 ```
@@ -45,6 +49,7 @@ sudo yum install cmake -y
 ## Build Dependencies From Source
 
 ```
+// note: if "SET(ENABLE_LIBAIO ON)" will require libaio, otherwise no need.
 # libaio
 # you can skip this if you install libaio from packages
 git clone https://pagure.io/libaio.git

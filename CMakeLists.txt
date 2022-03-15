@@ -5,16 +5,20 @@ enable_testing()
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
-find_package(Aio REQUIRED)
 find_package(GMock REQUIRED)
 find_package(GTest REQUIRED)
 find_package(Benchmark)
 
-if(LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
-    message(STATUS "aio found")
-    message(STATUS "aio: ${LIBAIO_INCLUDE_DIR}, ${LIBAIO_LIBRARIES}.")
-else()
-    message(FATAL_ERROR "aio NOT found")
+SET(ENABLE_LIBAIO OFF)
+
+if (ENABLE_LIBAIO)
+    find_package(Aio REQUIRED)
+    if(LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
+        message(STATUS "aio found")
+        message(STATUS "aio: ${LIBAIO_INCLUDE_DIR}, ${LIBAIO_LIBRARIES}.")
+    else()
+        message(FATAL_ERROR "aio NOT found")
+    endif()
 endif()
 
 if(GTEST_INCLUDE_DIR AND GTEST_LIBRARIES)
@@ -62,12 +66,16 @@ set(HEADERS_PATH
     ${PROJECT_SOURCE_DIR}
     ${GTEST_INCLUDE_DIR}
     ${GMOCK_INCLUDE_DIR}
-    ${AIO_INCLUDE_DIR}
+    if (ENABLE_LIBAIO)
+        ${AIO_INCLUDE_DIR}
+    endif()
     )
 include_directories(${HEADERS_PATH})
 
 set(deplibs)
-list(APPEND deplibs ${LIBAIO_LIBRARIES})
+if (ENABLE_LIBAIO)
+    list(APPEND deplibs ${LIBAIO_LIBRARIES})
+endif()
 list(APPEND deplibs pthread)
 set(testdeplibs)
 list(APPEND testdeplibs ${GTEST_LIBRARIES})

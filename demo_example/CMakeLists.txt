@@ -1,14 +1,16 @@
 add_executable(CountChar CountChar.cpp)
 target_link_libraries(CountChar async_simple)
 
-add_executable(ReadFiles ReadFiles.cpp)
-target_link_libraries(ReadFiles async_simple)
+if (ENABLE_LIBAIO)
+    add_executable(ReadFiles ReadFiles.cpp)
+    target_link_libraries(ReadFiles async_simple)
 
-add_custom_command(
-        TARGET ReadFiles POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-                ${CMAKE_SOURCE_DIR}/demo_example/Input
-                ${CMAKE_CURRENT_BINARY_DIR}/Input)
+    add_custom_command(
+            TARGET ReadFiles POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    ${CMAKE_SOURCE_DIR}/demo_example/Input
+                    ${CMAKE_CURRENT_BINARY_DIR}/Input)
+endif()
 
 include_directories(asio)
 
