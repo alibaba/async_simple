@@ -12,7 +12,6 @@ find_package(Benchmark)
 
 SET(ENABLE_LIBAIO OFF)
 
-find_package(Aio REQUIRED)
 if(LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
     message(STATUS "aio found")
     message(STATUS "aio: ${LIBAIO_INCLUDE_DIR}, ${LIBAIO_LIBRARIES}.")
