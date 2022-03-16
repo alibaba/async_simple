@@ -19,7 +19,6 @@
 #include <functional>
 
 #include <async_simple/Executor.h>
-#include <async_simple/executors/SimpleIOExecutor.h>
 #include <async_simple/util/ThreadPool.h>
 
 #include <thread>
@@ -51,9 +50,7 @@ public:
     SimpleExecutor(size_t threadNum) : _pool(threadNum) {
         [[maybe_unused]] auto ret = _pool.start();
         assert(ret);
-        _ioExecutor.init();
     }
-    ~SimpleExecutor() { _ioExecutor.destroy(); }
 
 public:
     bool schedule(Func func) override {
@@ -87,11 +84,8 @@ public:
                util::ThreadPool::ERROR_NONE;
     }
 
-    IOExecutor* getIOExecutor() override { return &_ioExecutor; }
-
 private:
     util::ThreadPool _pool;
-    SimpleIOExecutor _ioExecutor;
 };
 
 }  // namespace executors
