@@ -77,7 +77,7 @@ TEST_F(SimpleIOExecutorTest, testException) {
     _executor->submitIO(
         -1, IOCB_CMD_PREAD, output, kBufferSize, 0,
         [](io_event_t& event) mutable { EXPECT_TRUE((int32_t)event.res < 0); });
-    usleep(1000 * 300);
+    std::this_thread::sleep_for(300ms);
     free(output);
 }
 
