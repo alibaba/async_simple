@@ -5,18 +5,18 @@ enable_testing()
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
-find_package(Aio REQUIRED)
+find_package(Aio)
 find_package(GMock REQUIRED)
 find_package(GTest REQUIRED)
 find_package(Benchmark)
 
-SET(ENABLE_LIBAIO OFF)
-
 if(LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
+    add_compile_definitions(ENABLE_LIBAIO=ON)
     message(STATUS "aio found")
     message(STATUS "aio: ${LIBAIO_INCLUDE_DIR}, ${LIBAIO_LIBRARIES}.")
 else()
-    message(FATAL_ERROR "aio NOT found")
+    message(STATUS "aio NOT found")
+    add_compile_definitions(ENABLE_LIBAIO=OFF)
 endif()
 
 if(GTEST_INCLUDE_DIR AND GTEST_LIBRARIES)
