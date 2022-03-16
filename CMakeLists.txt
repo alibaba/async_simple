@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.12)
 project(async_simple CXX C ASM)
 enable_testing()
 
@@ -11,12 +11,10 @@ find_package(GTest REQUIRED)
 find_package(Benchmark)
 
 if(LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
-    add_compile_definitions(ENABLE_LIBAIO=ON)
     message(STATUS "aio found")
     message(STATUS "aio: ${LIBAIO_INCLUDE_DIR}, ${LIBAIO_LIBRARIES}.")
 else()
-    message(STATUS "aio NOT found")
-    add_compile_definitions(ENABLE_LIBAIO=OFF)
+    add_compile_definitions(ASYNC_SIMPLE_HAS_NOT_AIO)
 endif()
 
 if(GTEST_INCLUDE_DIR AND GTEST_LIBRARIES)
@@ -64,14 +62,12 @@ set(HEADERS_PATH
     ${PROJECT_SOURCE_DIR}
     ${GTEST_INCLUDE_DIR}
     ${GMOCK_INCLUDE_DIR}
-    if (ENABLE_LIBAIO)
-        ${AIO_INCLUDE_DIR}
-    endif()
+    ${AIO_INCLUDE_DIR}
     )
 include_directories(${HEADERS_PATH})
 
 set(deplibs)
-if (ENABLE_LIBAIO)
+if(LIBAIO_LIBRARIES)
     list(APPEND deplibs ${LIBAIO_LIBRARIES})
 endif()
 list(APPEND deplibs pthread)

@@ -21,7 +21,7 @@ and the traditional Future/Promise.
 ## Using apt (ubuntu and debian's)
 
 ```
-// note: if "SET(ENABLE_LIBAIO ON)" will require libaio, otherwise no need.
+# Optional.
 sudo apt install libaio-dev -y
 
 # Install gtest
@@ -39,7 +39,7 @@ cd .. && sudo rm -rf build
 
 ## Using yum (CentOS and fedora)
 ```
-// note: if "SET(ENABLE_LIBAIO ON)" will require libaio, otherwise no need.
+# Optional.
 sudo yum install libaio-devel -y
 
 sudo yum install cmake -y
@@ -49,8 +49,7 @@ sudo yum install cmake -y
 ## Build Dependencies From Source
 
 ```
-// note: if "SET(ENABLE_LIBAIO ON)" will require libaio, otherwise no need.
-# libaio
+# libaio (optional)
 # you can skip this if you install libaio from packages
 git clone https://pagure.io/libaio.git
 cd libaio
