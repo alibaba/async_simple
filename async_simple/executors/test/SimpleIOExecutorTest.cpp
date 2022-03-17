@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <chrono>
 #include <exception>
+#include <memory>
 
 #include "async_simple/executors/SimpleIOExecutor.h"
 #include "async_simple/test/unittest.h"
