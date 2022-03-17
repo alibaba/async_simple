@@ -4,3 +4,4 @@ add_executable(async_simple_uthread_test ${uthread_test_src} ${PROJECT_SOURCE_DI
 target_link_libraries(async_simple_uthread_test async_simple ${deplibs} ${testdeplibs})
 
 add_test(NAME run_async_simple_uthread_test COMMAND async_simple_uthread_test)
+

@@ -21,7 +21,9 @@ and the traditional Future/Promise.
 ## Using apt (ubuntu and debian's)
 
 ```
+# Optional.
 sudo apt install libaio-dev -y
+
 # Install gtest
 sudo apt install libgtest-dev -y
 sudo apt install cmake -y
@@ -37,7 +39,9 @@ cd .. && sudo rm -rf build
 
 ## Using yum (CentOS and fedora)
 ```
+# Optional.
 sudo yum install libaio-devel -y
+
 sudo yum install cmake -y
 # Try to build gtest and gmock from source
 ```
@@ -45,7 +49,7 @@ sudo yum install cmake -y
 ## Build Dependencies From Source
 
 ```
-# libaio
+# libaio (optional)
 # you can skip this if you install libaio from packages
 git clone https://pagure.io/libaio.git
 cd libaio

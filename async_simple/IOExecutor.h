@@ -16,7 +16,6 @@
 #ifndef ASYNC_SIMPLE_IO_EXECUTOR_H
 #define ASYNC_SIMPLE_IO_EXECUTOR_H
 
-#include <libaio.h>
 #include <functional>
 #include <string>
 
@@ -38,7 +37,19 @@ enum iocb_cmd {
     IOCB_CMD_PWRITEV = 8,
 };
 
-using AIOCallback = std::function<void(io_event&)>;
+struct io_event_t {
+    void* data;
+    void* obj;
+    uint64_t res;
+    uint64_t res2;
+};
+
+struct iovec_t {
+    void* iov_base;
+    size_t iov_len;
+};
+
+using AIOCallback = std::function<void(io_event_t&)>;
 
 // The IOExecutor would accept IO read/write requests.
 // After the user implements an IOExecutor, he should associate
@@ -56,8 +67,8 @@ public:
 public:
     virtual void submitIO(int fd, iocb_cmd cmd, void* buffer, size_t length,
                           off_t offset, AIOCallback cbfn) = 0;
-    virtual void submitIOV(int fd, iocb_cmd cmd, const iovec* iov, size_t count,
-                           off_t offset, AIOCallback cbfn) = 0;
+    virtual void submitIOV(int fd, iocb_cmd cmd, const iovec_t* iov,
+                           size_t count, off_t offset, AIOCallback cbfn) = 0;
 };
 
 }  // namespace async_simple

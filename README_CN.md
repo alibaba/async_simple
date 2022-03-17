@@ -15,14 +15,16 @@ async\_simple是阿里巴巴开源的轻量级C++异步框架。提供了基于C
 
 # 准备环境
 
-async\_simple涉及C++20协程，对编译器版本有较高要求。需要clang11，gcc10及其以上版本。 其他只依赖gtest和libaio。
+sync\_simple 涉及 C++20 协程，对编译器版本有较高要求。需要 clang11 或 gcc10 及其以上版本。编译运行测试需要 gtest。需要 libaio 的功能的需要依赖 libaio。
 
 ## Debian/Ubuntu系列
 
 - 安装clang11及其以上版本。安装方法见：[APT Packages](https://apt.llvm.org/)
-- 安装cmake、libaio。
+- 安装cmake。
+- 如需使用 libaio 功能，需安装 libaio。
 
 ```bash
+# Optional.
 sudo apt install cmake libaio-dev -y
 ```
 
@@ -45,9 +47,10 @@ cd .. && sudo rm -rf build
 ## CentOS/Fedora系列
 
 - 同样是先安装clang11及其以上版本。安装方法见：[Fedora Snapshot Packages](https://copr.fedorainfracloud.org/coprs/g/fedora-llvm-team/llvm-snapshots/)
-- 安装cmake、libaio。
+- 安装cmake、libaio(可选)。
 
 ```bash
+# Optional.
 sudo yum install cmake libaio-devel -y
 ```
 
@@ -65,7 +68,7 @@ cmake .. && sudo make install
 - 如果你不是上述Linux发行版，可以直接源码编译来安装依赖组件。
 
 ```bash
-# libaio
+# libaio (optional)
 git clone https://pagure.io/libaio.git
 cd libaio
 sudo make install
@@ -113,4 +116,4 @@ make install
 
 # 许可证
 
-async\_simple遵循Apache License (Version 2.0)开源许可证。async\_simple包含的部分第三方组件可能遵循其他开源许可证。相关详细信息可以查看NOTICE文件。
+async\_simple遵循Apache License (Version 2.0)开源许可证。async\_simple包含的部分第三方组件可能遵循其它开源许可证。相关详细信息可以查看NOTICE文件。

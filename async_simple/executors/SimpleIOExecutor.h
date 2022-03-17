@@ -17,7 +17,9 @@
 #define FUTURE_SIMPLE_IO_EXECUTOR_H
 
 #include <async_simple/IOExecutor.h>
+#ifndef ASYNC_SIMPLE_HAS_NOT_AIO
 #include <libaio.h>
+#endif
 #include <sys/syscall.h> /* For SYS_xxx definitions */
 #include <thread>
 
@@ -45,7 +47,9 @@ public:
         ~Task() {}
 
     public:
-        void process(io_event& event) { _func(event); }
+#ifndef ASYNC_SIMPLE_HAS_NOT_AIO
+        void process(io_event_t& event) { _func(event); }
+#endif
 
     private:
         AIOCallback _func;
@@ -53,23 +57,30 @@ public:
 
 public:
     bool init() {
+#ifndef ASYNC_SIMPLE_HAS_NOT_AIO
         auto r = io_setup(kMaxAio, &_ioContext);
         if (r < 0) {
             return false;
         }
         _loopThread = std::thread([this]() mutable { this->loop(); });
         return true;
+#else
+        return false;
+#endif
     }
 
     void destroy() {
+#ifndef ASYNC_SIMPLE_HAS_NOT_AIO
         _shutdown = true;
         if (_loopThread.joinable()) {
             _loopThread.join();
         }
         io_destroy(_ioContext);
+#endif
     }
 
     void loop() {
+#ifndef ASYNC_SIMPLE_HAS_NOT_AIO
         while (!_shutdown) {
             io_event events[kMaxAio];
             struct timespec timeout = {0, 1000 * 300};
@@ -79,15 +90,19 @@ public:
             }
             for (auto i = 0; i < n; ++i) {
                 auto task = reinterpret_cast<Task*>(events[i].data);
-                task->process(events[i]);
+                io_event_t evt{events[i].data, events[i].obj, events[i].res,
+                               events[i].res2};
+                task->process(evt);
                 delete task;
             }
         }
+#endif
     }
 
 public:
     void submitIO(int fd, iocb_cmd cmd, void* buffer, size_t length,
                   off_t offset, AIOCallback cbfn) override {
+#ifndef ASYNC_SIMPLE_HAS_NOT_AIO
         iocb io;
         memset(&io, 0, sizeof(iocb));
         io.aio_fildes = fd;
@@ -100,15 +115,17 @@ public:
         auto r = io_submit(_ioContext, 1, iocbs);
         if (r < 0) {
             auto task = reinterpret_cast<Task*>(iocbs[0]->data);
-            io_event event;
+            io_event_t event;
             event.res = r;
             task->process(event);
             delete task;
             return;
         }
+#endif
     }
-    void submitIOV(int fd, iocb_cmd cmd, const iovec* iov, size_t count,
+    void submitIOV(int fd, iocb_cmd cmd, const iovec_t* iov, size_t count,
                    off_t offset, AIOCallback cbfn) override {
+#ifndef ASYNC_SIMPLE_HAS_NOT_AIO
         iocb io;
         memset(&io, 0, sizeof(iocb));
         io.aio_fildes = fd;
@@ -121,17 +138,20 @@ public:
         auto r = io_submit(_ioContext, 1, iocbs);
         if (r < 0) {
             auto task = reinterpret_cast<Task*>(iocbs[0]->data);
-            io_event event;
+            io_event_t event;
             event.res = r;
             task->process(event);
             delete task;
             return;
         }
+#endif
     }
 
 private:
+#ifndef ASYNC_SIMPLE_HAS_NOT_AIO
     volatile bool _shutdown = false;
     io_context_t _ioContext = 0;
+#endif
     std::thread _loopThread;
 };
 
