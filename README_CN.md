@@ -15,7 +15,7 @@ async\_simple是阿里巴巴开源的轻量级C++异步框架。提供了基于C
 
 # 准备环境
 
-sync\_simple 涉及 C++20 协程，对编译器版本有较高要求。需要 clang11 或 gcc10 及其以上版本。编译运行测试需要 gtest。需要 libaio 的功能的需要依赖 libaio。
+async\_simple 涉及 C++20 协程，对编译器版本有较高要求。需要 clang11 或 gcc10 及其以上版本。编译运行测试需要 gtest。需要 libaio 的功能的需要依赖 libaio。
 
 ## Debian/Ubuntu系列
 
