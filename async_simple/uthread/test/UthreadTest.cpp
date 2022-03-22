@@ -122,7 +122,7 @@ TEST_F(UthreadTest, testSwitch) {
     _executor.schedule([ex, &running, &show, &ioJob]() mutable {
         Uthread task1(Attribute{ex}, [&running, &show, &ioJob]() {
             show("task1 start");
-            auto value = ioJob().get();
+            auto value = await(ioJob());
             EXPECT_EQ(1024, value);
             show("task1 done");
             running--;
@@ -178,7 +178,7 @@ TEST_F(UthreadTest, testScheduleInTwoThread) {
     ex->schedule([ex, &running, &show, &ioJob]() mutable {
         Uthread task(Attribute{ex}, [&running, &show, &ioJob]() {
             show("task start");
-            auto value = ioJob().get();
+            auto value = await(ioJob());
             EXPECT_EQ(1024, value);
             show("task done");
             running--;
@@ -212,7 +212,7 @@ TEST_F(UthreadTest, testAsync) {
     async<Launch::Schedule>(
         [&running, &show, &ioJob]() {
             show("task1 start");
-            auto value = ioJob().get();
+            auto value = await(ioJob());
             EXPECT_EQ(1024, value);
             show("task1 done");
             running--;
@@ -409,7 +409,7 @@ TEST_F(UthreadTest, testCollectAllSlow) {
     std::vector<std::function<std::size_t()>> fs;
     for (size_t i = 0; i < kMaxTask; ++i) {
         fs.emplace_back([i, &ioJob]() -> std::size_t {
-            return i + ioJob(kMaxTask - i).get();
+            return i + await(ioJob(kMaxTask - i));
         });
     }
 
@@ -448,7 +448,7 @@ TEST_F(UthreadTest, testCollectAllSlowSingleThread) {
     std::vector<std::function<std::size_t()>> fs;
     for (size_t i = 0; i < kMaxTask; ++i) {
         fs.emplace_back([i, &ioJob]() -> std::size_t {
-            return i + ioJob(kMaxTask - i).get();
+            return i + await(ioJob(kMaxTask - i));
         });
     }
 
