@@ -103,6 +103,26 @@ T await(Executor* ex, Fn&& fn) {
     return std::move(f).get();
 }
 
+// Use to async get future value in uthread context.
+// Invoke await will not block current thread.
+// The current uthraed will be suspend until promise.setValue() be called.
+template <class T>
+T await(Future<T>&& fut) {
+    logicAssert(fut.valid(), "Future is broken");
+    if (fut.hasResult()) {
+        return fut.value();
+    }
+    assert(currentThreadInExecutor());
+    auto ctx = uthread::internal::thread_impl::get();
+    fut.setContinuation(
+        [ctx](Try<T>&& t) { uthread::internal::thread_impl::switch_in(ctx); });
+    do {
+        uthread::internal::thread_impl::switch_out(ctx);
+        assert(fut.hasResult());
+    } while (!fut.hasResult());
+    return fut.value();
+}
+
 }  // namespace uthread
 }  // namespace async_simple
 

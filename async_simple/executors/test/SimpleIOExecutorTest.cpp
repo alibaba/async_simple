@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef ASYNC_SIMPLE_HAS_NOT_AIO
 #include <fcntl.h>
 #include <gtest/gtest.h>
 #include <malloc.h>
@@ -83,3 +84,4 @@ TEST_F(SimpleIOExecutorTest, testException) {
 }
 
 }  // namespace async_simple
+#endif

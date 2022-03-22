@@ -23,8 +23,6 @@
 #include <async_simple/Traits.h>
 #include <type_traits>
 
-#include <async_simple/uthread/internal/thread_impl.h>
-
 namespace async_simple {
 
 // The well-known Future/Promise pairs mimic a producer/consuerm pair.
@@ -34,9 +32,7 @@ namespace async_simple {
 // could be able to appear in different thread.
 //
 // To get the value of Future synchronously, user should use `get()`
-// method. In case that Uthread (stackful coroutine) is enabled,
-// `get()` would checkout the current Uthread. Otherwise, the it
-// would blocking the current thread by using condition variable.
+// method. It would blocking the current thread by using condition variable.
 //
 // To get the value of Future asynchronously, user could use `thenValue(F)`
 // or `thenTry(F)`. See the seperate comments for details.
@@ -98,40 +94,14 @@ public:
     Try<T>& result() & { return getTry(*this); }
     const Try<T>& result() const& { return getTry(*this); }
 
-    // Implementation for get() to wait asynchronously.
-    void await() {
-        logicAssert(valid(), "Future is broken");
-        if (hasResult()) {
-            return;
-        }
-        assert(currentThreadInExecutor());
-
-        auto ctx = uthread::internal::thread_impl::get();
-        _sharedState->checkout();
-        _sharedState->setForceSched();
-        _sharedState->setContinuation([ctx](Try<T>&& t) mutable {
-            uthread::internal::thread_impl::switch_in(ctx);
-        });
-
-        do {
-            uthread::internal::thread_impl::switch_out(ctx);
-            assert(_sharedState->hasResult());
-        } while (!_sharedState->hasResult());
-    }
-
     // get is only allowed on rvalue, aka, Future is not valid after get
     // invoked.
     //
-    // When the future doesn't have a value, if the future is in a Uthread,
-    // the Uhtread would be checked out until the future gets a value. And if
-    // the future is not in a Uthread, it would block the current thread until
-    // the future gets a value.
+    // Get value blocked thread when the future doesn't have a value.
+    // If future in uthread context, use await(future) to get value without
+    // thread blocked.
     T get() && {
-        if (uthread::internal::thread_impl::can_switch_out()) {
-            await();
-        } else {
-            wait();
-        }
+        wait();
         return (std::move(*this)).value();
     }
     // Implementation for get() to wait synchronously.
