@@ -1,12 +1,8 @@
 add_executable(CountChar CountChar.cpp)
-target_link_libraries(CountChar)
+target_link_libraries(CountChar async_simple)
 
 add_executable(ReadFiles ReadFiles.cpp)
-if(LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
-  target_link_libraries(ReadFiles pthread aio)
-else()
-  target_link_libraries(ReadFiles pthread)
-endif()
+target_link_libraries(ReadFiles async_simple)
 
 add_custom_command(
         TARGET ReadFiles POST_BUILD
@@ -17,10 +13,10 @@ add_custom_command(
 include_directories(asio)
 
 add_executable(async_echo_server async_echo_server.cpp)
-target_link_libraries(async_echo_server pthread)
+target_link_libraries(async_echo_server async_simple)
 
 add_executable(async_echo_client async_echo_client.cpp)
-target_link_libraries(async_echo_client pthread)
+target_link_libraries(async_echo_client async_simple)
 
 add_executable(block_echo_server block_echo_server.cpp)
 target_link_libraries(block_echo_server pthread)
@@ -29,13 +25,13 @@ add_executable(block_echo_client block_echo_client.cpp)
 target_link_libraries(block_echo_client pthread)
 
 add_executable(http_server http/coroutine_http/http_server.cpp)
-target_link_libraries(http_server pthread)
+target_link_libraries(http_server async_simple)
 
 add_executable(http_client http/coroutine_http/http_client.cpp)
-target_link_libraries(http_client pthread)
+target_link_libraries(http_client async_simple)
 
 add_executable(block_http_server http/block_http/block_http_server.cpp)
-target_link_libraries(block_http_server pthread)
+target_link_libraries(block_http_server async_simple)
 
 SET(ENABLE_SSL OFF)
 
@@ -47,7 +43,7 @@ endif()
 
 add_executable(smtp_client smtp/smtp_client.cpp)
 if (ENABLE_SSL)
-    target_link_libraries(smtp_client stdc++fs pthread OpenSSL::SSL)
+    target_link_libraries(smtp_client stdc++fs async_simple OpenSSL::SSL)
 else()
-    target_link_libraries(smtp_client stdc++fs pthread)
+    target_link_libraries(smtp_client stdc++fs async_simple)
 endif()
