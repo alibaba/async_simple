@@ -34,6 +34,7 @@ if(UTHREAD)
   list(APPEND SRCS ${uthread_asm_src})
 endif()
 
+# NOTE: remove if branch once we have actual src files.
 if(SRCS)
   add_library(async_simple_static STATIC ${SRCS})
   add_library(async_simple SHARED ${SRCS})

@@ -46,6 +46,13 @@ sudo yum install cmake -y
 # Try to build gtest and gmock from source
 ```
 
+## Using Homebrew (macOS)
+
+```
+brew install cmake
+brew install googletest
+```
+
 ## Build Dependencies From Source
 
 ```
