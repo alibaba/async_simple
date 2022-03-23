@@ -60,7 +60,7 @@ public:
         if (_skip) {
             return;
         }
-        _promise.getFuture().via(ex).get();
+        uthread::await(_promise.getFuture().via(ex));
     }
     std::size_t currentCount() const {
         return _count.load(std::memory_order_acquire);
