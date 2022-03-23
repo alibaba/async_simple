@@ -16,7 +16,6 @@
 
 #include <cassert>
 #include <cstdlib>
-#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -278,8 +277,8 @@ private:
             return;
         }
 
-        std::string filename =
-            std::filesystem::path(data_.filepath).filename().string();
+        std::string filename = data_.filepath.substr(
+            data_.filepath.find_last_of(get_separator()) + 1);
         out << "--async_simple\r\nContent-Type: application/octet-stream; "
                "name=\""
             << filename << "\"\r\n";
@@ -341,6 +340,12 @@ private:
     }
 
 private:
+    std::string get_separator() {
+#ifdef _WIN32
+        return '\\';
+#endif
+        return "/";
+    }
     asio::io_context &io_context_;
     asio::ip::tcp::socket socket_;
 #ifdef ENABLE_SSL
