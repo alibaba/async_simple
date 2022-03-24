@@ -225,10 +225,10 @@ public:
         logicAssert(!hasContinuation(),
                     "FutureState already has a continuation");
         MoveWrapper<F> lambdaFunc(std::move(func));
-        new (&_continuation) Continuation([lambdaFunc](Try<T>&& v) mutable {
+        _continuation = {[lambdaFunc](Try<T>&& v) mutable {
             auto& lambda = lambdaFunc.get();
             lambda(std::forward<Try<T>>(v));
-        });
+        }};
 
         auto state = _state.load(std::memory_order_acquire);
         switch (state) {
@@ -268,7 +268,8 @@ private:
                              currentThreadInExecutor())) {
             // execute inplace for better performance
             ContinuationReference guard(this);
-            _continuation(std::move(_try));
+            assert(_continuation.index() == 1);
+            std::get<1>(_continuation)(std::move(_try));
         } else {
             ContinuationReference guard(this);
             ContinuationReference guardForException(this);
@@ -279,7 +280,8 @@ private:
                         [fsRef = std::move(guard)]() mutable {
                             auto ref = std::move(fsRef);
                             auto fs = ref.getFutureState();
-                            fs->_continuation(std::move(fs->_try));
+                            assert(fs->_continuation.index() == 1);
+                            std::get<1>(fs->_continuation)(std::move(fs->_try));
                         });
                 } else {
                     ScheduleOptions opts;
@@ -290,7 +292,8 @@ private:
                         [fsRef = std::move(guard)]() mutable {
                             auto ref = std::move(fsRef);
                             auto fs = ref.getFutureState();
-                            fs->_continuation(std::move(fs->_try));
+                            assert(fs->_continuation.index() == 1);
+                            std::get<1>(fs->_continuation)(std::move(fs->_try));
                         },
                         _context, opts);
                 }
@@ -300,7 +303,8 @@ private:
                 }
             } catch (std::exception& e) {
                 // reschedule failed, execute inplace
-                _continuation(std::move(_try));
+                assert(_continuation.index() == 1);
+                std::get<1>(_continuation)(std::move(_try));
             }
         }
     }
@@ -312,7 +316,7 @@ private:
         auto old = _continuationRef.fetch_sub(1, std::memory_order_relaxed);
         assert(old >= 1);
         if (old == 1) {
-            _continuation.~Continuation();
+            _continuation = {};
         }
     }
 
@@ -321,9 +325,7 @@ private:
     std::atomic<uint8_t> _attached;
     std::atomic<uint8_t> _continuationRef;
     Try<T> _try;
-    union {
-        Continuation _continuation;
-    };
+    std::variant<std::monostate, Continuation> _continuation;
     Executor* _executor;
     Executor::Context _context;
     std::atomic<std::size_t> _promiseRef;
