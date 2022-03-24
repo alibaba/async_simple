@@ -63,7 +63,7 @@ class Executor {
 public:
     // Context is an indentification for the context where an executor
     // should run. See checkin/checkout for details.
-    using Context = std::variant<std::monostate, void *, int32_t>;
+    using Context = std::variant<std::monostate, void *, int64_t>;
 
     // A time duration in microseconds.
     using Duration = std::chrono::duration<int64_t, std::micro>;
