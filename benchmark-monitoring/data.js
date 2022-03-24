@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1648093371214,
+  "lastUpdate": 1648110042425,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -804,6 +804,90 @@ window.BENCHMARK_DATA = {
             "value": 39999047.65000034,
             "unit": "ns/iter",
             "extra": "iterations: 60\ncpu: 11432326.66666667 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "RainMark@users.noreply.github.com",
+            "name": "RainMark",
+            "username": "RainMark"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "561d3d2a7d82d9031794c1f79f146ea39e094fea",
+          "message": "make uthread portable (#73)\n\nfix simple executor ub issue\r\nfix uthread unittest asan issue\r\n\r\nSigned-off-by: Rain Mark <rain.by.zhou@gmail.com>",
+          "timestamp": "2022-03-24T16:19:06+08:00",
+          "tree_id": "c772c2e071d7be7baf73af8b8e51f4d838f4e006",
+          "url": "https://github.com/alibaba/async_simple/commit/561d3d2a7d82d9031794c1f79f146ea39e094fea"
+        },
+        "date": 1648110041893,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 32599145.690000173,
+            "unit": "ns/iter",
+            "extra": "iterations: 100\ncpu: 540506.0000000001 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 60498428.324999765,
+            "unit": "ns/iter",
+            "extra": "iterations: 40\ncpu: 19582737.500000004 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 23811.837478986294,
+            "unit": "ns/iter",
+            "extra": "iterations: 29147\ncpu: 23810.076508731607 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 9684639.582089365,
+            "unit": "ns/iter",
+            "extra": "iterations: 67\ncpu: 9683622.38805971 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 51132.6423611835,
+            "unit": "ns/iter",
+            "extra": "iterations: 47959\ncpu: 14675.798077524547 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 31849742.61999997,
+            "unit": "ns/iter",
+            "extra": "iterations: 100\ncpu: 24344.99999999673 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 134860142.85714176,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103071314.28571425 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 134833684.9999977,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 102888285.71428572 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 133149098.9999996,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 101533600.00000003 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 43364922.90476175,
+            "unit": "ns/iter",
+            "extra": "iterations: 63\ncpu: 11575495.238095239 ns\nthreads: 1"
           }
         ]
       }
