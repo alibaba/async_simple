@@ -42,18 +42,9 @@ public:
     using Func = Executor::Func;
     using Context = Executor::Context;
 
-    union ContextUnion {
-        Context ctx;
-        int64_t id;
-    };
-
 public:
-    SimpleExecutor(size_t threadNum) : _pool(threadNum) {
-        [[maybe_unused]] auto ret = _pool.start();
-        assert(ret);
-        _ioExecutor.init();
-    }
-    ~SimpleExecutor() { _ioExecutor.destroy(); }
+    explicit SimpleExecutor(size_t threadNum);
+    ~SimpleExecutor();
 
 public:
     bool schedule(Func func) override {
@@ -67,25 +58,8 @@ public:
 
     size_t currentContextId() const override { return _pool.getCurrentId(); }
 
-    Context checkout() override {
-        ContextUnion u;
-        // avoid u.id equal to NULLCTX
-        u.id = _pool.getCurrentId() | 0x40000000;
-        return u.ctx;
-    }
-    bool checkin(Func func, Context ctx, ScheduleOptions opts) override {
-        ContextUnion u;
-        u.ctx = ctx;
-        // 0xBFFFFFFF == ~0x40000000
-        auto prompt =
-            _pool.getCurrentId() == (u.id & 0xBFFFFFFF) && opts.prompt;
-        if (prompt) {
-            func();
-            return true;
-        }
-        return _pool.scheduleById(std::move(func), u.id & 0xBFFFFFFF) ==
-               util::ThreadPool::ERROR_NONE;
-    }
+    Context checkout() override;
+    bool checkin(Func func, Context ctx, ScheduleOptions opts) override;
 
     IOExecutor* getIOExecutor() override { return &_ioExecutor; }
 
