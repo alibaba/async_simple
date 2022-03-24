@@ -50,7 +50,7 @@ void async_simple_Lazy_collectAll(benchmark::State& state) {
 
 void RescheduleLazy_chain(benchmark::State& state) {
     auto chain_starter = [&]() -> async_simple::coro::Lazy<int> {
-        co_return co_await lazy_fn<async_simple::coro::Lazy, 1000>()();
+        co_return co_await lazy_fn<async_simple::coro::Lazy, 948>()();
     };
     async_simple::executors::SimpleExecutor e(10);
     for ([[maybe_unused]] const auto& _ : state)
