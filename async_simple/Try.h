@@ -39,8 +39,7 @@ public:
     Try() : _result{} {}
     ~Try() { destroy(); }
 
-    Try(Try<T>&& other) : _result(std::move(other._result)) {
-    }
+    Try(Try<T>&& other) : _result(std::move(other._result)) {}
     template <typename T2 = T>
     Try(std::enable_if_t<std::is_same<Unit, T2>::value, const Try<void>&>
             other) {
@@ -73,8 +72,7 @@ public:
 
     Try(const T& val) : _result(val) {}
     Try(T&& val) : _result(std::move(val)) {}
-    Try(std::exception_ptr error)
-        : _result(error) {}
+    Try(std::exception_ptr error) : _result(error) {}
 
 private:
     Try(const Try&) = delete;
@@ -108,8 +106,7 @@ public:
         _result = error;
     }
     std::exception_ptr getException() {
-        logicAssert(_result.index() == 2,
-                    "Try object do not has an error");
+        logicAssert(_result.index() == 2, "Try object do not has an error");
         return std::get<2>(_result);
     }
 
@@ -126,9 +123,7 @@ private:
         }
     }
 
-    void destroy() {
-        _result = {};
-    }
+    void destroy() { _result = {}; }
 
 private:
     std::variant<std::monostate, T, std::exception_ptr> _result;
