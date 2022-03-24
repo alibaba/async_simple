@@ -149,7 +149,7 @@ public:
 
 public:
     bool currentThreadInExecutor() const override { return true; }
-    Context checkout() override { return NULLCTX; }
+    Context checkout() override { return {}; }
     bool checkin(Func func, Context ctx, ScheduleOptions opts) override {
         return schedule(std::move(func));
     }

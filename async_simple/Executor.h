@@ -23,6 +23,7 @@
 #include <functional>
 #include <string>
 #include <thread>
+#include <variant>
 
 namespace async_simple {
 // Stat information for an executor.
@@ -62,8 +63,7 @@ class Executor {
 public:
     // Context is an indentification for the context where an executor
     // should run. See checkin/checkout for details.
-    using Context = void *;
-    static constexpr Context NULLCTX = nullptr;
+    using Context = std::variant<std::monostate, void *, int32_t>;
 
     // A time duration in microseconds.
     using Duration = std::chrono::duration<int64_t, std::micro>;
@@ -99,7 +99,7 @@ public:
     // implementation, then checkin(func, "Context") should schdule func to the
     // same "Context" as before.
     virtual size_t currentContextId() const { return 0; };
-    virtual Context checkout() { return NULLCTX; }
+    virtual Context checkout() { return {}; }
     virtual bool checkin(Func func, Context ctx, ScheduleOptions opts) {
         return schedule(std::move(func));
     }

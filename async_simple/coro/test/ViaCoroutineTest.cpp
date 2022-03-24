@@ -45,7 +45,7 @@ public:
     }
     bool checkin(Func func, Context ctx, ScheduleOptions opts) override {
         // -1 is invalid ctx for SimpleExecutor
-        if (ctx == (void*)-1) {
+        if (ctx.index() == 0) {
             return false;
         }
         check--;

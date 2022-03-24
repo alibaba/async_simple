@@ -34,18 +34,17 @@ SimpleExecutor::~SimpleExecutor() {
 }
 
 SimpleExecutor::Context SimpleExecutor::checkout() {
-    // avoid CurrentId equal to NULLCTX
-    return reinterpret_cast<Context>(_pool.getCurrentId() | kContextMask);
+    return _pool.getCurrentId() | kContextMask;
 }
 
 bool SimpleExecutor::checkin(Func func, Context ctx, ScheduleOptions opts) {
-    int64_t id = reinterpret_cast<int64_t>(ctx);
-    auto prompt = _pool.getCurrentId() == (id & (~kContextMask)) && opts.prompt;
+    int64_t id = std::get<2>(ctx) & (~kContextMask);
+    auto prompt = _pool.getCurrentId() == id && opts.prompt;
     if (prompt) {
         func();
         return true;
     }
-    return _pool.scheduleById(std::move(func), id & (~kContextMask)) ==
+    return _pool.scheduleById(std::move(func), id) ==
            util::ThreadPool::ERROR_NONE;
 }
 

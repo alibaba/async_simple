@@ -115,7 +115,7 @@ public:
           _attached(0),
           _continuationRef(0),
           _executor(nullptr),
-          _context(Executor::NULLCTX),
+          _context{},
           _promiseRef(0),
           _forceSched(false) {}
     ~FutureState() {}
@@ -274,7 +274,7 @@ private:
             ContinuationReference guardForException(this);
             try {
                 bool ret;
-                if (Executor::NULLCTX == _context) {
+                if (_context.index() == 0) {
                     ret = _executor->schedule(
                         [fsRef = std::move(guard)]() mutable {
                             auto ref = std::move(fsRef);

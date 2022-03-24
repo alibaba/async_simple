@@ -43,7 +43,7 @@ class ViaCoroutine {
 public:
     struct promise_type {
         struct FinalAwaiter;
-        promise_type(Executor* ex) : _ex(ex), _ctx(Executor::NULLCTX) {}
+        promise_type(Executor* ex) : _ex(ex), _ctx{} {}
         ViaCoroutine get_return_object() noexcept;
         void return_void() noexcept {}
         void unhandled_exception() const noexcept { assert(false); }
