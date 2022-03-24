@@ -20,6 +20,7 @@
 #include <async_simple/Unit.h>
 #include <cassert>
 #include <exception>
+#include <variant>
 
 namespace async_simple {
 
@@ -34,33 +35,19 @@ namespace async_simple {
 // 4. moved from another Try<T> instance.
 template <typename T>
 class Try {
-private:
-    enum class Contains {
-        VALUE,
-        EXCEPTION,
-        NOTHING,
-    };
-
 public:
-    Try() : _contains(Contains::NOTHING) {}
+    Try() : _result{} {}
     ~Try() { destroy(); }
 
-    Try(Try<T>&& other) : _contains(other._contains) {
-        if (_contains == Contains::VALUE) {
-            new (&_value) T(std::move(other._value));
-        } else if (_contains == Contains::EXCEPTION) {
-            new (&_error) std::exception_ptr(other._error);
-        }
+    Try(Try<T>&& other) : _result(std::move(other._result)) {
     }
     template <typename T2 = T>
     Try(std::enable_if_t<std::is_same<Unit, T2>::value, const Try<void>&>
             other) {
         if (other.hasError()) {
-            _contains = Contains::EXCEPTION;
-            new (&_error) std::exception_ptr(other._error);
+            _result = other._error;
         } else {
-            _contains = Contains::VALUE;
-            new (&_value) T();
+            _result = T();
         }
     }
     Try& operator=(Try<T>&& other) {
@@ -70,76 +57,69 @@ public:
 
         destroy();
 
-        _contains = other._contains;
-        if (_contains == Contains::VALUE) {
-            new (&_value) T(std::move(other._value));
-        } else if (_contains == Contains::EXCEPTION) {
-            new (&_error) std::exception_ptr(other._error);
-        }
+        _result = std::move(other._result);
         return *this;
     }
     Try& operator=(std::exception_ptr error) {
-        if (_contains == Contains::EXCEPTION && error == this->_error) {
+        if (_result.index() == 2 && error == std::get<2>(_result)) {
             return *this;
         }
 
         destroy();
 
-        _contains = Contains::EXCEPTION;
-        new (&_error) std::exception_ptr(error);
+        _result = error;
         return *this;
     }
 
-    Try(const T& val) : _contains(Contains::VALUE), _value(val) {}
-    Try(T&& val) : _contains(Contains::VALUE), _value(std::move(val)) {}
+    Try(const T& val) : _result(val) {}
+    Try(T&& val) : _result(std::move(val)) {}
     Try(std::exception_ptr error)
-        : _contains(Contains::EXCEPTION), _error(error) {}
+        : _result(error) {}
 
 private:
     Try(const Try&) = delete;
     Try& operator=(const Try&) = delete;
 
 public:
-    bool available() const { return _contains != Contains::NOTHING; }
-    bool hasError() const { return _contains == Contains::EXCEPTION; }
+    bool available() const { return _result.index() != 0; }
+    bool hasError() const { return _result.index() == 2; }
     const T& value() const& {
         checkHasTry();
-        return _value;
+        return std::get<1>(_result);
     }
     T& value() & {
         checkHasTry();
-        return _value;
+        return std::get<1>(_result);
     }
     T&& value() && {
         checkHasTry();
-        return std::move(_value);
+        return std::move(std::get<1>(_result));
     }
     const T&& value() const&& {
         checkHasTry();
-        return std::move(_value);
+        return std::move(std::get<1>(_result));
     }
 
     void setException(std::exception_ptr error) {
-        if (_contains == Contains::EXCEPTION && _error == error) {
+        if (_result.index() == 2 && std::get<2>(_result) == error) {
             return;
         }
         destroy();
-        _contains = Contains::EXCEPTION;
-        new (&_error) std::exception_ptr(error);
+        _result = error;
     }
     std::exception_ptr getException() {
-        logicAssert(_contains == Contains::EXCEPTION,
+        logicAssert(_result.index() == 2,
                     "Try object do not has an error");
-        return _error;
+        return std::get<2>(_result);
     }
 
 private:
     FL_INLINE void checkHasTry() const {
-        if (FL_LIKELY(_contains == Contains::VALUE)) {
+        if (FL_LIKELY(_result.index() == 1)) {
             return;
-        } else if (_contains == Contains::EXCEPTION) {
-            std::rethrow_exception(_error);
-        } else if (_contains == Contains::NOTHING) {
+        } else if (_result.index() == 2) {
+            std::rethrow_exception(std::get<2>(_result));
+        } else if (_result.index() == 0) {
             throw std::logic_error("Try object is empty");
         } else {
             assert(false);
@@ -147,20 +127,11 @@ private:
     }
 
     void destroy() {
-        if (_contains == Contains::VALUE) {
-            _value.~T();
-        } else if (_contains == Contains::EXCEPTION) {
-            _error.~exception_ptr();
-        }
-        _contains = Contains::NOTHING;
+        _result = {};
     }
 
 private:
-    Contains _contains = Contains::NOTHING;
-    union {
-        T _value;
-        std::exception_ptr _error;
-    };
+    std::variant<std::monostate, T, std::exception_ptr> _result;
 
 private:
     friend Try<Unit>;
