@@ -26,10 +26,41 @@
 
 #include <async_simple/Future.h>
 #include <async_simple/coro/Lazy.h>
+#include <async_simple/uthread/internal/thread_impl.h>
 #include <type_traits>
 
 namespace async_simple {
 namespace uthread {
+
+// Use to async get future value in uthread context.
+// Invoke await will not block current thread.
+// The current uthread will be suspend until promise.setValue() be called.
+template <class T>
+T await(Future<T>&& fut) {
+    logicAssert(fut.valid(), "Future is broken");
+    if (fut.hasResult()) {
+        return fut.value();
+    }
+    auto executor = fut.getExecutor();
+    logicAssert(executor, "Future not has Executor");
+    logicAssert(executor->currentThreadInExecutor(),
+                "await invoked not in Executor");
+    Promise<T> p;
+    auto f = p.getFuture().via(executor);
+    p.forceSched().checkout();
+
+    auto ctx = uthread::internal::thread_impl::get();
+    f.setContinuation(
+        [ctx](auto&&) { uthread::internal::thread_impl::switch_in(ctx); });
+
+    std::move(fut).thenTry(
+        [p = std::move(p)](Try<T>&& t) mutable { p.setValue(std::move(t)); });
+    do {
+        uthread::internal::thread_impl::switch_out(ctx);
+        assert(f.hasResult());
+    } while (!f.hasResult());
+    return f.value();
+}
 
 // This await interface focus on await non-static member function of an object.
 // Here is an example:
@@ -55,7 +86,7 @@ decltype(auto) await(Executor* ex, Fn B::*fn, C* cls, Ts&&... ts) {
         co_return;
     };
     lazy(std::forward<Ts&&>(ts)...).setEx(ex).start([](auto&&) {});
-    return std::move(f).get();
+    return await(std::move(f));
 }
 
 // This await interface focus on await non-member functions. Here is the
@@ -80,7 +111,7 @@ decltype(auto) await(Executor* ex, Fn&& fn, Ts&&... ts) {
         co_return;
     };
     lazy(std::forward<Ts&&>(ts)...).setEx(ex).start([](auto&&) {});
-    return std::move(f).get();
+    return await(std::move(f));
 }
 
 // This await interface is special. It would accept the function who receive an
@@ -100,7 +131,7 @@ T await(Executor* ex, Fn&& fn) {
     Promise<T> p;
     auto f = p.getFuture().via(ex);
     fn(std::move(p));
-    return std::move(f).get();
+    return await(std::move(f));
 }
 
 }  // namespace uthread

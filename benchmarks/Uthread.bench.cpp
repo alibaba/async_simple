@@ -55,7 +55,7 @@ void Uthread_switch(benchmark::State& state) {
 
         auto UthreadTask = [&executor, &running, &Job]() {
             Uthread task(Attribute{&executor}, [&running, &Job]() {
-                Job().get();
+                await(Job());
                 running--;
             });
             task.detach();
@@ -94,7 +94,7 @@ void Uthread_async(benchmark::State& state) {
         for (size_t i = 0; i < n; i++)
             async<Launch::Schedule>(
                 [&running, &Job]() {
-                    Job().get();
+                    await(Job());
                     running--;
                 },
                 &executor);
@@ -159,7 +159,7 @@ void Uthread_collectAll(benchmark::State& state) {
         std::vector<std::function<std::size_t()>> Tasks;
         for (size_t i = 0; i < n; ++i)
             Tasks.emplace_back(
-                [i, &Job]() -> std::size_t { return i + Job(n - i).get(); });
+                [i, &Job]() -> std::size_t { return i + await(Job(n - i)); });
 
         std::atomic<bool> running = true;
 

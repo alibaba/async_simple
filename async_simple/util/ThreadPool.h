@@ -25,6 +25,7 @@
 #define FUTURE_THREAD_POOL_H
 
 #include <atomic>
+#include <cassert>
 #include <chrono>
 #include <functional>
 #include <memory>

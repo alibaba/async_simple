@@ -63,6 +63,16 @@ mkdir build && cd build
 cmake .. && sudo make install
 ```
 
+## macOS
+
+- 建议升级macOS 12.1，默认已安装clang13。
+- 安装cmake，googletest。
+
+```
+brew install cmake
+brew install googletest
+```
+
 ## 源码依赖
 
 - 如果你不是上述Linux发行版，可以直接源码编译来安装依赖组件。
