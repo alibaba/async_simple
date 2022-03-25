@@ -23,7 +23,6 @@ namespace executors {
 static constexpr int64_t kContextMask = 0x40000000;
 
 SimpleExecutor::SimpleExecutor(size_t threadNum) : _pool(threadNum) {
-    assert(ret);
     _ioExecutor.init();
 }
 

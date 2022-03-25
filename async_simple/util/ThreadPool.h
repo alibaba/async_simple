@@ -25,11 +25,12 @@
 #define FUTURE_THREAD_POOL_H
 
 #include <atomic>
+#include <cassert>
 #include <functional>
 #include <thread>
 #include <vector>
 
-#include "Queue.h"
+#include <async_simple/util/Queue.h>
 namespace async_simple::util {
 class ThreadPool {
 public:
@@ -46,6 +47,7 @@ public:
     static constexpr size_t DEFAULT_THREAD_NUM = 4;
     enum ERROR_TYPE {
         ERROR_NONE = 0,
+        ERROR_POOL_HAS_STOP,
         ERROR_POOL_ITEM_IS_NULL,
     };
 
@@ -54,23 +56,25 @@ public:
     ~ThreadPool();
 
     ThreadPool::ERROR_TYPE scheduleById(std::function<void()> fn,
-                                        size_t id = -1);
-    size_t getCurrentId() const;
+                                        int32_t id = -1);
+    int32_t getCurrentId() const;
     size_t getItemCount() const;
-    size_t getThreadNum() const { return _threadNum; }
+    int32_t getThreadNum() const { return _threadNum; }
 
 private:
     std::pair<size_t, ThreadPool *> *getCurrent() const;
-    size_t _threadNum;
+    int32_t _threadNum;
     std::vector<Queue<WorkItem>> _queues;
     std::vector<std::thread> _threads;
     bool _enableWorkSteal;
+    std::atomic<bool> _stop;
 };
 
 inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal)
     : _threadNum(threadNum ? threadNum : DEFAULT_THREAD_NUM),
       _queues(_threadNum),
-      _enableWorkSteal(enableWorkSteal) {
+      _enableWorkSteal(enableWorkSteal),
+      _stop(false) {
     auto worker = [this](size_t id) {
         auto current = getCurrent();
         current->first = id;
@@ -98,12 +102,13 @@ inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal)
     };
 
     _threads.reserve(_threadNum);
-    for (size_t i = 0; i < _threadNum; ++i) {
+    for (auto i = 0; i < _threadNum; ++i) {
         _threads.emplace_back(worker, i);
     }
 }
 
 inline ThreadPool::~ThreadPool() {
+    _stop = true;
     for (auto &queue : _queues)
         queue.stop();
     for (auto &thread : _threads)
@@ -111,9 +116,13 @@ inline ThreadPool::~ThreadPool() {
 }
 
 inline ThreadPool::ERROR_TYPE ThreadPool::scheduleById(std::function<void()> fn,
-                                                       size_t id) {
+                                                       int32_t id) {
     if (nullptr == fn) {
         return ERROR_POOL_ITEM_IS_NULL;
+    }
+
+    if(_stop) {
+        return ERROR_POOL_HAS_STOP;
     }
 
     if (id == -1) {
@@ -121,7 +130,7 @@ inline ThreadPool::ERROR_TYPE ThreadPool::scheduleById(std::function<void()> fn,
             // Try to push to a non-block queue firstly.
             WorkItem workerItem{false, fn};
             for (auto n = 0; n < _threadNum * 2; ++n) {
-                if (_queues[(id + n) % _threadNum].try_push(workerItem))
+                if (_queues.at(n % _threadNum).try_push(workerItem))
                     return ERROR_NONE;
             }
         }
@@ -141,7 +150,7 @@ inline std::pair<size_t, ThreadPool *> *ThreadPool::getCurrent() const {
     return &current;
 }
 
-inline size_t ThreadPool::getCurrentId() const {
+inline int32_t ThreadPool::getCurrentId() const {
     auto current = getCurrent();
     if (this == current->second) {
         return current->first;
@@ -151,7 +160,7 @@ inline size_t ThreadPool::getCurrentId() const {
 
 inline size_t ThreadPool::getItemCount() const {
     size_t ret = 0;
-    for (size_t i = 0; i < _threadNum; ++i) {
+    for (auto i = 0; i < _threadNum; ++i) {
         ret += _queues[i].size();
     }
     return ret;

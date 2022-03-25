@@ -109,8 +109,8 @@ private:
     std::chrono::time_point<std::chrono::high_resolution_clock> m_beg;
 };
 
-const unsigned int COUNT = 1'000'000;
-const unsigned int REPS = 10;
+const int COUNT = 1'000'000;
+const int REPS = 10;
 
 void Benchmark(bool enableWorkSteal) {
     std::atomic<int> count = 0;
