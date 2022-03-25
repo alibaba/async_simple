@@ -25,327 +25,123 @@
 #define FUTURE_THREAD_POOL_H
 
 #include <atomic>
-#include <cassert>
-#include <chrono>
 #include <functional>
-#include <memory>
-#include <queue>
 #include <thread>
 #include <vector>
 
-namespace async_simple {
-
-namespace util {
-
-class ThreadMutex {
-public:
-    ThreadMutex(const pthread_mutexattr_t *mta = NULL) {
-        pthread_mutex_init(&_mutex, mta);
-    }
-
-    ~ThreadMutex() { pthread_mutex_destroy(&_mutex); }
-
-    int lock() { return pthread_mutex_lock(&_mutex); }
-
-    int trylock() { return pthread_mutex_trylock(&_mutex); }
-
-    int unlock() { return pthread_mutex_unlock(&_mutex); }
-
-private:
-    ThreadMutex(const ThreadMutex &);
-    ThreadMutex &operator=(const ThreadMutex &);
-
-protected:
-    pthread_mutex_t _mutex;
-};
-
-class ProducerConsumerCond : public ThreadMutex {
-public:
-    ProducerConsumerCond() {
-        pthread_cond_init(&_producerCond, NULL);
-        pthread_cond_init(&_consumerCond, NULL);
-    }
-
-    ~ProducerConsumerCond() {
-        pthread_cond_destroy(&_producerCond);
-        pthread_cond_destroy(&_consumerCond);
-    }
-
-public:
-    int producerWait(int64_t usec = 0) { return wait(_producerCond, usec); }
-
-    int signalProducer() { return signal(_producerCond); }
-
-    int broadcastProducer() { return broadcast(_producerCond); }
-
-    int consumerWait(int64_t usec = 0) { return wait(_consumerCond, usec); }
-
-    int signalConsumer() { return signal(_consumerCond); }
-
-    int broadcastConsumer() { return broadcast(_consumerCond); }
-
-private:
-    int wait(pthread_cond_t &cond, int64_t usec) {
-        int ret = 0;
-        assert(usec == 0);
-        ret = pthread_cond_wait(&cond, &_mutex);
-        return ret;
-    }
-
-    static int signal(pthread_cond_t &cond) {
-        return pthread_cond_signal(&cond);
-    }
-
-    static int broadcast(pthread_cond_t &cond) {
-        return pthread_cond_broadcast(&cond);
-    }
-
-protected:
-    pthread_cond_t _producerCond;
-    pthread_cond_t _consumerCond;
-};
-
-class ScopedLock {
-private:
-    ThreadMutex &_lock;
-
-private:
-    ScopedLock(const ScopedLock &);
-    ScopedLock &operator=(const ScopedLock &);
-
-public:
-    explicit ScopedLock(ThreadMutex &lock) : _lock(lock) {
-        int ret = _lock.lock();
-        assert(ret == 0);
-        (void)ret;
-    }
-
-    ~ScopedLock() {
-        int ret = _lock.unlock();
-        assert(ret == 0);
-        (void)ret;
-    }
-};
-
-class WorkItem {
-public:
-    ~WorkItem() {
-        //        destroy();
-    }
-
-    WorkItem(std::function<void()> rhs) { fn = std::move(rhs); }
-
-    WorkItem(WorkItem &&rhs) { fn = std::move(rhs.fn); }
-
-public:
-    void process() { fn(); }
-    void destroy() { delete this; }
-    void drop() { delete this; }
-
-private:
-    std::function<void()> fn;
-};
-
+#include "Queue.h"
+namespace async_simple::util {
 class ThreadPool {
 public:
-    enum {
-        DEFAULT_THREADNUM = 4,
+    struct WorkItem {
+        // Whether or not the fn is auto schedule.
+        // If the user don't assign a thread to fn,
+        // thread pool will apply random policy to fn.
+        // If enable work steal,
+        // thread pool will apply work steal policy firstly , if failed, will
+        // apply random policy to fn.
+        bool autoSchedule = false;
+        std::function<void()> fn = nullptr;
     };
-
-    enum STOP_TYPE {
-        STOP_THREAD_ONLY = 0,
-        STOP_AND_CLEAR_QUEUE,
-        STOP_AFTER_QUEUE_EMPTY
-    };
-
+    static constexpr size_t DEFAULT_THREAD_NUM = 4;
     enum ERROR_TYPE {
         ERROR_NONE = 0,
-        ERROR_POOL_HAS_STOP,
         ERROR_POOL_ITEM_IS_NULL,
-        ERROR_POOL_QUEUE_FULL,
     };
 
-public:
-    ThreadPool(size_t threadNum = DEFAULT_THREADNUM);
+    explicit ThreadPool(size_t threadNum = DEFAULT_THREAD_NUM,
+                        bool enableWorkSteal = false);
     ~ThreadPool();
 
-private:
-    ThreadPool(const ThreadPool &);
-    ThreadPool &operator=(const ThreadPool &);
-
-public:
-    ERROR_TYPE scheduleById(std::function<void()> fn, int32_t id = -1);
-    int32_t getCurrentId() const;
+    ThreadPool::ERROR_TYPE scheduleById(std::function<void()> fn,
+                                        size_t id = -1);
+    size_t getCurrentId() const;
     size_t getItemCount() const;
     size_t getThreadNum() const { return _threadNum; }
-    bool start();
-    void stop(STOP_TYPE stopType = STOP_AFTER_QUEUE_EMPTY);
-    void clearQueue();
-    size_t getActiveThreadNum() const;
-    const std::vector<std::thread> &getThreads() const { return _threads; }
 
 private:
-    void push(WorkItem *item);
-    void pushFront(WorkItem *item);
-    bool tryPopItem(WorkItem *&);
-    bool createThreads();
-    void workerLoop(size_t id);
-    void waitQueueEmpty();
-    void stopThread();
-    std::pair<int32_t, ThreadPool *> *getCurrent() const;
-
-private:
+    std::pair<size_t, ThreadPool *> *getCurrent() const;
     size_t _threadNum;
-    std::vector<std::queue<WorkItem *> > _queue;
+    std::vector<Queue<WorkItem>> _queues;
     std::vector<std::thread> _threads;
-    mutable std::vector<ProducerConsumerCond> _cond;
-    volatile bool _push;
-    volatile bool _run;
-    std::atomic<std::uint32_t> _activeThreadCount;
-
-private:
-    friend class ThreadPoolTest;
+    bool _enableWorkSteal;
 };
 
-typedef std::shared_ptr<ThreadPool> ThreadPoolPtr;
+inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal)
+    : _threadNum(threadNum ? threadNum : DEFAULT_THREAD_NUM),
+      _queues(_threadNum),
+      _enableWorkSteal(enableWorkSteal) {
+    auto worker = [this](size_t id) {
+        auto current = getCurrent();
+        current->first = id;
+        current->second = this;
+        while (true) {
+            WorkItem workerItem = {};
+            if (_enableWorkSteal) {
+                // Try to do work steal firstly.
+                for (auto n = 0; n < _threadNum * 2; ++n) {
+                    if (_queues[(id + n) % _threadNum].try_pop(
+                            workerItem,
+                            [](auto &item) { return item.autoSchedule; }))
+                        break;
+                }
+            }
 
-inline ThreadPool::ThreadPool(size_t threadNum)
-    : _threadNum(threadNum),
-      _queue(threadNum ? threadNum : DEFAULT_THREADNUM),
-      _cond(threadNum ? threadNum : DEFAULT_THREADNUM),
-      _push(true),
-      _run(false),
-      _activeThreadCount(0) {
-    if (_threadNum == 0) {
-        _threadNum = DEFAULT_THREADNUM;
+            if (!workerItem.fn && !_queues[id].pop(workerItem)) {
+                break;
+            }
+
+            if (workerItem.fn) {
+                workerItem.fn();
+            }
+        }
+    };
+
+    _threads.reserve(_threadNum);
+    for (size_t i = 0; i < _threadNum; ++i) {
+        _threads.emplace_back(worker, i);
     }
 }
 
-inline ThreadPool::~ThreadPool() { stop(STOP_AND_CLEAR_QUEUE); }
-
-inline size_t ThreadPool::getItemCount() const {
-    size_t ret = 0;
-    for (size_t i = 0; i < _threadNum; ++i) {
-        ScopedLock lock(_cond[i]);
-        ret += _queue[i].size();
-    }
-    return ret;
+inline ThreadPool::~ThreadPool() {
+    for (auto &queue : _queues)
+        queue.stop();
+    for (auto &thread : _threads)
+        thread.join();
 }
 
 inline ThreadPool::ERROR_TYPE ThreadPool::scheduleById(std::function<void()> fn,
-                                                       int32_t id) {
-    if (-1 == id) {
-        id = rand() % _threadNum;
-    }
-    assert(id >= 0 && static_cast<size_t>(id) < _threadNum);
-    WorkItem *item = new WorkItem(std::move(fn));
-    if (!_push) {
-        return ERROR_POOL_HAS_STOP;
-    }
-
-    if (NULL == item) {
+                                                       size_t id) {
+    if (nullptr == fn) {
         return ERROR_POOL_ITEM_IS_NULL;
     }
 
-    ScopedLock lock(_cond[id]);
+    if (id == -1) {
+        if (_enableWorkSteal) {
+            // Try to push to a non-block queue firstly.
+            WorkItem workerItem{false, fn};
+            for (auto n = 0; n < _threadNum * 2; ++n) {
+                if (_queues[(id + n) % _threadNum].try_push(workerItem))
+                    return ERROR_NONE;
+            }
+        }
 
-    if (!_push) {
-        return ERROR_POOL_HAS_STOP;
+        id = rand() % _threadNum;
+        _queues[id].push(WorkItem{false, std::move(fn)});
+    } else {
+        assert(id < _threadNum);
+        _queues[id].push(WorkItem{true, std::move(fn)});
     }
 
-    _queue[id].push(item);
-    _cond[id].signalConsumer();
     return ERROR_NONE;
 }
 
-inline bool ThreadPool::start() {
-    if (_run) {
-        return false;
-    }
-
-    _push = true;
-    _run = true;
-
-    if (createThreads()) {
-        return true;
-    } else {
-        stop(STOP_THREAD_ONLY);
-        return false;
-    }
-}
-
-inline void ThreadPool::stop(STOP_TYPE stopType) {
-    if (STOP_THREAD_ONLY != stopType) {
-        { _push = false; }
-    }
-
-    if (STOP_AFTER_QUEUE_EMPTY == stopType) {
-        waitQueueEmpty();
-    }
-
-    stopThread();
-
-    if (STOP_THREAD_ONLY != stopType) {
-        clearQueue();
-    }
-}
-
-inline void ThreadPool::stopThread() {
-    if (!_run) {
-        return;
-    }
-    {
-        for (size_t i = 0; i < _threadNum; ++i) {
-            ScopedLock lock(_cond[i]);
-            _run = false;
-            _cond[i].broadcastConsumer();
-        }
-    }
-    for (auto &it : _threads) {
-        it.join();
-    }
-    _threads.clear();
-}
-
-inline std::pair<int32_t, ThreadPool *> *ThreadPool::getCurrent() const {
-    static thread_local std::pair<int32_t, ThreadPool *> current(-1, nullptr);
+inline std::pair<size_t, ThreadPool *> *ThreadPool::getCurrent() const {
+    static thread_local std::pair<size_t, ThreadPool *> current(-1, nullptr);
     return &current;
 }
 
-inline void ThreadPool::waitQueueEmpty() {
-    using namespace std::chrono_literals;
-    while (true) {
-        if ((size_t)0 == getItemCount()) {
-            break;
-        }
-        std::this_thread::sleep_for(10000us);
-    }
-}
-
-inline bool ThreadPool::createThreads() {
-    size_t num = _threadNum;
-    while (num--) {
-        _threads.push_back(
-            std::thread(std::bind(&ThreadPool::workerLoop, this, num)));
-    }
-    return true;
-}
-
-inline void ThreadPool::clearQueue() {
-    for (size_t i = 0; i < _threadNum; ++i) {
-        ScopedLock lock(_cond[i]);
-        while (!_queue[i].empty()) {
-            WorkItem *item = _queue[i].front();
-            _queue[i].pop();
-            if (item) {
-                item->drop();
-            }
-        }
-        _cond[i].broadcastProducer();
-    }
-}
-
-inline int32_t ThreadPool::getCurrentId() const {
+inline size_t ThreadPool::getCurrentId() const {
     auto current = getCurrent();
     if (this == current->second) {
         return current->first;
@@ -353,44 +149,13 @@ inline int32_t ThreadPool::getCurrentId() const {
     return -1;
 }
 
-inline void ThreadPool::workerLoop(size_t id) {
-    auto current = getCurrent();
-    current->first = id;
-    current->second = this;
-    while (_run) {
-        WorkItem *item = NULL;
-        {
-            ScopedLock lock(_cond[id]);
-            while (_run && _queue[id].empty()) {
-                _cond[id].consumerWait();
-            }
-
-            if (!_run) {
-                return;
-            }
-
-            item = _queue[id].front();
-            _queue[id].pop();
-            _cond[id].signalProducer();
-            if (item) {
-                ++_activeThreadCount;
-            }
-        }
-
-        if (item) {
-            item->process();
-            item->destroy();
-            --_activeThreadCount;
-        }
+inline size_t ThreadPool::getItemCount() const {
+    size_t ret = 0;
+    for (size_t i = 0; i < _threadNum; ++i) {
+        ret += _queues[i].size();
     }
+    return ret;
 }
-
-inline size_t ThreadPool::getActiveThreadNum() const {
-    return _activeThreadCount;
-}
-
-}  // namespace util
-
-}  // namespace async_simple
+}  // namespace async_simple::util
 
 #endif  // FUTURE_THREAD_POOL_H
