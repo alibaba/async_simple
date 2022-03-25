@@ -121,7 +121,7 @@ inline ThreadPool::ERROR_TYPE ThreadPool::scheduleById(std::function<void()> fn,
         return ERROR_POOL_ITEM_IS_NULL;
     }
 
-    if(_stop) {
+    if (_stop) {
         return ERROR_POOL_HAS_STOP;
     }
 
