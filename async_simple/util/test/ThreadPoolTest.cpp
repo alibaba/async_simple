@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include <exception>
 
+#include <chrono>
 #include <functional>
 #include <thread>
 #include <vector>
@@ -55,7 +56,6 @@ TEST_F(ThreadPoolTest, testScheduleWithId) {
         done3 = true;
     };
     std::function<void()> f4 = [&done4]() { done4 = true; };
-    _tp->start();
     _tp->scheduleById(std::move(f1), 0);
     _tp->scheduleById(std::move(f2), 0);
     _tp->scheduleById(std::move(f3), 1);
@@ -66,6 +66,76 @@ TEST_F(ThreadPoolTest, testScheduleWithId) {
     ASSERT_TRUE(id1 == id2) << id1 << " " << id2;
     ASSERT_TRUE(id1 != id3) << id1 << " " << id3;
     ASSERT_TRUE(_tp->getCurrentId() == -1);
+}
+
+using namespace async_simple::util;
+
+void TestBasic(ThreadPool& pool) {
+    EXPECT_EQ(ThreadPool::ERROR_TYPE::ERROR_NONE, pool.scheduleById([] {}));
+    EXPECT_GE(pool.getItemCount(), 0);
+
+    EXPECT_EQ(ThreadPool::ERROR_TYPE::ERROR_POOL_ITEM_IS_NULL,
+              pool.scheduleById(nullptr));
+    EXPECT_EQ(pool.getCurrentId(), -1);
+
+    pool.scheduleById([&pool] { EXPECT_EQ(pool.getCurrentId(), 1); }, 1);
+}
+
+TEST(ThreadTest, BasicTest) {
+    ThreadPool pool;
+    EXPECT_EQ(ThreadPool::DEFAULT_THREAD_NUM, pool.getThreadNum());
+    ThreadPool pool1(2);
+    EXPECT_EQ(2, pool1.getThreadNum());
+
+    TestBasic(pool);
+
+    ThreadPool tp(ThreadPool::DEFAULT_THREAD_NUM, /*enableWorkSteal = */ true);
+    TestBasic(tp);
+}
+
+class ScopedTimer {
+public:
+    ScopedTimer(const char* name)
+        : m_name(name), m_beg(std::chrono::high_resolution_clock::now()) {}
+    ~ScopedTimer() {
+        auto end = std::chrono::high_resolution_clock::now();
+        auto dur =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(end - m_beg);
+        std::cout << m_name << " : " << dur.count() << " ns\n";
+    }
+
+private:
+    const char* m_name;
+    std::chrono::time_point<std::chrono::high_resolution_clock> m_beg;
+};
+
+const unsigned int COUNT = 1'000'000;
+const unsigned int REPS = 10;
+
+void Benchmark(bool enableWorkSteal) {
+    std::atomic<int> count = 0;
+    {
+        ThreadPool tp(ThreadPool::DEFAULT_THREAD_NUM, enableWorkSteal);
+        ScopedTimer timer("ThreadPool");
+
+        for (int i = 0; i < COUNT; ++i) {
+            auto ret = tp.scheduleById([i, &count] {
+                count++;
+                int x;
+                auto reps = REPS + (REPS * (rand() % 5));
+                for (int n = 0; n < reps; ++n)
+                    x = i + rand();
+                (void)x;
+            });
+            EXPECT_EQ(ret, ThreadPool::ERROR_TYPE::ERROR_NONE);
+        }
+    }
+    EXPECT_EQ(count, COUNT);
+}
+
+TEST(ThreadTest, BenchmarkTest) {
+    Benchmark(/*enableWorkSteal = */ false);
+    Benchmark(/*enableWorkSteal = */ true);
 }
 
 }  // namespace async_simple
