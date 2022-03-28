@@ -41,7 +41,7 @@ public:
         // If enable work steal,
         // thread pool will apply work steal policy firstly , if failed, will
         // apply random policy to fn.
-        bool autoSchedule = false;
+        bool canSteal = false;
         std::function<void()> fn = nullptr;
     };
 
@@ -86,11 +86,13 @@ inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal)
                 for (auto n = 0; n < _threadNum * 2; ++n) {
                     if (_queues[(id + n) % _threadNum].try_pop_if(
                             workerItem,
-                            [](auto &item) { return item.autoSchedule; }))
+                            [](auto &item) { return item.canSteal; }))
                         break;
                 }
             }
 
+            // If _enableWorkSteal false or work steal failed, wait for a pop
+            // task.
             if (!workerItem.fn && !_queues[id].pop(workerItem)) {
                 break;
             }
@@ -128,7 +130,7 @@ inline ThreadPool::ERROR_TYPE ThreadPool::scheduleById(std::function<void()> fn,
     if (id == -1) {
         if (_enableWorkSteal) {
             // Try to push to a non-block queue firstly.
-            WorkItem workerItem{false, fn};
+            WorkItem workerItem{/*canSteal = */ true, fn};
             for (auto n = 0; n < _threadNum * 2; ++n) {
                 if (_queues.at(n % _threadNum).try_push(workerItem))
                     return ERROR_NONE;
@@ -136,10 +138,10 @@ inline ThreadPool::ERROR_TYPE ThreadPool::scheduleById(std::function<void()> fn,
         }
 
         id = rand() % _threadNum;
-        _queues[id].push(WorkItem{false, std::move(fn)});
+        _queues[id].push(WorkItem{/*canSteal = */ true, std::move(fn)});
     } else {
         assert(id < _threadNum);
-        _queues[id].push(WorkItem{true, std::move(fn)});
+        _queues[id].push(WorkItem{/*canSteal = */ false, std::move(fn)});
     }
 
     return ERROR_NONE;

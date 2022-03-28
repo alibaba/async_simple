@@ -80,7 +80,7 @@ public:
         if (!lock || _queue.empty())
             return false;
 
-        if (predict && predict(_queue.front())) {
+        if (predict && !predict(_queue.front())) {
             return false;
         }
 
