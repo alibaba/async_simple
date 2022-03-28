@@ -34,8 +34,6 @@ namespace async_simple::util {
 template <typename T>
 class Queue {
 public:
-    Queue() = default;
-
     void push(T &&item) {
         {
             std::scoped_lock guard(_mutex);
