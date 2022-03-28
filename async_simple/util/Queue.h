@@ -32,6 +32,7 @@
 namespace async_simple::util {
 
 template <typename T>
+requires std::is_move_assignable_v<T>
 class Queue {
 public:
     void push(T &&item) {
