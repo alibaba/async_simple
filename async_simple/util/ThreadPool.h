@@ -44,14 +44,14 @@ public:
         bool autoSchedule = false;
         std::function<void()> fn = nullptr;
     };
-    static constexpr size_t DEFAULT_THREAD_NUM = 4;
+
     enum ERROR_TYPE {
         ERROR_NONE = 0,
         ERROR_POOL_HAS_STOP,
         ERROR_POOL_ITEM_IS_NULL,
     };
 
-    explicit ThreadPool(size_t threadNum = DEFAULT_THREAD_NUM,
+    explicit ThreadPool(size_t threadNum = std::thread::hardware_concurrency(),
                         bool enableWorkSteal = false);
     ~ThreadPool();
 
@@ -71,7 +71,7 @@ private:
 };
 
 inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal)
-    : _threadNum(threadNum ? threadNum : DEFAULT_THREAD_NUM),
+    : _threadNum(threadNum ? threadNum : std::thread::hardware_concurrency()),
       _queues(_threadNum),
       _enableWorkSteal(enableWorkSteal),
       _stop(false) {

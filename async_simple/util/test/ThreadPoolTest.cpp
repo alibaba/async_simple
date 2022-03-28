@@ -83,13 +83,14 @@ void TestBasic(ThreadPool& pool) {
 
 TEST(ThreadTest, BasicTest) {
     ThreadPool pool;
-    EXPECT_EQ(ThreadPool::DEFAULT_THREAD_NUM, pool.getThreadNum());
+    EXPECT_EQ(std::thread::hardware_concurrency(), pool.getThreadNum());
     ThreadPool pool1(2);
     EXPECT_EQ(2, pool1.getThreadNum());
 
     TestBasic(pool);
 
-    ThreadPool tp(ThreadPool::DEFAULT_THREAD_NUM, /*enableWorkSteal = */ true);
+    ThreadPool tp(std::thread::hardware_concurrency(),
+                  /*enableWorkSteal = */ true);
     TestBasic(tp);
 }
 
@@ -115,7 +116,7 @@ const int REPS = 10;
 void Benchmark(bool enableWorkSteal) {
     std::atomic<int> count = 0;
     {
-        ThreadPool tp(ThreadPool::DEFAULT_THREAD_NUM, enableWorkSteal);
+        ThreadPool tp(std::thread::hardware_concurrency(), enableWorkSteal);
         ScopedTimer timer("ThreadPool");
 
         for (int i = 0; i < COUNT; ++i) {
