@@ -35,10 +35,10 @@ namespace async_simple::util {
 class ThreadPool {
 public:
     struct WorkItem {
-        // Whether or not the fn is auto schedule.
+        // Whether or not do work steal for fn.
         // If the user don't assign a thread to fn,
         // thread pool will apply random policy to fn.
-        // If enable work steal,
+        // If enable canSteal,
         // thread pool will apply work steal policy firstly , if failed, will
         // apply random policy to fn.
         bool canSteal = false;
