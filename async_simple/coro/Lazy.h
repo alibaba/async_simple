@@ -510,7 +510,11 @@ public:
     }
 
     void detach() {
-        start([](auto&&) {});
+        start([](auto&& t) {
+            if (t.hasError()) {
+                std::rethrow_exception(t.getException());
+            }
+        });
     }
 
 private:

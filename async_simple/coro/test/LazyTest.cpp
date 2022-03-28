@@ -1349,5 +1349,33 @@ TEST_F(LazyTest, testBatchedcollectAll) {
     }
 }
 
+TEST_F(LazyTest, testDetach) {
+    int count = 0;
+    {
+        executors::SimpleExecutor e1(1);
+        auto test1 = [&count]() -> Lazy<int> {
+            count += 2;
+            co_return count;
+        };
+        test1().via(&e1).detach();
+    }
+
+    EXPECT_EQ(count, 2);
+
+    auto test2 = [] {
+        executors::SimpleExecutor e1(1);
+        auto test1 = []() -> Lazy<int> {
+            throw std::logic_error("error");
+            co_return 42;
+        };
+        test1().via(&e1).detach();
+    };
+    try {
+        test2();
+        EXPECT_TRUE(false);  // This shouldn't be executed.
+    } catch (...) {
+    }
+}
+
 }  // namespace coro
 }  // namespace async_simple
