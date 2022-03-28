@@ -65,9 +65,19 @@ public:
         return true;
     }
 
+    bool try_pop(T &item) {
+        std::unique_lock lock(_mutex, std::try_to_lock);
+        if (!lock || _queue.empty())
+            return false;
+
+        item = std::move(_queue.front());
+        _queue.pop();
+        return true;
+    }
+
     // non-blocking pop an item, maybe pop failed.
     // predict is an extension pop condition, default is null.
-    bool try_pop(T &item, bool (*predict)(T &) = nullptr) {
+    bool try_pop_if(T &item, bool (*predict)(T &) = nullptr) {
         std::unique_lock lock(_mutex, std::try_to_lock);
         if (!lock || _queue.empty())
             return false;

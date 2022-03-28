@@ -84,7 +84,7 @@ inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal)
             if (_enableWorkSteal) {
                 // Try to do work steal firstly.
                 for (auto n = 0; n < _threadNum * 2; ++n) {
-                    if (_queues[(id + n) % _threadNum].try_pop(
+                    if (_queues[(id + n) % _threadNum].try_pop_if(
                             workerItem,
                             [](auto &item) { return item.autoSchedule; }))
                         break;
