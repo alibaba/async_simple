@@ -94,49 +94,4 @@ TEST(ThreadTest, BasicTest) {
     TestBasic(tp);
 }
 
-class ScopedTimer {
-public:
-    ScopedTimer(const char* name)
-        : m_name(name), m_beg(std::chrono::high_resolution_clock::now()) {}
-    ~ScopedTimer() {
-        auto end = std::chrono::high_resolution_clock::now();
-        auto dur =
-            std::chrono::duration_cast<std::chrono::nanoseconds>(end - m_beg);
-        std::cout << m_name << " : " << dur.count() << " ns\n";
-    }
-
-private:
-    const char* m_name;
-    std::chrono::time_point<std::chrono::high_resolution_clock> m_beg;
-};
-
-const int COUNT = 1'000'000;
-const int REPS = 10;
-
-void Benchmark(bool enableWorkSteal) {
-    std::atomic<int> count = 0;
-    {
-        ThreadPool tp(std::thread::hardware_concurrency(), enableWorkSteal);
-        ScopedTimer timer("ThreadPool");
-
-        for (int i = 0; i < COUNT; ++i) {
-            auto ret = tp.scheduleById([i, &count] {
-                count++;
-                int x;
-                auto reps = REPS + (REPS * (rand() % 5));
-                for (int n = 0; n < reps; ++n)
-                    x = i + rand();
-                (void)x;
-            });
-            EXPECT_EQ(ret, ThreadPool::ERROR_TYPE::ERROR_NONE);
-        }
-    }
-    EXPECT_EQ(count, COUNT);
-}
-
-TEST(ThreadTest, BenchmarkTest) {
-    Benchmark(/*enableWorkSteal = */ false);
-    Benchmark(/*enableWorkSteal = */ true);
-}
-
 }  // namespace async_simple

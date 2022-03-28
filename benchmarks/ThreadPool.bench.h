@@ -13,21 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Future.bench.h"
-#include "Lazy.bench.h"
-#include "ThreadPool.bench.h"
-#include "Uthread.bench.h"
+#include "async_simple/util/ThreadPool.h"
+#include "benchmark/benchmark.h"
 
-BENCHMARK(Future_chain);
-BENCHMARK(Future_collectAll);
-BENCHMARK(async_simple_Lazy_chain);
-BENCHMARK(async_simple_Lazy_collectAll);
-BENCHMARK(RescheduleLazy_chain);
-BENCHMARK(RescheduleLazy_collectAll);
-BENCHMARK(Uthread_switch);
-BENCHMARK(Uthread_async);
-BENCHMARK(Uthread_await);
-BENCHMARK(Uthread_collectAll);
-BENCHMARK(ThreadPool_noWorkSteal);
-BENCHMARK(ThreadPool_withWorkSteal);
-BENCHMARK_MAIN();
+void ThreadPool_noWorkSteal(benchmark::State& state);
+void ThreadPool_withWorkSteal(benchmark::State& state);
