@@ -138,7 +138,8 @@ inline ThreadPool::ERROR_TYPE ThreadPool::scheduleById(std::function<void()> fn,
         }
 
         id = rand() % _threadNum;
-        _queues[id].push(WorkItem{/*canSteal = */ true, std::move(fn)});
+        _queues[id].push(
+            WorkItem{/*canSteal = */ _enableWorkSteal, std::move(fn)});
     } else {
         assert(id < _threadNum);
         _queues[id].push(WorkItem{/*canSteal = */ false, std::move(fn)});
