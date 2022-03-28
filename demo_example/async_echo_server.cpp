@@ -59,7 +59,7 @@ async_simple::coro::Lazy<void> start_server(asio::io_context& io_context,
             continue;
         }
         std::cout << "New client comming.\n";
-        session(std::move(socket)).via(E).start([](auto&&) {});
+        session(std::move(socket)).via(E).detach();
     }
 }
 

@@ -35,7 +35,7 @@ public:
                 continue;
             }
             std::cout << "New client comming.\n";
-            start_one(std::move(socket)).via(&executor_).start([](auto&&) {});
+            start_one(std::move(socket)).via(&executor_).detach();
         }
     }
 
