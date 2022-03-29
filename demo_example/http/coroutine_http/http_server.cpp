@@ -28,7 +28,8 @@ public:
     async_simple::coro::Lazy<void> start() {
         tcp::acceptor a(io_context_, tcp::endpoint(tcp::v4(), port_));
         for (;;) {
-            auto [error, socket] = co_await async_accept(a);
+            tcp::socket socket(io_context_);
+            auto error = co_await async_accept(a, socket);
             if (error) {
                 std::cout << "Accept failed, error: " << error.message()
                           << '\n';

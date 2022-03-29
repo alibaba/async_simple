@@ -71,34 +71,29 @@ private:
 class AcceptorAwaiter {
 public:
     AcceptorAwaiter(asio::ip::tcp::acceptor &acceptor,
-                    asio::ip::tcp::socket socket)
-        : acceptor_(acceptor), socket_(std::move(socket)) {}
+                    asio::ip::tcp::socket &socket)
+        : acceptor_(acceptor), socket_(socket) {}
     bool await_ready() const noexcept { return false; }
     void await_suspend(std::coroutine_handle<> handle) {
-        acceptor_.async_accept([this, handle](auto ec, auto socket) mutable {
+        acceptor_.async_accept(socket_, [this, handle](auto ec) mutable {
             ec_ = ec;
-            socket_ = std::move(socket);
             handle.resume();
         });
     }
-    auto await_resume() noexcept {
-        return std::make_pair(ec_, std::move(socket_));
-    }
+    auto await_resume() noexcept { return ec_; }
     auto coAwait(async_simple::Executor *executor) noexcept {
         return std::move(*this);
     }
 
 private:
     asio::ip::tcp::acceptor &acceptor_;
-    asio::ip::tcp::socket socket_;
+    asio::ip::tcp::socket &socket_;
     std::error_code ec_{};
 };
 
-inline async_simple::coro::Lazy<
-    std::pair<std::error_code, asio::ip::tcp::socket>>
-async_accept(asio::ip::tcp::acceptor &acceptor) noexcept {
-    co_return co_await AcceptorAwaiter{
-        acceptor, asio::ip::tcp::socket(acceptor.get_executor())};
+inline async_simple::coro::Lazy<std::error_code> async_accept(
+    asio::ip::tcp::acceptor &acceptor, asio::ip::tcp::socket &socket) noexcept {
+    co_return co_await AcceptorAwaiter{acceptor, socket};
 }
 
 template <typename Socket, typename AsioBuffer>
