@@ -92,6 +92,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND CXX_FLAGS "-fsanitize=address")
 endif()
 
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux") # uname -s
+  if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64|aarch64") # uname -p
+    set(UTHREAD ON)
+    message("-- Uthread on")
+  endif()
+endif()
+
 string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")

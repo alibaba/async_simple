@@ -1,16 +1,12 @@
 file(GLOB coro_src "coro/*.cpp")
 file(GLOB executors_src "executors/*.cpp")
 
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux") # uname -s
+if(UTHREAD)
   file(GLOB uthread_src "uthread/internal/*.cc")
-  if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64") # uname -p
+  if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
     file(GLOB uthread_asm_src "uthread/internal/*arm64_aapcs_elf*")
-    set(UTHREAD ON)
   elseif ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
     file(GLOB uthread_asm_src "uthread/internal/*x86_64_sysv_elf*")
-    set(UTHREAD ON)
-  else()
-    message(STATUS "Uthread Unsupported Target: ${CMAKE_SYSTEM_PROCESSOR}")
   endif()
 endif()
 
