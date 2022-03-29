@@ -48,7 +48,7 @@ public:
         void return_void() noexcept {}
         void unhandled_exception() const noexcept { assert(false); }
 
-        STD_CORO::suspend_always initial_suspend() const noexcept { return {}; }
+        std::suspend_always initial_suspend() const noexcept { return {}; }
         FinalAwaiter final_suspend() noexcept { return FinalAwaiter(_ctx); }
 
         struct FinalAwaiter {
@@ -56,8 +56,7 @@ public:
             bool await_ready() const noexcept { return false; }
 
             template <typename PromiseType>
-            auto await_suspend(
-                STD_CORO::coroutine_handle<PromiseType> h) noexcept {
+            auto await_suspend(std::coroutine_handle<PromiseType> h) noexcept {
                 auto& pr = h.promise();
                 // promise will remain valid across final_suspend point
                 if (pr._ex) {
@@ -75,11 +74,11 @@ public:
         };
 
         Executor* _ex;
-        STD_CORO::coroutine_handle<> _continuation;
+        std::coroutine_handle<> _continuation;
         Executor::Context _ctx;
     };
 
-    ViaCoroutine(STD_CORO::coroutine_handle<promise_type> coro) : _coro(coro) {}
+    ViaCoroutine(std::coroutine_handle<promise_type> coro) : _coro(coro) {}
     ~ViaCoroutine() {
         if (_coro) {
             _coro.destroy();
@@ -103,8 +102,8 @@ public:
             pr._ex->checkin(func, pr._ctx);
         }
     }
-    STD_CORO::coroutine_handle<> getWrappedContinuation(
-        STD_CORO::coroutine_handle<> continuation) {
+    std::coroutine_handle<> getWrappedContinuation(
+        std::coroutine_handle<> continuation) {
         // do not call this method on a moved ViaCoroutine,
         assert(_coro);
         auto& pr = _coro.promise();
@@ -116,13 +115,12 @@ public:
     }
 
 private:
-    STD_CORO::coroutine_handle<promise_type> _coro;
+    std::coroutine_handle<promise_type> _coro;
 };
 
 inline ViaCoroutine ViaCoroutine::promise_type::get_return_object() noexcept {
     return ViaCoroutine(
-        STD_CORO::coroutine_handle<ViaCoroutine::promise_type>::from_promise(
-            *this));
+        std::coroutine_handle<ViaCoroutine::promise_type>::from_promise(*this));
 }
 
 // used by co_await non-Lazy object
@@ -134,7 +132,7 @@ struct [[nodiscard]] ViaAsyncAwaiter {
           _awaiter(detail::getAwaiter(std::forward<Awaitable>(awaitable))),
           _viaCoroutine(ViaCoroutine::create(ex)) {}
 
-    using HandleType = STD_CORO::coroutine_handle<>;
+    using HandleType = std::coroutine_handle<>;
     using AwaitSuspendResultType =
         decltype(std::declval<Awaiter&>().await_suspend(
             std::declval<HandleType>()));

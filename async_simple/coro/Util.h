@@ -38,8 +38,8 @@ namespace detail {
 // better to use `Lazy::start()`.
 struct DetachedCoroutine {
     struct promise_type {
-        STD_CORO::suspend_never initial_suspend() noexcept { return {}; }
-        STD_CORO::suspend_never final_suspend() noexcept { return {}; }
+        std::suspend_never initial_suspend() noexcept { return {}; }
+        std::suspend_never final_suspend() noexcept { return {}; }
         void return_void() noexcept {}
         void unhandled_exception() {
             try {

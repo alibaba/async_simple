@@ -75,8 +75,7 @@ public:
             ValueAwaiter(LazyTest* t) : test(t), value(0) {}
 
             bool await_ready() { return false; }
-            void await_suspend(
-                STD_CORO::coroutine_handle<> continuation) noexcept {
+            void await_suspend(std::coroutine_handle<> continuation) noexcept {
                 test->applyValue(
                     [this, c = std::move(continuation)](int v) mutable {
                         value = v;
@@ -98,8 +97,7 @@ public:
             ValueAwaiter() {}
 
             bool await_ready() { return false; }
-            void await_suspend(
-                STD_CORO::coroutine_handle<> continuation) noexcept {
+            void await_suspend(std::coroutine_handle<> continuation) noexcept {
                 std::thread([c = continuation]() mutable {
                     c.resume();
                 }).detach();
@@ -119,8 +117,7 @@ public:
             ValueAwaiter(T v) : value(v) {}
 
             bool await_ready() { return false; }
-            void await_suspend(
-                STD_CORO::coroutine_handle<> continuation) noexcept {
+            void await_suspend(std::coroutine_handle<> continuation) noexcept {
                 std::thread([c = continuation]() mutable {
                     c.resume();
                 }).detach();
@@ -141,8 +138,7 @@ public:
             ValueAwaiter(int v) : value(v) {}
 
             bool await_ready() { return false; }
-            void await_suspend(
-                STD_CORO::coroutine_handle<> continuation) noexcept {
+            void await_suspend(std::coroutine_handle<> continuation) noexcept {
                 std::thread([c = continuation]() mutable {
                     std::this_thread::sleep_for(
                         std::chrono::microseconds(rand() % 1000 + 1));
@@ -162,8 +158,7 @@ public:
         struct ValueAwaiter {
             ValueAwaiter() {}
             bool await_ready() { return false; }
-            void await_suspend(
-                STD_CORO::coroutine_handle<> continuation) noexcept {
+            void await_suspend(std::coroutine_handle<> continuation) noexcept {
                 std::thread([c = continuation]() mutable {
                     std::this_thread::sleep_for(
                         std::chrono::microseconds(rand() % 1000000 + 1));
@@ -1129,7 +1124,7 @@ Lazy<int> getValue(A x) {
         ValueAwaiter(int v) : value(v) {}
 
         bool await_ready() { return false; }
-        void await_suspend(STD_CORO::coroutine_handle<> continuation) noexcept {
+        void await_suspend(std::coroutine_handle<> continuation) noexcept {
             std::thread([c = std::move(continuation)]() mutable {
                 c.resume();
             }).detach();

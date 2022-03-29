@@ -56,7 +56,7 @@ public:
 class Awaiter {
 public:
     bool await_ready() noexcept { return false; }
-    bool await_suspend(STD_CORO::coroutine_handle<> continuation) noexcept {
+    bool await_suspend(std::coroutine_handle<> continuation) noexcept {
         return false;
     }
     void await_resume() noexcept {}
