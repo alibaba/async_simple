@@ -1361,20 +1361,6 @@ TEST_F(LazyTest, testDetach) {
     }
 
     EXPECT_EQ(count, 2);
-
-    int value = 0;
-    auto test2 = [&] {
-        executors::SimpleExecutor e1(1);
-        auto test1 = [&]() -> Lazy<void> {
-            throw std::logic_error("error");
-            value = 42;
-            co_return;
-        };
-        test1().via(&e1).detach();
-    };
-
-    test2();
-    EXPECT_EQ(value, 0);
 }
 
 }  // namespace coro
