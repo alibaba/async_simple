@@ -16,7 +16,9 @@
 #include "Future.bench.h"
 #include "Lazy.bench.h"
 #include "ThreadPool.bench.h"
+#ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 #include "Uthread.bench.h"
+#endif
 
 BENCHMARK(Future_chain);
 BENCHMARK(Future_collectAll);
@@ -24,10 +26,12 @@ BENCHMARK(async_simple_Lazy_chain);
 BENCHMARK(async_simple_Lazy_collectAll);
 BENCHMARK(RescheduleLazy_chain);
 BENCHMARK(RescheduleLazy_collectAll);
+#ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 BENCHMARK(Uthread_switch);
 BENCHMARK(Uthread_async);
 BENCHMARK(Uthread_await);
 BENCHMARK(Uthread_collectAll);
+#endif
 BENCHMARK(ThreadPool_noWorkSteal);
 BENCHMARK(ThreadPool_withWorkSteal);
 BENCHMARK_MAIN();
