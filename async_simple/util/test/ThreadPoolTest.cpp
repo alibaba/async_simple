@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include <exception>
 
+#include <chrono>
 #include <functional>
 #include <thread>
 #include <vector>
@@ -55,7 +56,6 @@ TEST_F(ThreadPoolTest, testScheduleWithId) {
         done3 = true;
     };
     std::function<void()> f4 = [&done4]() { done4 = true; };
-    _tp->start();
     _tp->scheduleById(std::move(f1), 0);
     _tp->scheduleById(std::move(f2), 0);
     _tp->scheduleById(std::move(f3), 1);
@@ -66,6 +66,32 @@ TEST_F(ThreadPoolTest, testScheduleWithId) {
     ASSERT_TRUE(id1 == id2) << id1 << " " << id2;
     ASSERT_TRUE(id1 != id3) << id1 << " " << id3;
     ASSERT_TRUE(_tp->getCurrentId() == -1);
+}
+
+using namespace async_simple::util;
+
+void TestBasic(ThreadPool& pool) {
+    EXPECT_EQ(ThreadPool::ERROR_TYPE::ERROR_NONE, pool.scheduleById([] {}));
+    EXPECT_GE(pool.getItemCount(), 0);
+
+    EXPECT_EQ(ThreadPool::ERROR_TYPE::ERROR_POOL_ITEM_IS_NULL,
+              pool.scheduleById(nullptr));
+    EXPECT_EQ(pool.getCurrentId(), -1);
+
+    pool.scheduleById([&pool] { EXPECT_EQ(pool.getCurrentId(), 1); }, 1);
+}
+
+TEST(ThreadTest, BasicTest) {
+    ThreadPool pool;
+    EXPECT_EQ(std::thread::hardware_concurrency(), pool.getThreadNum());
+    ThreadPool pool1(2);
+    EXPECT_EQ(2, pool1.getThreadNum());
+
+    TestBasic(pool);
+
+    ThreadPool tp(std::thread::hardware_concurrency(),
+                  /*enableWorkSteal = */ true);
+    TestBasic(tp);
 }
 
 }  // namespace async_simple

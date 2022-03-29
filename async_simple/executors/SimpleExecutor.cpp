@@ -23,15 +23,10 @@ namespace executors {
 static constexpr int64_t kContextMask = 0x40000000;
 
 SimpleExecutor::SimpleExecutor(size_t threadNum) : _pool(threadNum) {
-    [[maybe_unused]] auto ret = _pool.start();
-    assert(ret);
     _ioExecutor.init();
 }
 
-SimpleExecutor::~SimpleExecutor() {
-    _ioExecutor.destroy();
-    _pool.stop();
-}
+SimpleExecutor::~SimpleExecutor() { _ioExecutor.destroy(); }
 
 SimpleExecutor::Context SimpleExecutor::checkout() {
     // avoid CurrentId equal to NULLCTX
