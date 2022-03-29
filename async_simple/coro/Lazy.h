@@ -512,7 +512,12 @@ public:
     void detach() {
         start([](auto&& t) {
             if (t.hasError()) {
-                std::rethrow_exception(t.getException());
+                try {
+                    std::rethrow_exception(t.getException());
+                } catch (const std::exception& e) {
+                    fprintf(stderr, "find exception: %s\n", e.what());
+                    fflush(stderr);
+                }
             }
         });
     }

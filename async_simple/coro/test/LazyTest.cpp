@@ -1362,19 +1362,19 @@ TEST_F(LazyTest, testDetach) {
 
     EXPECT_EQ(count, 2);
 
-    auto test2 = [] {
+    int value = 0;
+    auto test2 = [&] {
         executors::SimpleExecutor e1(1);
-        auto test1 = []() -> Lazy<int> {
+        auto test1 = [&]() -> Lazy<void> {
             throw std::logic_error("error");
-            co_return 42;
+            value = 42;
+            co_return;
         };
         test1().via(&e1).detach();
     };
-    try {
-        test2();
-        EXPECT_TRUE(false);  // This shouldn't be executed.
-    } catch (...) {
-    }
+
+    test2();
+    EXPECT_EQ(value, 0);
 }
 
 }  // namespace coro
