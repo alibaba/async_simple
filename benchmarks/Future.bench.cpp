@@ -25,8 +25,8 @@
 using namespace async_simple;
 
 void Future_chain(benchmark::State& state) {
-    auto test = []() {
-        async_simple::executors::SimpleExecutor executor(10);
+    async_simple::executors::SimpleExecutor executor(10);
+    auto test = [&executor]() {
         Promise<int> p;
         int output0 = 0;
         int output1 = 0;
@@ -59,16 +59,18 @@ void Future_chain(benchmark::State& state) {
                      })
                      .thenValue(
                          [](std::string&& s) { return std::stoi(s) + 1111.0; });
+        p.setValue(0);
+        f.wait();
     };
 
     for ([[maybe_unused]] const auto& _ : state)
         test();
 }
 void Future_collectAll(benchmark::State& state) {
-    auto test = []() {
+    async_simple::executors::SimpleExecutor executor(10);
+    auto test = [&executor]() {
         size_t n = 5000;
 
-        async_simple::executors::SimpleExecutor executor(10);
         std::vector<Promise<int>> promise(n);
         std::vector<Future<int>> futures;
 

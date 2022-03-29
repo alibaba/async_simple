@@ -35,8 +35,8 @@ void delayedTask(Executor* ex, Func&& func, std::size_t ms) {
 }
 
 void Uthread_switch(benchmark::State& state) {
-    auto test = []() {
-        async_simple::executors::SimpleExecutor executor(10);
+    async_simple::executors::SimpleExecutor executor(10);
+    auto test = [&]() {
         auto Job = [&]() -> Future<int> {
             Promise<int> p;
             auto f = p.getFuture().via(&executor);
@@ -73,8 +73,8 @@ void Uthread_switch(benchmark::State& state) {
 }
 
 void Uthread_async(benchmark::State& state) {
-    auto test = []() {
-        async_simple::executors::SimpleExecutor executor(10);
+    async_simple::executors::SimpleExecutor executor(10);
+    auto test = [&]() {
         auto Job = [&]() -> Future<int> {
             Promise<int> p;
             auto f = p.getFuture().via(&executor);
@@ -108,8 +108,8 @@ void Uthread_async(benchmark::State& state) {
 }
 
 void Uthread_await(benchmark::State& state) {
-    auto test = []() {
-        async_simple::executors::SimpleExecutor executor(10);
+    async_simple::executors::SimpleExecutor executor(10);
+    auto test = [&]() {
         auto Job = [&](Promise<int> p) {
             delayedTask(
                 &executor,
@@ -140,8 +140,8 @@ void Uthread_await(benchmark::State& state) {
 }
 
 void Uthread_collectAll(benchmark::State& state) {
-    auto test = []() {
-        async_simple::executors::SimpleExecutor executor(10);
+    async_simple::executors::SimpleExecutor executor(10);
+    auto test = [&]() {
         auto Job = [&](std::size_t delay_ms) -> Future<int> {
             Promise<int> p;
             auto f = p.getFuture().via(&executor);
