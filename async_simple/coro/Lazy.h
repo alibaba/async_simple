@@ -509,6 +509,14 @@ public:
             launchCoro(std::move(*this), std::forward<F>(callback));
     }
 
+    void detach() {
+        start([](auto&& t) {
+            if (t.hasError()) {
+                std::rethrow_exception(t.getException());
+            }
+        });
+    }
+
 private:
     Handle _coro;
     friend class Lazy<T>;

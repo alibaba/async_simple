@@ -1349,5 +1349,19 @@ TEST_F(LazyTest, testBatchedcollectAll) {
     }
 }
 
+TEST_F(LazyTest, testDetach) {
+    int count = 0;
+    {
+        executors::SimpleExecutor e1(1);
+        auto test1 = [&count]() -> Lazy<int> {
+            count += 2;
+            co_return count;
+        };
+        test1().via(&e1).detach();
+    }
+
+    EXPECT_EQ(count, 2);
+}
+
 }  // namespace coro
 }  // namespace async_simple
