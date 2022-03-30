@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1648608520628,
+  "lastUpdate": 1648619369430,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -1524,6 +1524,102 @@ window.BENCHMARK_DATA = {
             "value": 492759515.50000006,
             "unit": "ns/iter",
             "extra": "iterations: 12\ncpu: 62344041.666666664 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "383121719@qq.com",
+            "name": "qicosmos",
+            "username": "qicosmos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b958ff777f19b9ec3019e8e75e671d32459207d5",
+          "message": "[Demo Example]Add multiple core demo (#79)\n\n* modify AcceptorAwaiter for multiple core\r\n\r\n* add multiple core http server\r\n\r\n* merge main",
+          "timestamp": "2022-03-30T13:47:28+08:00",
+          "tree_id": "9c2ccdb4f38b9b2f52175b01b52689aac30d02f8",
+          "url": "https://github.com/alibaba/async_simple/commit/b958ff777f19b9ec3019e8e75e671d32459207d5"
+        },
+        "date": 1648619368181,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 29737.51076811084,
+            "unit": "ns/iter",
+            "extra": "iterations: 46712\ncpu: 19037.43363589656 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 13762652.326086927,
+            "unit": "ns/iter",
+            "extra": "iterations: 46\ncpu: 11869721.73913044 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 25395.00219426544,
+            "unit": "ns/iter",
+            "extra": "iterations: 27344\ncpu: 25390.429344645992 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 11421708.533333449,
+            "unit": "ns/iter",
+            "extra": "iterations: 60\ncpu: 11420098.333333336 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 57611.187340216464,
+            "unit": "ns/iter",
+            "extra": "iterations: 40680\ncpu: 17097.546705998026 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 28282140.549999896,
+            "unit": "ns/iter",
+            "extra": "iterations: 100\ncpu: 28661.99999999708 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 107119338.6666683,
+            "unit": "ns/iter",
+            "extra": "iterations: 6\ncpu: 106808016.66666673 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 103929557.28571402,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103558214.28571424 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 103890212.00000213,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103380285.71428572 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 11342218.19642889,
+            "unit": "ns/iter",
+            "extra": "iterations: 56\ncpu: 10905275 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_noWorkSteal",
+            "value": 7063495684.999992,
+            "unit": "ns/iter",
+            "extra": "iterations: 1\ncpu: 400725400.00000066 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_withWorkSteal",
+            "value": 660953234.4999992,
+            "unit": "ns/iter",
+            "extra": "iterations: 10\ncpu: 51249439.999999955 ns\nthreads: 1"
           }
         ]
       }
