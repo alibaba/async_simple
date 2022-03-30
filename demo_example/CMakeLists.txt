@@ -27,6 +27,9 @@ target_link_libraries(block_echo_client pthread)
 add_executable(http_server http/coroutine_http/http_server.cpp)
 target_link_libraries(http_server async_simple)
 
+add_executable(multiple_core_http_server http/coroutine_http/multiple_core_http_server.cpp)
+target_link_libraries(multiple_core_http_server async_simple)
+
 add_executable(http_client http/coroutine_http/http_client.cpp)
 target_link_libraries(http_client async_simple)
 

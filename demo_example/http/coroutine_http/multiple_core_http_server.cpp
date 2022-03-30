@@ -16,19 +16,21 @@
 #include <iostream>
 #include <thread>
 
+#include "../../io_context_pool.hpp"
 #include "connection.hpp"
 
 using asio::ip::tcp;
 
-class http_server {
+class multilple_core_http_server {
 public:
-    http_server(asio::io_context& io_context, unsigned short port)
-        : io_context_(io_context), port_(port), executor_(io_context) {}
+    multilple_core_http_server(io_context_pool& pool, unsigned short port)
+        : pool_(pool), port_(port), executor_(pool.get_io_context()) {}
 
     async_simple::coro::Lazy<void> start() {
-        tcp::acceptor a(io_context_, tcp::endpoint(tcp::v4(), port_));
+        tcp::acceptor a(pool_.get_io_context(),
+                        tcp::endpoint(tcp::v4(), port_));
         for (;;) {
-            tcp::socket socket(io_context_);
+            tcp::socket socket(pool_.get_io_context());
             auto error = co_await async_accept(a, socket);
             if (error) {
                 std::cout << "Accept failed, error: " << error.message()
@@ -46,19 +48,16 @@ public:
     }
 
 private:
-    asio::io_context& io_context_;
+    io_context_pool& pool_;
     unsigned short port_;
     AsioExecutor executor_;
 };
 
 int main(int argc, char* argv[]) {
     try {
-        asio::io_context io_context;
-        std::thread thd([&io_context] {
-            asio::io_context::work work(io_context);
-            io_context.run();
-        });
-        http_server server(io_context, 9980);
+        io_context_pool pool(10);
+        std::thread thd([&pool] { pool.run(); });
+        multilple_core_http_server server(pool, 9980);
         async_simple::coro::syncAwait(server.start());
         thd.join();
     } catch (std::exception& e) {
