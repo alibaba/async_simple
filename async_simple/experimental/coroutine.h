@@ -61,10 +61,9 @@ template <class P> struct hash<coroutine_handle<P>>;
 
 #if __has_include(<coroutine>) && !defined(USE_SELF_DEFINED_COROUTINE)
 #include <coroutine>
-#define STD_CORO std
+#define HAS_NON_EXPERIMENTAL_COROUTINE
 #elif __has_include(<experimental/coroutine>)
 #include <experimental/coroutine>
-#define STD_CORO std::experimental
 #else
 
 #if defined(__cpp_lib_three_way_comparison) && \
@@ -328,7 +327,7 @@ private:
 
     void* __handle_ = nullptr;
 
-#elif defined(_LIBCPP_COMPILER_GCC)
+#elif defined(__GNUC__) and !defined(__clang__)
     // GCC doesn't implement __builtin_coro_noop().
     // Construct the coroutine frame manually instead.
     struct __noop_coroutine_frame_ty_ {
@@ -350,7 +349,7 @@ private:
 
 using noop_coroutine_handle = coroutine_handle<noop_coroutine_promise>;
 
-#if defined(_LIBCPP_COMPILER_GCC)
+#if defined(__GNUC__) and !defined(__clang__)
 inline noop_coroutine_handle::__noop_coroutine_frame_ty_
     noop_coroutine_handle::__noop_coroutine_frame_{};
 #endif
@@ -375,25 +374,39 @@ struct suspend_always {
 
 }  // namespace STD_CORO
 
+#undef STD_CORO
+
+#endif
+
+#if !defined(HAS_NON_EXPERIMENTAL_COROUTINE)
+
+namespace std {
+using std::experimental::coroutine_handle;
+using std::experimental::coroutine_traits;
+using std::experimental::noop_coroutine;
+using std::experimental::noop_coroutine_handle;
+using std::experimental::suspend_always;
+using std::experimental::suspend_never;
+}  // namespace std
+
+#endif /* HAS_NON_EXPERIMENTAL_COROUTINE */
+
 namespace std {
 
 template <class _Tp>
-struct hash<STD_CORO::coroutine_handle<_Tp> > {
-    using __arg_type = STD_CORO::coroutine_handle<_Tp>;
+struct hash<coroutine_handle<_Tp> > {
+    using __arg_type = coroutine_handle<_Tp>;
 
     size_t operator()(__arg_type const& __v) const noexcept {
         return hash<void*>()(__v.address());
     }
 };
-
 }  // namespace std
-
-#endif
 
 namespace async_simple {
 namespace coro {
 template <typename T = void>
-using CoroHandle = STD_CORO::coroutine_handle<T>;
+using CoroHandle = std::coroutine_handle<T>;
 }
 }  // namespace async_simple
 

@@ -64,7 +64,7 @@ public:
     struct FinalAwaiter {
         bool await_ready() const noexcept { return false; }
         template <typename PromiseType>
-        auto await_suspend(STD_CORO::coroutine_handle<PromiseType> h) noexcept {
+        auto await_suspend(std::coroutine_handle<PromiseType> h) noexcept {
             return h.promise()._continuation;
         }
         void await_resume() noexcept {}
@@ -73,7 +73,7 @@ public:
     struct YieldAwaiter {
         YieldAwaiter(Executor* executor) : _executor(executor) {}
         bool await_ready() const noexcept { return false; }
-        void await_suspend(STD_CORO::coroutine_handle<> handle) {
+        void await_suspend(std::coroutine_handle<> handle) {
             std::function<void()> func = [h = std::move(handle)]() mutable {
                 h.resume();
             };
@@ -88,7 +88,7 @@ public:
 public:
     LazyPromiseBase() : _executor(nullptr) {}
     // Lazily started, coroutine will not execute until first resume() is called
-    STD_CORO::suspend_always initial_suspend() noexcept { return {}; }
+    std::suspend_always initial_suspend() noexcept { return {}; }
     FinalAwaiter final_suspend() noexcept { return {}; }
 
     template <typename Awaitable>
@@ -104,7 +104,7 @@ public:
 
 public:
     Executor* _executor;
-    STD_CORO::coroutine_handle<> _continuation;
+    std::coroutine_handle<> _continuation;
 };
 
 template <typename T>
@@ -341,8 +341,8 @@ public:
         using Base = detail::LazyAwaiterBase<T>;
         AwaiterBase(Handle coro) : Base(coro) {}
 
-        __attribute__((__always_inline__)) STD_CORO::coroutine_handle<>
-        await_suspend(STD_CORO::coroutine_handle<> continuation) noexcept {
+        __attribute__((__always_inline__)) std::coroutine_handle<>
+        await_suspend(std::coroutine_handle<> continuation) noexcept {
             // current coro started, caller becomes my continuation
             Base::_handle.promise()._continuation = continuation;
             return Base::_handle;

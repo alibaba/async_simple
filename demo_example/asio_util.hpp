@@ -74,7 +74,7 @@ public:
                     asio::ip::tcp::socket socket)
         : acceptor_(acceptor), socket_(std::move(socket)) {}
     bool await_ready() const noexcept { return false; }
-    void await_suspend(STD_CORO::coroutine_handle<> handle) {
+    void await_suspend(std::coroutine_handle<> handle) {
         acceptor_.async_accept([this, handle](auto ec, auto socket) mutable {
             ec_ = ec;
             socket_ = std::move(socket);
@@ -108,7 +108,7 @@ public:
         : socket_(socket), buffer_(buffer) {}
     bool await_ready() { return false; }
     auto await_resume() { return std::make_pair(ec_, size_); }
-    void await_suspend(STD_CORO::coroutine_handle<> handle) {
+    void await_suspend(std::coroutine_handle<> handle) {
         socket_.async_read_some(std::move(buffer_),
                                 [this, handle](auto ec, auto size) mutable {
                                     ec_ = ec;
@@ -141,7 +141,7 @@ public:
         : socket_(socket), buffer_(buffer) {}
     bool await_ready() { return false; }
     auto await_resume() { return std::make_pair(ec_, size_); }
-    void await_suspend(STD_CORO::coroutine_handle<> handle) {
+    void await_suspend(std::coroutine_handle<> handle) {
         asio::async_read(socket_, buffer_,
                          [this, handle](auto ec, auto size) mutable {
                              ec_ = ec;
@@ -175,7 +175,7 @@ public:
         : socket_(socket), buffer_(buffer), delim_(delim) {}
     bool await_ready() { return false; }
     auto await_resume() { return std::make_pair(ec_, size_); }
-    void await_suspend(STD_CORO::coroutine_handle<> handle) {
+    void await_suspend(std::coroutine_handle<> handle) {
         asio::async_read_until(socket_, buffer_, delim_,
                                [this, handle](auto ec, auto size) mutable {
                                    ec_ = ec;
@@ -210,7 +210,7 @@ public:
         : socket_(socket), buffer_(std::move(buffer)) {}
     bool await_ready() { return false; }
     auto await_resume() { return std::make_pair(ec_, size_); }
-    void await_suspend(STD_CORO::coroutine_handle<> handle) {
+    void await_suspend(std::coroutine_handle<> handle) {
         asio::async_write(socket_, std::move(buffer_),
                           [this, handle](auto ec, auto size) mutable {
                               ec_ = ec;
@@ -242,7 +242,7 @@ public:
                    const std::string &host, const std::string &port)
         : io_context_(io_context), socket_(socket), host_(host), port_(port) {}
     bool await_ready() const noexcept { return false; }
-    void await_suspend(STD_CORO::coroutine_handle<> handle) {
+    void await_suspend(std::coroutine_handle<> handle) {
         asio::ip::tcp::resolver resolver(io_context_);
         auto endpoints = resolver.resolve(host_, port_);
         asio::async_connect(socket_, endpoints,

@@ -57,7 +57,7 @@ public:
         Awaiter(Executor* e, T v) : ex(e), value(v) {}
 
         bool await_ready() { return false; }
-        void await_suspend(STD_CORO::coroutine_handle<> handle) noexcept {
+        void await_suspend(std::coroutine_handle<> handle) noexcept {
             auto ctx = ex->checkout();
             std::thread([handle, e = ex, ctx]() mutable {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -315,7 +315,7 @@ struct Awaiter {
     Awaiter(Executor* e, T v) : ex(e), value(v) {}
 
     bool await_ready() { return false; }
-    void await_suspend(STD_CORO::coroutine_handle<> handle) noexcept {
+    void await_suspend(std::coroutine_handle<> handle) noexcept {
         auto ctx = ex->checkout();
         std::thread([handle, e = ex, ctx]() mutable {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));

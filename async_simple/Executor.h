@@ -168,7 +168,7 @@ public:
     }
 
     template <typename PromiseType>
-    void await_suspend(STD_CORO::coroutine_handle<PromiseType> continuation) {
+    void await_suspend(std::coroutine_handle<PromiseType> continuation) {
         std::function<void()> func = [c = continuation]() mutable {
             c.resume();
         };
@@ -204,7 +204,7 @@ public:
     bool await_ready() const noexcept { return false; }
 
     template <typename PromiseType>
-    void await_suspend(STD_CORO::coroutine_handle<PromiseType> continuation) {
+    void await_suspend(std::coroutine_handle<PromiseType> continuation) {
         std::function<void()> func = [c = continuation]() mutable {
             c.resume();
         };

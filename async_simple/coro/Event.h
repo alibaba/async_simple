@@ -51,7 +51,7 @@ public:
             return nullptr;
             // return nullptr instead of noop_coroutine could save one time
             // for accessing the memory.
-            // return STD_CORO::noop_coroutine();
+            // return std::noop_coroutine();
         }
     }
     [[nodiscard]] size_t downCount(size_t n = 1) {

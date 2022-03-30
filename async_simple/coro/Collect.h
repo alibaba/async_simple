@@ -80,9 +80,9 @@ struct CollectAnyAwaiter {
                (_result && _result->_idx != static_cast<size_t>(-1));
     }
 
-    void await_suspend(STD_CORO::coroutine_handle<> continuation) {
+    void await_suspend(std::coroutine_handle<> continuation) {
         auto promise_type =
-            STD_CORO::coroutine_handle<LazyPromiseBase>::from_address(
+            std::coroutine_handle<LazyPromiseBase>::from_address(
                 continuation.address())
                 .promise();
         auto executor = promise_type._executor;
@@ -156,9 +156,9 @@ struct CollectAllAwaiter {
     CollectAllAwaiter& operator=(const CollectAllAwaiter&) = delete;
 
     inline bool await_ready() const noexcept { return _input.empty(); }
-    inline void await_suspend(STD_CORO::coroutine_handle<> continuation) {
+    inline void await_suspend(std::coroutine_handle<> continuation) {
         auto promise_type =
-            STD_CORO::coroutine_handle<LazyPromiseBase>::from_address(
+            std::coroutine_handle<LazyPromiseBase>::from_address(
                 continuation.address())
                 .promise();
         auto executor = promise_type._executor;
