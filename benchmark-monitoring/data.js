@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1648607419245,
+  "lastUpdate": 1648608520628,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -1428,6 +1428,102 @@ window.BENCHMARK_DATA = {
             "value": 457536185.4285701,
             "unit": "ns/iter",
             "extra": "iterations: 14\ncpu: 53675421.42857142 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "68680648+ChuanqiXu9@users.noreply.github.com",
+            "name": "Chuanqi Xu",
+            "username": "ChuanqiXu9"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ecb26d7fb9f0337b3b5361f44143a99f95b3474e",
+          "message": "Enable to use coroutine components under std directly (#83)\n\nWe could use coroutine components under std directly by using\r\nexperimental ones in std namespace. So the code would be cleaner.",
+          "timestamp": "2022-03-30T10:46:52+08:00",
+          "tree_id": "509c7e8c21cf6072df87a89ce5bc2a6d9ea3d8c4",
+          "url": "https://github.com/alibaba/async_simple/commit/ecb26d7fb9f0337b3b5361f44143a99f95b3474e"
+        },
+        "date": 1648608519989,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 30411.090383204322,
+            "unit": "ns/iter",
+            "extra": "iterations: 35438\ncpu: 19437.651673344997 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 11998674.820000019,
+            "unit": "ns/iter",
+            "extra": "iterations: 50\ncpu: 10052408.000000002 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 41086.04182443042,
+            "unit": "ns/iter",
+            "extra": "iterations: 17167\ncpu: 41080.969301566955 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 12373046.566037957,
+            "unit": "ns/iter",
+            "extra": "iterations: 53\ncpu: 12372132.075471697 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 92572.65084148102,
+            "unit": "ns/iter",
+            "extra": "iterations: 31195\ncpu: 18931.783939733952 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 28224768.370000105,
+            "unit": "ns/iter",
+            "extra": "iterations: 100\ncpu: 31482.000000000455 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 103944038.99999817,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103612671.42857145 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 103931195.9999988,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103468271.42857137 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 103929495.99999821,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103581914.2857142 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 12128638.37931009,
+            "unit": "ns/iter",
+            "extra": "iterations: 58\ncpu: 11454339.655172415 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_noWorkSteal",
+            "value": 4579680558.000007,
+            "unit": "ns/iter",
+            "extra": "iterations: 1\ncpu: 219682899.99999958 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_withWorkSteal",
+            "value": 492759515.50000006,
+            "unit": "ns/iter",
+            "extra": "iterations: 12\ncpu: 62344041.666666664 ns\nthreads: 1"
           }
         ]
       }
