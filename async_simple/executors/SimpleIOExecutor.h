@@ -20,7 +20,9 @@
 #ifndef ASYNC_SIMPLE_HAS_NOT_AIO
 #include <libaio.h>
 #endif
+#ifndef _WIN32
 #include <sys/syscall.h> /* For SYS_xxx definitions */
+#endif  // !_WIN32
 #include <thread>
 
 namespace async_simple {

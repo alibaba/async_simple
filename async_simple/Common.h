@@ -18,10 +18,18 @@
 
 #include <stdexcept>
 
+#ifdef _WIN32
+#define __builtin_expect(EXP, C) (EXP)
+#endif
+
 #define FL_LIKELY(x) __builtin_expect((x), 1)
 #define FL_UNLIKELY(x) __builtin_expect((x), 0)
 
+#ifdef _WIN32
+#define FL_INLINE inline
+#else
 #define FL_INLINE __attribute__((__always_inline__)) inline
+#endif
 
 namespace async_simple {
 // Different from assert, logicAssert is meaningful in

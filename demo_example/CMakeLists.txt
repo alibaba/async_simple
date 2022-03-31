@@ -19,10 +19,10 @@ add_executable(async_echo_client async_echo_client.cpp)
 target_link_libraries(async_echo_client async_simple)
 
 add_executable(block_echo_server block_echo_server.cpp)
-target_link_libraries(block_echo_server pthread)
+target_link_libraries(block_echo_server ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(block_echo_client block_echo_client.cpp)
-target_link_libraries(block_echo_client pthread)
+target_link_libraries(block_echo_client ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(http_server http/coroutine_http/http_server.cpp)
 target_link_libraries(http_server async_simple)
@@ -46,7 +46,7 @@ endif()
 
 add_executable(smtp_client smtp/smtp_client.cpp)
 if (ENABLE_SSL)
-    target_link_libraries(smtp_client pthread OpenSSL::SSL)
+    target_link_libraries(smtp_client ${CMAKE_THREAD_LIBS_INIT} OpenSSL::SSL)
 else()
-    target_link_libraries(smtp_client pthread)
+    target_link_libraries(smtp_client ${CMAKE_THREAD_LIBS_INIT})
 endif()

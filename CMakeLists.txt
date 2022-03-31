@@ -5,6 +5,7 @@ enable_testing()
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
+find_package(Threads)
 find_package(Aio)
 find_package(GMock REQUIRED)
 find_package(GTest REQUIRED)
@@ -42,17 +43,25 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # set CXXFALGS
-set(CXX_FLAGS
-    -std=c++20
-    -D_GLIBCXX_USE_CXX11_ABI=1
-    -Wno-deprecated-register
-    -D_FILE_OFFSET_BITS=64
-    -fPIC
-    -Wall
-    -Werror
-    -D__STDC_LIMIT_MACROS
-    -g
-    )
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    set(CXX_FLAGS
+        /std:c++20
+        /await:strict
+        /EHa
+        )
+else()
+    set(CXX_FLAGS
+        -std=c++20
+        -D_GLIBCXX_USE_CXX11_ABI=1
+        -Wno-deprecated-register
+        -D_FILE_OFFSET_BITS=64
+        -fPIC
+        -Wall
+        -Werror
+        -D__STDC_LIMIT_MACROS
+        -g
+        )
+endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     list(APPEND CXX_FLAGS "-fcoroutines")
@@ -67,24 +76,27 @@ set(HEADERS_PATH
 include_directories(${HEADERS_PATH})
 
 set(deplibs)
+list(APPEND deplibs ${CMAKE_THREAD_LIBS_INIT})
 if(LIBAIO_LIBRARIES)
     list(APPEND deplibs ${LIBAIO_LIBRARIES})
 endif()
-list(APPEND deplibs pthread)
+
 set(testdeplibs)
 list(APPEND testdeplibs ${GTEST_LIBRARIES})
 list(APPEND testdeplibs ${GMOCK_LIBRARIES})
 
-if(CMAKE_BUILD_BITS EQUAL 32)
-    message("-- Use flag -m32")
-    list(APPEND CXX_FLAGS "-m32")
-    list(APPEND CXX_FLAGS "-DTARGET_32")
-    list(APPEND deplibs "-m32")
-else()
-    message("-- Use flag -m64")
-    list(APPEND CXX_FLAGS "-m64")
-    list(APPEND CXX_FLAGS "-DTARGET_64")
-    #list(APPEND deplibs "-m64")
+if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    if(CMAKE_BUILD_BITS EQUAL 32)
+        message("-- Use flag -m32")
+        list(APPEND CXX_FLAGS "-m32")
+        list(APPEND CXX_FLAGS "-DTARGET_32")
+        list(APPEND deplibs "-m32")
+    else()
+        message("-- Use flag -m64")
+        list(APPEND CXX_FLAGS "-m64")
+        list(APPEND CXX_FLAGS "-DTARGET_64")
+        #list(APPEND deplibs "-m64")
+    endif()
 endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -100,8 +112,14 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux") # uname -s
 endif()
 
 string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0")
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
+
+if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
+else()
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+endif()
 
 add_subdirectory(async_simple)
 add_subdirectory(demo_example)

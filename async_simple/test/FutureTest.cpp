@@ -457,7 +457,7 @@ TEST_F(FutureTest, testViaAfterWait) {
     auto future = promise.getFuture();
 
     auto t = std::thread([p = std::move(promise)]() mutable {
-        sleep(1);
+        std::this_thread::sleep_for(1s);
         p.setValue(100);
     });
 

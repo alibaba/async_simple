@@ -43,7 +43,7 @@ class Lazy;
 // ```
 //
 // This would suspend the executing coruotine.
-struct Yield {};
+struct Yield_t {};
 
 namespace detail {
 template <typename LazyType, typename IAlloc, typename OAlloc, bool Para>
@@ -100,7 +100,7 @@ public:
     auto await_transform(CurrentExecutor) {
         return ReadyAwaiter<Executor*>(_executor);
     }
-    auto await_transform(Yield) { return YieldAwaiter(_executor); }
+    auto await_transform(Yield_t) { return YieldAwaiter(_executor); }
 
 public:
     Executor* _executor;
@@ -341,7 +341,7 @@ public:
         using Base = detail::LazyAwaiterBase<T>;
         AwaiterBase(Handle coro) : Base(coro) {}
 
-        __attribute__((__always_inline__)) std::coroutine_handle<>
+        FL_INLINE std::coroutine_handle<>
         await_suspend(std::coroutine_handle<> continuation) noexcept {
             // current coro started, caller becomes my continuation
             Base::_handle.promise()._continuation = continuation;
@@ -358,7 +358,7 @@ public:
 
     struct ValueAwaiter : public AwaiterBase {
         ValueAwaiter(Handle coro) : AwaiterBase(coro) {}
-        __attribute__((__always_inline__)) T await_resume() {
+        FL_INLINE T await_resume() {
             return AwaiterBase::awaitResume();
         }
     };
@@ -472,7 +472,7 @@ private:
     struct ValueAwaiter : public AwaiterBase {
         ValueAwaiter(Handle coro) : AwaiterBase(coro) {}
 
-        __attribute__((__always_inline__)) T await_resume() {
+        FL_INLINE T await_resume() {
             return AwaiterBase::awaitResume();
         }
     };

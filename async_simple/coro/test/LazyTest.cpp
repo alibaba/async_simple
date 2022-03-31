@@ -231,7 +231,7 @@ TEST_F(LazyTest, testYield) {
     auto test1 = [](std::mutex& m, int& value) -> Lazy<void> {
         m.lock();
         // push task to queue's tail
-        co_await Yield();
+        co_await Yield_t();
         value++;
         co_return;
     };
