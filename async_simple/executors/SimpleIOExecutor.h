@@ -22,7 +22,7 @@
 #endif
 #ifndef _WIN32
 #include <sys/syscall.h> /* For SYS_xxx definitions */
-#endif  // !_WIN32
+#endif                   // !_WIN32
 #include <thread>
 
 namespace async_simple {

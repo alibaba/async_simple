@@ -341,8 +341,8 @@ public:
         using Base = detail::LazyAwaiterBase<T>;
         AwaiterBase(Handle coro) : Base(coro) {}
 
-        FL_INLINE std::coroutine_handle<>
-        await_suspend(std::coroutine_handle<> continuation) noexcept {
+        FL_INLINE std::coroutine_handle<> await_suspend(
+            std::coroutine_handle<> continuation) noexcept {
             // current coro started, caller becomes my continuation
             Base::_handle.promise()._continuation = continuation;
             return Base::_handle;
@@ -358,9 +358,7 @@ public:
 
     struct ValueAwaiter : public AwaiterBase {
         ValueAwaiter(Handle coro) : AwaiterBase(coro) {}
-        FL_INLINE T await_resume() {
-            return AwaiterBase::awaitResume();
-        }
+        FL_INLINE T await_resume() { return AwaiterBase::awaitResume(); }
     };
 
     ~Lazy() {
@@ -472,9 +470,7 @@ private:
     struct ValueAwaiter : public AwaiterBase {
         ValueAwaiter(Handle coro) : AwaiterBase(coro) {}
 
-        FL_INLINE T await_resume() {
-            return AwaiterBase::awaitResume();
-        }
+        FL_INLINE T await_resume() { return AwaiterBase::awaitResume(); }
     };
 
     struct TryAwaiter : public AwaiterBase {
