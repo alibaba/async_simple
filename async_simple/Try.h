@@ -135,7 +135,7 @@ public:
 
 private:
     FL_INLINE void checkHasTry() const {
-        if (FL_LIKELY(_contains == Contains::VALUE)) {
+        if (_contains == Contains::VALUE) [[likely]] {
             return;
         } else if (_contains == Contains::EXCEPTION) {
             std::rethrow_exception(_error);

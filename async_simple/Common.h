@@ -22,9 +22,6 @@
 #define __builtin_expect(EXP, C) (EXP)
 #endif
 
-#define FL_LIKELY(x) __builtin_expect((x), 1)
-#define FL_UNLIKELY(x) __builtin_expect((x), 0)
-
 #ifdef _WIN32
 #define FL_INLINE inline
 #else
@@ -39,7 +36,7 @@ namespace async_simple {
 // a bug in the library. If logicAssert fails, it means
 // there is a bug in the user code.
 inline void logicAssert(bool x, const char* errorMsg) {
-    if (FL_LIKELY(x)) {
+    if (x) [[likely]] {
         return;
     }
     throw std::logic_error(errorMsg);

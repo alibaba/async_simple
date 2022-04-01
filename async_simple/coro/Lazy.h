@@ -142,14 +142,14 @@ public:
 
 public:
     T& result() & {
-        if (FL_UNLIKELY(_resultType == result_type::exception)) {
+        if (_resultType == result_type::exception) [[unlikely]] {
             std::rethrow_exception(_exception);
         }
         assert(_resultType == result_type::value);
         return _value;
     }
     T&& result() && {
-        if (FL_UNLIKELY(_resultType == result_type::exception)) {
+        if (_resultType == result_type::exception) [[unlikely]] {
             std::rethrow_exception(_exception);
         }
         assert(_resultType == result_type::value);
@@ -157,7 +157,7 @@ public:
     }
 
     Try<T> tryResult() noexcept {
-        if (FL_UNLIKELY(_resultType == result_type::exception)) {
+        if (_resultType == result_type::exception) [[unlikely]] {
             return Try<T>(_exception);
         } else {
             assert(_resultType == result_type::value);
@@ -183,7 +183,7 @@ public:
     }
 
     void result() {
-        if (FL_UNLIKELY(_exception != nullptr)) {
+        if (_exception != nullptr) [[unlikely]] {
             std::rethrow_exception(_exception);
         }
     }

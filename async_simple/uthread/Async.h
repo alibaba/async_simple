@@ -58,7 +58,7 @@ template <class T, class F,
           typename std::enable_if<std::is_same<T, Launch::Schedule>::value,
                                   T>::type* = nullptr>
 inline void async(F&& f, Executor* ex) {
-    if (FL_UNLIKELY(!ex)) {
+    if (!ex) [[unlikely]] {
         return;
     }
     ex->schedule([f = std::move(f), ex]() {
@@ -72,7 +72,7 @@ template <class T, class F, class C,
           typename std::enable_if<std::is_same<T, Launch::Schedule>::value,
                                   T>::type* = nullptr>
 inline void async(F&& f, C&& c, Executor* ex) {
-    if (FL_UNLIKELY(!ex)) {
+    if (!ex) [[unlikely]] {
         return;
     }
     ex->schedule([f = std::move(f), c = std::move(c), ex]() {
