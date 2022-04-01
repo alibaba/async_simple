@@ -43,7 +43,7 @@ class Lazy;
 // ```
 //
 // This would suspend the executing coruotine.
-struct Yield_t {};
+struct Yield {};
 
 namespace detail {
 template <typename LazyType, typename IAlloc, typename OAlloc, bool Para>
@@ -100,7 +100,7 @@ public:
     auto await_transform(CurrentExecutor) {
         return ReadyAwaiter<Executor*>(_executor);
     }
-    auto await_transform(Yield_t) { return YieldAwaiter(_executor); }
+    auto await_transform(Yield) { return YieldAwaiter(_executor); }
 
 public:
     Executor* _executor;
