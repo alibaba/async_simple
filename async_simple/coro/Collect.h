@@ -177,7 +177,7 @@ struct CollectAllAwaiter {
                 });
             };
             if (Para == true && _input.size() > 1) {
-                if (exec != nullptr) 
+                if (exec != nullptr)
                     [[likely]] {
                         exec->schedule(func);
                         continue;
