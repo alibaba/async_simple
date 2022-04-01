@@ -178,10 +178,17 @@ struct CollectAllAwaiter {
             };
             if (Para == true && _input.size() > 1) {
                 if (exec != nullptr)
+#if defined(__clang__) && __clang_major__ < 12
+                {
+                    exec->schedule(func);
+                    continue;
+                }
+#else
                     [[likely]] {
                         exec->schedule(func);
                         continue;
                     }
+#endif
             }
             func();
         }

@@ -143,20 +143,38 @@ public:
 public:
     T& result() & {
         if (_resultType == result_type::exception)
+#if defined(__clang__) && __clang_major__ < 12
+        {
+            std::rethrow_exception(_exception);
+        }
+#else
             [[unlikely]] { std::rethrow_exception(_exception); }
+#endif
         assert(_resultType == result_type::value);
         return _value;
     }
     T&& result() && {
         if (_resultType == result_type::exception)
+#if defined(__clang__) && __clang_major__ < 12
+        {
+            std::rethrow_exception(_exception);
+        }
+#else
             [[unlikely]] { std::rethrow_exception(_exception); }
+#endif
         assert(_resultType == result_type::value);
         return std::move(_value);
     }
 
     Try<T> tryResult() noexcept {
         if (_resultType == result_type::exception)
+#if defined(__clang__) && __clang_major__ < 12
+        {
+            return Try<T>(_exception);
+        }
+#else
             [[unlikely]] { return Try<T>(_exception); }
+#endif
         else {
             assert(_resultType == result_type::value);
             return Try<T>(std::move(_value));
@@ -182,7 +200,13 @@ public:
 
     void result() {
         if (_exception != nullptr)
+#if defined(__clang__) && __clang_major__ < 12
+        {
+            std::rethrow_exception(_exception);
+        }
+#else
             [[unlikely]] { std::rethrow_exception(_exception); }
+#endif
     }
     Try<void> tryResult() noexcept { return Try<void>(_exception); }
 

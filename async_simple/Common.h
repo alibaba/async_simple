@@ -37,11 +37,13 @@ namespace async_simple {
 // there is a bug in the user code.
 inline void logicAssert(bool x, const char* errorMsg) {
     if (x)
-    #if defined(__clang__) && __clang_major__ < 12
-        { return; }
-    #else
+#if defined(__clang__) && __clang_major__ < 12
+    {
+        return;
+    }
+#else
         [[likely]] { return; }
-    #endif
+#endif
     throw std::logic_error(errorMsg);
 }
 
