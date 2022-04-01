@@ -55,7 +55,11 @@ size_t get_base_stack_size() {
 inline void jmp_buf_link::switch_in() {
     link = std::exchange(g_current_context, this);
     if (!link)
+    #if defined(__clang__) && __clang_major__ < 12
+        { link = &g_unthreaded_context; }
+    #else
         [[unlikely]] { link = &g_unthreaded_context; }
+    #endif
     fcontext = _fl_jump_fcontext(fcontext, thread).fctx;
 }
 

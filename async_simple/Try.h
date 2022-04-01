@@ -136,7 +136,11 @@ public:
 private:
     FL_INLINE void checkHasTry() const {
         if (_contains == Contains::VALUE)
+        #if defined(__clang__) && __clang_major__ < 12
+            { return; }
+        #else
             [[likely]] { return; }
+        #endif
         else if (_contains == Contains::EXCEPTION) {
             std::rethrow_exception(_error);
         } else if (_contains == Contains::NOTHING) {
