@@ -36,9 +36,8 @@ namespace async_simple {
 // a bug in the library. If logicAssert fails, it means
 // there is a bug in the user code.
 inline void logicAssert(bool x, const char* errorMsg) {
-    if (x) [[likely]] {
-        return;
-    }
+    if (x)
+        [[likely]] { return; }
     throw std::logic_error(errorMsg);
 }
 

@@ -135,9 +135,9 @@ public:
 
 private:
     FL_INLINE void checkHasTry() const {
-        if (_contains == Contains::VALUE) [[likely]] {
-            return;
-        } else if (_contains == Contains::EXCEPTION) {
+        if (_contains == Contains::VALUE)
+            [[likely]] { return; }
+        else if (_contains == Contains::EXCEPTION) {
             std::rethrow_exception(_error);
         } else if (_contains == Contains::NOTHING) {
             throw std::logic_error("Try object is empty");
