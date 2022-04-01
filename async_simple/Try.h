@@ -134,7 +134,7 @@ public:
     }
 
 private:
-    FL_INLINE void checkHasTry() const {
+    AS_INLINE void checkHasTry() const {
         if (_contains == Contains::VALUE)
 #if defined(__clang__) && __clang_major__ < 12
         {

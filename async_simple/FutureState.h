@@ -140,21 +140,21 @@ public:
         return (state & allow) != detail::State();
     }
 
-    FL_INLINE void attachOne() {
+    AS_INLINE void attachOne() {
         _attached.fetch_add(1, std::memory_order_relaxed);
     }
-    FL_INLINE void detachOne() {
+    AS_INLINE void detachOne() {
         auto old = _attached.fetch_sub(1, std::memory_order_relaxed);
         assert(old >= 1u);
         if (old == 1) {
             delete this;
         }
     }
-    FL_INLINE void attachPromise() {
+    AS_INLINE void attachPromise() {
         _promiseRef.fetch_add(1, std::memory_order_relaxed);
         attachOne();
     }
-    FL_INLINE void detachPromise() {
+    AS_INLINE void detachPromise() {
         auto old = _promiseRef.fetch_sub(1, std::memory_order_relaxed);
         assert(old >= 1u);
         if (!hasResult() && old == 1) {

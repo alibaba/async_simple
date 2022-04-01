@@ -23,9 +23,9 @@
 #endif
 
 #ifdef _WIN32
-#define FL_INLINE inline
+#define AS_INLINE inline
 #else
-#define FL_INLINE __attribute__((__always_inline__)) inline
+#define AS_INLINE __attribute__((__always_inline__)) inline
 #endif
 
 namespace async_simple {

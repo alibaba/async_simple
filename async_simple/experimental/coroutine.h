@@ -54,7 +54,8 @@ template <class P> struct hash<coroutine_handle<P>>;
 // clang couldn't compile <coroutine> in libstdc++. In this case,
 // we could only use self-provided coroutine header.
 // Note: the <coroutine> header in libc++ is available for both clang and gcc.
-// And the outdated <experimental/coroutine> is available for clang only.
+// And the outdated <experimental/coroutine> is available for clang only(need to
+// exclude msvc).
 #if (__cplusplus <= 201703L && !defined(_MSC_VER)) || \
     (defined(__clang__) && defined(__GLIBCXX__))
 #define USE_SELF_DEFINED_COROUTINE
