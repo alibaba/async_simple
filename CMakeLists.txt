@@ -99,9 +99,11 @@ if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     endif()
 endif()
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message("-- Use flag -fsanitize=address")
-    list(APPEND CXX_FLAGS "-fsanitize=address")
+if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        message("-- Use flag -fsanitize=address")
+        list(APPEND CXX_FLAGS "-fsanitize=address")
+    endif()
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux") # uname -s
