@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1648619369430,
+  "lastUpdate": 1649311924396,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -1620,6 +1620,102 @@ window.BENCHMARK_DATA = {
             "value": 660953234.4999992,
             "unit": "ns/iter",
             "extra": "iterations: 10\ncpu: 51249439.999999955 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "383121719@qq.com",
+            "name": "qicosmos",
+            "username": "qicosmos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e342335eda9011b7c10bef70f5cbf84ac2088a20",
+          "message": "Support windows (#84)\n\n* begin to support windows\r\n\r\n* fix for gcc\r\n\r\n* format\r\n\r\n* revert Yield\r\n\r\n* use c++20 likely\r\n\r\n* update cmake\r\n\r\n* format\r\n\r\n* format\r\n\r\n* fix for clang12 below\r\n\r\n* continue add clang version checking\r\n\r\n* comments and rename\r\n\r\n* revert\r\n\r\n* remove -pthread\r\n\r\n* refactor likely",
+          "timestamp": "2022-04-07T14:10:03+08:00",
+          "tree_id": "6fded154d5880dd1a5a6efc1098c6accbce9fbf9",
+          "url": "https://github.com/alibaba/async_simple/commit/e342335eda9011b7c10bef70f5cbf84ac2088a20"
+        },
+        "date": 1649311923841,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 22925.969699319627,
+            "unit": "ns/iter",
+            "extra": "iterations: 103166\ncpu: 14983.558536727214 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 12160236.627451025,
+            "unit": "ns/iter",
+            "extra": "iterations: 51\ncpu: 10331750.980392154 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 23614.673902768427,
+            "unit": "ns/iter",
+            "extra": "iterations: 29620\ncpu: 23612.76502363267 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 9026778.196969697,
+            "unit": "ns/iter",
+            "extra": "iterations: 66\ncpu: 9026553.030303031 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 48410.73783878052,
+            "unit": "ns/iter",
+            "extra": "iterations: 48741\ncpu: 13353.648878767362 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 22404762.668999992,
+            "unit": "ns/iter",
+            "extra": "iterations: 1000\ncpu: 20381.099999999817 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 103389295.71428576,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103069871.42857134 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 103949571.42857005,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103610571.4285715 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 104491904.285717,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 104254557.14285724 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 10877707.93939378,
+            "unit": "ns/iter",
+            "extra": "iterations: 66\ncpu: 10378721.21212122 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_noWorkSteal",
+            "value": 9195106140.000008,
+            "unit": "ns/iter",
+            "extra": "iterations: 1\ncpu: 353757599.99999976 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_withWorkSteal",
+            "value": 499901673.70000046,
+            "unit": "ns/iter",
+            "extra": "iterations: 10\ncpu: 43392710 ns\nthreads: 1"
           }
         ]
       }
