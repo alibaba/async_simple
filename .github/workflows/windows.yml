@@ -1,0 +1,32 @@
+name: Windows
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types:
+      - published
+
+jobs:
+  windows_msvc:
+    name: Windows | MSVC
+    runs-on: windows-2019
+
+    strategy:
+      fail-fast: false
+      matrix:
+        build_config: [Release, Debug]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+
+      - name: Generate Project
+        run: cmake -B Build/${{ matrix.build_config }} -DCMAKE_BUILD_TYPE=${{ matrix.build_config }} -DRFK_DEV=1 -G "Visual Studio 16 2019" -A x64
+
+      - name: Build async_simple
+        run: cmake --build Build/${{ matrix.build_config }} --config ${{ matrix.build_config }} --verbose
