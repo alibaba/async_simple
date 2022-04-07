@@ -142,24 +142,22 @@ public:
 
 public:
     T& result() & {
-        if (FL_UNLIKELY(_resultType == result_type::exception)) {
-            std::rethrow_exception(_exception);
-        }
+        if (_resultType == result_type::exception)
+            UNLIKELY { std::rethrow_exception(_exception); }
         assert(_resultType == result_type::value);
         return _value;
     }
     T&& result() && {
-        if (FL_UNLIKELY(_resultType == result_type::exception)) {
-            std::rethrow_exception(_exception);
-        }
+        if (_resultType == result_type::exception)
+            UNLIKELY { std::rethrow_exception(_exception); }
         assert(_resultType == result_type::value);
         return std::move(_value);
     }
 
     Try<T> tryResult() noexcept {
-        if (FL_UNLIKELY(_resultType == result_type::exception)) {
-            return Try<T>(_exception);
-        } else {
+        if (_resultType == result_type::exception)
+            UNLIKELY { return Try<T>(_exception); }
+        else {
             assert(_resultType == result_type::value);
             return Try<T>(std::move(_value));
         }
@@ -183,9 +181,8 @@ public:
     }
 
     void result() {
-        if (FL_UNLIKELY(_exception != nullptr)) {
-            std::rethrow_exception(_exception);
-        }
+        if (_exception != nullptr)
+            UNLIKELY { std::rethrow_exception(_exception); }
     }
     Try<void> tryResult() noexcept { return Try<void>(_exception); }
 
@@ -341,8 +338,8 @@ public:
         using Base = detail::LazyAwaiterBase<T>;
         AwaiterBase(Handle coro) : Base(coro) {}
 
-        __attribute__((__always_inline__)) std::coroutine_handle<>
-        await_suspend(std::coroutine_handle<> continuation) noexcept {
+        AS_INLINE std::coroutine_handle<> await_suspend(
+            std::coroutine_handle<> continuation) noexcept {
             // current coro started, caller becomes my continuation
             Base::_handle.promise()._continuation = continuation;
             return Base::_handle;
@@ -351,16 +348,14 @@ public:
 
     struct TryAwaiter : public AwaiterBase {
         TryAwaiter(Handle coro) : AwaiterBase(coro) {}
-        FL_INLINE Try<T> await_resume() noexcept {
+        AS_INLINE Try<T> await_resume() noexcept {
             return AwaiterBase::awaitResumeTry();
         };
     };
 
     struct ValueAwaiter : public AwaiterBase {
         ValueAwaiter(Handle coro) : AwaiterBase(coro) {}
-        __attribute__((__always_inline__)) T await_resume() {
-            return AwaiterBase::awaitResume();
-        }
+        AS_INLINE T await_resume() { return AwaiterBase::awaitResume(); }
     };
 
     ~Lazy() {
@@ -472,14 +467,12 @@ private:
     struct ValueAwaiter : public AwaiterBase {
         ValueAwaiter(Handle coro) : AwaiterBase(coro) {}
 
-        __attribute__((__always_inline__)) T await_resume() {
-            return AwaiterBase::awaitResume();
-        }
+        AS_INLINE T await_resume() { return AwaiterBase::awaitResume(); }
     };
 
     struct TryAwaiter : public AwaiterBase {
         TryAwaiter(Handle coro) : AwaiterBase(coro) {}
-        FL_INLINE Try<T> await_resume() noexcept {
+        AS_INLINE Try<T> await_resume() noexcept {
             return AwaiterBase::awaitResumeTry();
         };
     };

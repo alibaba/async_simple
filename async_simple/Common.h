@@ -18,10 +18,19 @@
 
 #include <stdexcept>
 
-#define FL_LIKELY(x) __builtin_expect((x), 1)
-#define FL_UNLIKELY(x) __builtin_expect((x), 0)
+#if defined(__clang__) && __clang_major__ < 12
+#define LIKELY
+#define UNLIKELY
+#else
+#define LIKELY [[likely]]
+#define UNLIKELY [[unlikely]]
+#endif
 
-#define FL_INLINE __attribute__((__always_inline__)) inline
+#ifdef _WIN32
+#define AS_INLINE
+#else
+#define AS_INLINE __attribute__((__always_inline__)) inline
+#endif
 
 namespace async_simple {
 // Different from assert, logicAssert is meaningful in
@@ -31,9 +40,8 @@ namespace async_simple {
 // a bug in the library. If logicAssert fails, it means
 // there is a bug in the user code.
 inline void logicAssert(bool x, const char* errorMsg) {
-    if (FL_LIKELY(x)) {
-        return;
-    }
+    if (x)
+        LIKELY { return; }
     throw std::logic_error(errorMsg);
 }
 

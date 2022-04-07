@@ -342,7 +342,7 @@ private:
 private:
     std::string get_separator() {
 #ifdef _WIN32
-        return '\\';
+        return "\\";
 #endif
         return "/";
     }

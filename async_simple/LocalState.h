@@ -44,8 +44,8 @@ private:
 
 public:
     LocalState() : _executor(nullptr) {}
-    LocalState(T&& v) : _try(std::forward<T>(v)), _executor(nullptr) {}
-    LocalState(Try<T>&& t) : _try(std::move(t)), _executor(nullptr) {}
+    LocalState(T&& v) : _try_value(std::forward<T>(v)), _executor(nullptr) {}
+    LocalState(Try<T>&& t) : _try_value(std::move(t)), _executor(nullptr) {}
 
     ~LocalState() {}
 
@@ -53,22 +53,22 @@ public:
     LocalState& operator=(const LocalState&) = delete;
 
     LocalState(LocalState&& other)
-        : _try(std::move(other._try)),
+        : _try_value(std::move(other._try_value)),
           _executor(std::exchange(other._executor, nullptr)) {}
     LocalState& operator=(LocalState&& other) {
         if (this != &other) {
-            std::swap(_try, other._try);
+            std::swap(_try_value, other._try_value);
             std::swap(_executor, other._executor);
         }
         return *this;
     }
 
 public:
-    bool hasResult() const noexcept { return _try.available(); }
+    bool hasResult() const noexcept { return _try_value.available(); }
 
 public:
-    Try<T>& getTry() noexcept { return _try; }
-    const Try<T>& getTry() const noexcept { return _try; }
+    Try<T>& getTry() noexcept { return _try_value; }
+    const Try<T>& getTry() const noexcept { return _try_value; }
 
     void setExecutor(Executor* ex) { _executor = ex; }
 
@@ -83,12 +83,12 @@ public:
 
     template <typename F>
     void setContinuation(F&& f) {
-        assert(_try.available());
-        std::forward<F>(f)(std::move(_try));
+        assert(_try_value.available());
+        std::forward<F>(f)(std::move(_try_value));
     }
 
 private:
-    Try<T> _try;
+    Try<T> _try_value;
     Executor* _executor;
 };
 }  // namespace async_simple

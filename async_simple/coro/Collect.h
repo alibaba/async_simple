@@ -177,10 +177,11 @@ struct CollectAllAwaiter {
                 });
             };
             if (Para == true && _input.size() > 1) {
-                if (FL_LIKELY(exec != nullptr)) {
-                    exec->schedule(func);
-                    continue;
-                }
+                if (exec != nullptr)
+                    LIKELY {
+                        exec->schedule(func);
+                        continue;
+                    }
             }
             func();
         }

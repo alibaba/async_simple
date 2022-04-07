@@ -140,21 +140,21 @@ public:
         return (state & allow) != detail::State();
     }
 
-    inline __attribute__((__always_inline__)) void attachOne() {
+    AS_INLINE void attachOne() {
         _attached.fetch_add(1, std::memory_order_relaxed);
     }
-    inline __attribute__((__always_inline__)) void detachOne() {
+    AS_INLINE void detachOne() {
         auto old = _attached.fetch_sub(1, std::memory_order_relaxed);
         assert(old >= 1u);
         if (old == 1) {
             delete this;
         }
     }
-    inline __attribute__((__always_inline__)) void attachPromise() {
+    AS_INLINE void attachPromise() {
         _promiseRef.fetch_add(1, std::memory_order_relaxed);
         attachOne();
     }
-    inline __attribute__((__always_inline__)) void detachPromise() {
+    AS_INLINE void detachPromise() {
         auto old = _promiseRef.fetch_sub(1, std::memory_order_relaxed);
         assert(old >= 1u);
         if (!hasResult() && old == 1) {
@@ -168,8 +168,8 @@ public:
     }
 
 public:
-    Try<T>& getTry() noexcept { return _try; }
-    const Try<T>& getTry() const noexcept { return _try; }
+    Try<T>& getTry() noexcept { return _try_value; }
+    const Try<T>& getTry() const noexcept { return _try_value; }
 
     void setExecutor(Executor* ex) { _executor = ex; }
 
@@ -196,7 +196,7 @@ public:
     //  ONLY_CONTINUATION: future.thenImpl called
     void setResult(Try<T>&& value) {
         logicAssert(!hasResult(), "FutureState already has a result");
-        _try = std::move(value);
+        _try_value = std::move(value);
 
         auto state = _state.load(std::memory_order_acquire);
         switch (state) {
@@ -268,7 +268,7 @@ private:
                              currentThreadInExecutor())) {
             // execute inplace for better performance
             ContinuationReference guard(this);
-            _continuation(std::move(_try));
+            _continuation(std::move(_try_value));
         } else {
             ContinuationReference guard(this);
             ContinuationReference guardForException(this);
@@ -279,7 +279,7 @@ private:
                         [fsRef = std::move(guard)]() mutable {
                             auto ref = std::move(fsRef);
                             auto fs = ref.getFutureState();
-                            fs->_continuation(std::move(fs->_try));
+                            fs->_continuation(std::move(fs->_try_value));
                         });
                 } else {
                     ScheduleOptions opts;
@@ -290,7 +290,7 @@ private:
                         [fsRef = std::move(guard)]() mutable {
                             auto ref = std::move(fsRef);
                             auto fs = ref.getFutureState();
-                            fs->_continuation(std::move(fs->_try));
+                            fs->_continuation(std::move(fs->_try_value));
                         },
                         _context, opts);
                 }
@@ -300,7 +300,7 @@ private:
                 }
             } catch (std::exception& e) {
                 // reschedule failed, execute inplace
-                _continuation(std::move(_try));
+                _continuation(std::move(_try_value));
             }
         }
     }
@@ -320,7 +320,7 @@ private:
     std::atomic<detail::State> _state;
     std::atomic<uint8_t> _attached;
     std::atomic<uint8_t> _continuationRef;
-    Try<T> _try;
+    Try<T> _try_value;
     union {
         Continuation _continuation;
     };

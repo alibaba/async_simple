@@ -134,10 +134,10 @@ public:
     }
 
 private:
-    FL_INLINE void checkHasTry() const {
-        if (FL_LIKELY(_contains == Contains::VALUE)) {
-            return;
-        } else if (_contains == Contains::EXCEPTION) {
+    AS_INLINE void checkHasTry() const {
+        if (_contains == Contains::VALUE)
+            LIKELY { return; }
+        else if (_contains == Contains::EXCEPTION) {
             std::rethrow_exception(_error);
         } else if (_contains == Contains::NOTHING) {
             throw std::logic_error("Try object is empty");
