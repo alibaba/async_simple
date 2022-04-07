@@ -84,6 +84,7 @@ endif()
 set(testdeplibs)
 list(APPEND testdeplibs ${GTEST_LIBRARIES})
 list(APPEND testdeplibs ${GMOCK_LIBRARIES})
+list(APPEND testdeplibs ${CMAKE_THREAD_LIBS_INIT})
 
 if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     if(CMAKE_BUILD_BITS EQUAL 32)
