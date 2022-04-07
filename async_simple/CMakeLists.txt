@@ -30,12 +30,12 @@ if(UTHREAD)
   list(APPEND SRCS ${uthread_asm_src})
 endif()
 
-add_library(async_simple STATIC ${SRCS})
-add_library(async_simple_shared SHARED ${SRCS})
+add_library(async_simple_static STATIC ${SRCS})
+add_library(async_simple SHARED ${SRCS})
 target_link_libraries(async_simple ${deplibs})
-target_link_libraries(async_simple_shared ${deplibs})
+target_link_libraries(async_simple_static ${deplibs})
 
-#set_target_properties(async_simple_static PROPERTIES OUTPUT_NAME "async_simple")
+set_target_properties(async_simple_static PROPERTIES OUTPUT_NAME "async_simple")
 
 install(TARGETS async_simple DESTINATION lib/)
 #install(TARGETS async_simple_static DESTINATION lib/)
