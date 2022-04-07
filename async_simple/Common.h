@@ -18,12 +18,16 @@
 
 #include <stdexcept>
 
-#ifdef _WIN32
-#define __builtin_expect(EXP, C) (EXP)
+#if defined(__clang__) && __clang_major__ < 12
+#define LIKELY
+#define UNLIKELY
+#else
+#define LIKELY [[likely]]
+#define UNLIKELY [[unlikely]]
 #endif
 
 #ifdef _WIN32
-#define AS_INLINE inline
+#define AS_INLINE
 #else
 #define AS_INLINE __attribute__((__always_inline__)) inline
 #endif
@@ -37,13 +41,7 @@ namespace async_simple {
 // there is a bug in the user code.
 inline void logicAssert(bool x, const char* errorMsg) {
     if (x)
-#if defined(__clang__) && __clang_major__ < 12
-    {
-        return;
-    }
-#else
-        [[likely]] { return; }
-#endif
+        LIKELY { return; }
     throw std::logic_error(errorMsg);
 }
 
