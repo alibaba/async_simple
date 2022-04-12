@@ -24,7 +24,6 @@ async\_simple 涉及 C++20 协程，对编译器版本有较高要求。需要 c
 - 如需使用 libaio 功能，需安装 libaio。
 
 ```bash
-# Optional.
 sudo apt install cmake libaio-dev -y
 ```
 
@@ -97,7 +96,8 @@ cmake .. && sudo make install
 
 ```bash
 mkdir build && cd build
-CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug]
+# Specify [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] to skip tests.
+CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug] [-DASYNC_SIMPLE_ENABLE_TESTS=OFF]
 make -j4
 make test
 make install
