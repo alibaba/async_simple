@@ -2,9 +2,9 @@ name: Windows
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 env:
   # Customize the CMake build type here (Release, Debug, etc.)
