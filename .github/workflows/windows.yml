@@ -16,8 +16,8 @@ jobs:
 
     strategy:
       matrix:
-        mode: [ Debug, Release ]
-        arch: [ amd64, x86 ]
+        mode: [ Release ]
+        arch: [ x86 ]
 
     env:
       CXX: cl.exe
