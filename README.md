@@ -18,10 +18,13 @@ and the traditional Future/Promise.
 
 # Install Dependencies
 
+The build of async_simple need libaio, googletest and cmake.  Both libaio and googletest
+are optional. (Testing before using is highly suggested.)
+
 ## Using apt (ubuntu and debian's)
 
 ```
-# Optional.
+# Install libaio
 sudo apt install libaio-dev -y
 
 # Install gtest
@@ -39,7 +42,7 @@ cd .. && sudo rm -rf build
 
 ## Using yum (CentOS and fedora)
 ```
-# Optional.
+# Install libaio
 sudo yum install libaio-devel -y
 
 sudo yum install cmake -y
@@ -78,7 +81,8 @@ Demo example depends on standalone asio(https://github.com/chriskohlhoff/asio/tr
 # Build
 ```
 $ mkdir build && cd build
-CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug]
+# Specify [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] to skip tests.
+CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug] [-DASYNC_SIMPLE_ENABLE_TESTS=OFF]
 # for gcc, use CXX=g++ CC=gcc
 make -j4
 make test # optional
