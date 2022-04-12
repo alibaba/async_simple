@@ -35,10 +35,10 @@ add_library(async_simple SHARED ${SRCS})
 target_link_libraries(async_simple ${deplibs})
 target_link_libraries(async_simple_static ${deplibs})
 
-set_target_properties(async_simple_static PROPERTIES OUTPUT_NAME "async_simple")
-
 install(TARGETS async_simple DESTINATION lib/)
-#install(TARGETS async_simple_static DESTINATION lib/)
+install(TARGETS async_simple_static DESTINATION lib/)
+
+set_target_properties(async_simple_static PROPERTIES OUTPUT_NAME "async_simple")
 
 install(FILES ${headers} DESTINATION include/async_simple)
 install(FILES ${coro_header} DESTINATION include/async_simple/coro)
