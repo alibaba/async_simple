@@ -1,0 +1,33 @@
+name: Windows
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  # Customize the CMake build type here (Release, Debug, etc.)
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: windows-2019
+
+    strategy:
+      matrix:
+        mode: [ Debug, Release ]
+        arch: [ amd64, x86 ]
+
+    env:
+      CXX: cl.exe
+      CC: cl.exe
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Generate Project
+        run: cmake -B Build/${{ matrix.mode }} -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DRFK_DEV=1 -G "Visual Studio 16 2019" -A x64
+
+      - name: Build async_simple
+        run: cmake --build Build/${{ matrix.mode }} --config ${{ matrix.mode }} --verbose
