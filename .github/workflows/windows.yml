@@ -5,28 +5,29 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-  release:
-    types:
-      - published
+
+env:
+  # Customize the CMake build type here (Release, Debug, etc.)
+  BUILD_TYPE: Release
 
 jobs:
-  windows_msvc:
-    name: Windows | MSVC
+  build:
     runs-on: windows-2019
 
     strategy:
-      fail-fast: false
       matrix:
-        build_config: [Release, Debug]
+        mode: [ Debug, Release ]
+        arch: [ amd64, x86 ]
+
+    env:
+      CXX: cl.exe
+      CC: cl.exe
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
+      - uses: actions/checkout@v2
 
       - name: Generate Project
-        run: cmake -B Build/${{ matrix.build_config }} -DCMAKE_BUILD_TYPE=${{ matrix.build_config }} -DRFK_DEV=1 -G "Visual Studio 16 2019" -A x64
+        run: cmake -B Build/${{ matrix.mode }} -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DRFK_DEV=1 -G "Visual Studio 16 2019" -A x64
 
       - name: Build async_simple
-        run: cmake --build Build/${{ matrix.build_config }} --config ${{ matrix.build_config }} --verbose
+        run: cmake --build Build/${{ matrix.mode }} --config ${{ matrix.mode }} --verbose
