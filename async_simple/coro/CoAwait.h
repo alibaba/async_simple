@@ -73,8 +73,10 @@ public:
             Executor::Context _ctx;
         };
 
-        Executor* _ex;
+        /// IMPORTANT: _continuation should be the first member due to the
+        /// requirement of dbg script.
         std::coroutine_handle<> _continuation;
+        Executor* _ex;
         Executor::Context _ctx;
     };
 
