@@ -26,8 +26,36 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+    - name: Checkout GTest
+      uses: actions/checkout@v2
+      with:
+        repository: 'google/googletest'
+        ref: 'release-1.8.1'
+        path: 'googletest'
+    
+    - name: Build GTest
+      shell: cmd
+      run: |
+        cd googletest
+        md build
+        cd build
+        SET CMAKE_COMPILER="Visual Studio 16 2019 Win64"
+        echo "PLATFORM_FOLDER=%PLATFORM_FOLDER%"
+        echo "CMAKE_COMPILER=%CMAKE_COMPILER%"
+        echo "GITHUB_WORKSPACE=%GITHUB_WORKSPACE%"
+        cmake -Dgtest_force_shared_crt=OFF -DCMAKE_INSTALL_PREFIX=%GITHUB_WORKSPACE%\googletest_release -G %CMAKE_COMPILER% ..
+        IF %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
+        
+        cmake --build . --config ${{ matrix.mode }}
+        IF %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
+        
+        dir /b
+        cmake --build . --target install --config ${{ matrix.mode }}
+        IF %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
+        cd ../..
+
       - name: Generate Project
-        run: cmake -B Build/${{ matrix.mode }} -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DASYNC_SIMPLE_ENABLE_TESTS=OFF -DRFK_DEV=1 -G "Visual Studio 16 2019" -A x64
+        run: cmake -B Build/${{ matrix.mode }} -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DRFK_DEV=1 -G "Visual Studio 16 2019" -A x64
 
       - name: Build async_simple
         run: cmake --build Build/${{ matrix.mode }} --config ${{ matrix.mode }} --verbose
