@@ -102,9 +102,10 @@ public:
     }
     auto await_transform(Yield) { return YieldAwaiter(_executor); }
 
-public:
-    Executor* _executor;
+    /// IMPORTANT: _continuation should be the first member due to the
+    /// requirement of dbg script.
     std::coroutine_handle<> _continuation;
+    Executor* _executor;
 };
 
 template <typename T>

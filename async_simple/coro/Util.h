@@ -53,6 +53,10 @@ struct DetachedCoroutine {
         DetachedCoroutine get_return_object() noexcept {
             return DetachedCoroutine();
         }
+
+        // Hint to gdb script for that there is no continuation for
+        // DetachedCoroutine.
+        std::coroutine_handle<> _continuation = nullptr;
     };
 };
 
