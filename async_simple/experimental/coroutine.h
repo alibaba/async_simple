@@ -376,8 +376,18 @@ struct suspend_always {
 
 }  // namespace STD_CORO
 
-#undef STD_CORO
+namespace std {
 
+template <class _Tp>
+struct hash<STD_CORO::coroutine_handle<_Tp> > {
+    using __arg_type = STD_CORO::coroutine_handle<_Tp>;
+
+    size_t operator()(__arg_type const& __v) const noexcept {
+        return hash<void*>()(__v.address());
+    }
+};
+}  // namespace std
+#undef STD_CORO
 #endif
 
 #if !defined(HAS_NON_EXPERIMENTAL_COROUTINE)
@@ -392,20 +402,6 @@ using std::experimental::suspend_never;
 }  // namespace std
 
 #endif /* HAS_NON_EXPERIMENTAL_COROUTINE */
-
-#if !defined(_MSC_VER)
-namespace std {
-
-template <class _Tp>
-struct hash<coroutine_handle<_Tp> > {
-    using __arg_type = coroutine_handle<_Tp>;
-
-    size_t operator()(__arg_type const& __v) const noexcept {
-        return hash<void*>()(__v.address());
-    }
-};
-}  // namespace std
-#endif
 
 namespace async_simple {
 namespace coro {
