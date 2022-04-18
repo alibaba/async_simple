@@ -61,9 +61,7 @@ public:
             auto ctx = ex->checkout();
             std::thread([handle, e = ex, ctx]() mutable {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                Executor::Func f = [handle, ctx = std::move(ctx)]() mutable {
-                    handle.resume();
-                };
+                Executor::Func f = [handle]() mutable { handle.resume(); };
                 e->checkin(std::move(f), ctx);
             }).detach();
         }
@@ -319,9 +317,7 @@ struct Awaiter {
         auto ctx = ex->checkout();
         std::thread([handle, e = ex, ctx]() mutable {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            Executor::Func f = [handle, ctx = std::move(ctx)]() mutable {
-                handle.resume();
-            };
+            Executor::Func f = [handle]() mutable { handle.resume(); };
             e->checkin(std::move(f), ctx);
         }).detach();
     }
