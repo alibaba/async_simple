@@ -1177,7 +1177,16 @@ Lazy<int> lazy_fn<0>() {
 }
 }  // namespace detail
 TEST_F(LazyTest, testLazyPerf) {
+    // The code compiled by GCC with Debug would fail
+    // if test_loop is 5000.
+#ifndef NDEBUG
+    auto test_loop = 500;
+    auto expected_sum = 232500;
+#else
     auto test_loop = 5000;
+    auto expected_sum = 2325000;
+#endif
+
     auto total = 0;
 
     auto one = [](int n) -> Lazy<int> {
@@ -1194,7 +1203,7 @@ TEST_F(LazyTest, testLazyPerf) {
         }
     };
     syncAwait(loop_starter());
-    ASSERT_EQ(total, 2325000);
+    ASSERT_EQ(total, expected_sum);
 
     total = 0;
     auto chain_starter = [&]() -> Lazy<> {
@@ -1204,7 +1213,7 @@ TEST_F(LazyTest, testLazyPerf) {
         }
     };
     syncAwait(chain_starter());
-    ASSERT_EQ(total, 2325000);
+    ASSERT_EQ(total, expected_sum);
 }
 
 TEST_F(LazyTest, testcollectAllParallel) {
