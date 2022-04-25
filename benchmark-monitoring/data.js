@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1650855817657,
+  "lastUpdate": 1650856976218,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -2292,6 +2292,102 @@ window.BENCHMARK_DATA = {
             "value": 471918022.9000003,
             "unit": "ns/iter",
             "extra": "iterations: 10\ncpu: 41557320.000000075 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "68680648+ChuanqiXu9@users.noreply.github.com",
+            "name": "Chuanqi Xu",
+            "username": "ChuanqiXu9"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8f29e83c2d941d0e27e4b60fe8e45dbc7ce4bf12",
+          "message": "Remove unused using in unittest.h (#98)\n\nThe using statement in unittest.h is meaningless and it is possible to\r\nmake async_simple incompatible for user whose version of goolgetest is\r\nnot high enough.",
+          "timestamp": "2022-04-25T11:21:00+08:00",
+          "tree_id": "bf69601a91e5c6f63000f1ac3201692262a093b1",
+          "url": "https://github.com/alibaba/async_simple/commit/8f29e83c2d941d0e27e4b60fe8e45dbc7ce4bf12"
+        },
+        "date": 1650856975582,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 34462.151120000046,
+            "unit": "ns/iter",
+            "extra": "iterations: 100000\ncpu: 20794.678000000004 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 17150955.113636583,
+            "unit": "ns/iter",
+            "extra": "iterations: 44\ncpu: 12084277.272727277 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 29107.98649253563,
+            "unit": "ns/iter",
+            "extra": "iterations: 24579\ncpu: 29103.31990723788 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 15214431.404256223,
+            "unit": "ns/iter",
+            "extra": "iterations: 47\ncpu: 15209006.38297872 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 68112.36930000258,
+            "unit": "ns/iter",
+            "extra": "iterations: 38443\ncpu: 18906.144161485838 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 29486810.0299999,
+            "unit": "ns/iter",
+            "extra": "iterations: 100\ncpu: 29551.000000003212 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 103940425.2857139,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103535871.42857139 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 103375064.57143165,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 102823757.14285712 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 103962855.14285149,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103658271.42857143 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 11570658.220339244,
+            "unit": "ns/iter",
+            "extra": "iterations: 59\ncpu: 10852437.288135597 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_noWorkSteal",
+            "value": 7832626833.999995,
+            "unit": "ns/iter",
+            "extra": "iterations: 1\ncpu: 392079499.99999946 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_withWorkSteal",
+            "value": 480850929.27272457,
+            "unit": "ns/iter",
+            "extra": "iterations: 11\ncpu: 51667700.000000075 ns\nthreads: 1"
           }
         ]
       }
