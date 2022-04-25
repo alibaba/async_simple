@@ -1162,7 +1162,7 @@ TEST_F(LazyTest, testDestroyOrder) {
         co_return v;
     };
     syncAwait(test().via(&_executor));
-    EXPECT_THAT(A::destroyOrder, ElementsAre(1, 7, 1, 0, 999));
+    EXPECT_THAT(A::destroyOrder, testing::ElementsAre(1, 7, 1, 0, 999));
 }
 
 namespace detail {

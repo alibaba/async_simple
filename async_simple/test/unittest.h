@@ -22,17 +22,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-using testing::_;
-using testing::DoAll;
-using testing::ElementsAre;
-using testing::InSequence;
-using testing::Invoke;
-using testing::Return;
-using testing::ReturnRef;
-using testing::SetArgReferee;
-using testing::Throw;
-using testing::UnorderedElementsAre;
-
 class FUTURE_TESTBASE : public testing::Test {
 public:
     virtual void caseSetUp() = 0;
