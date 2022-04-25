@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1650334249696,
+  "lastUpdate": 1650855817657,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -2196,6 +2196,102 @@ window.BENCHMARK_DATA = {
             "value": 410014123.9999999,
             "unit": "ns/iter",
             "extra": "iterations: 10\ncpu: 45124979.99999993 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "RainMark@users.noreply.github.com",
+            "name": "RainMark",
+            "username": "RainMark"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1cd2ea90322f152cfda88878fb2df7afa55337da",
+          "message": "[coro] add spin lock (#96)\n\nSigned-off-by: Rain Mark <rain.by.zhou@gmail.com>",
+          "timestamp": "2022-04-25T11:01:42+08:00",
+          "tree_id": "4ef685ec47501cdadcac42229a62ec52cec7db8f",
+          "url": "https://github.com/alibaba/async_simple/commit/1cd2ea90322f152cfda88878fb2df7afa55337da"
+        },
+        "date": 1650855817145,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 21694.011555863704,
+            "unit": "ns/iter",
+            "extra": "iterations: 49066\ncpu: 13319.69999592386 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 11314450.771084307,
+            "unit": "ns/iter",
+            "extra": "iterations: 83\ncpu: 9776650.602409637 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 21020.56749510466,
+            "unit": "ns/iter",
+            "extra": "iterations: 33195\ncpu: 21018.891399307126 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 10797536.640624994,
+            "unit": "ns/iter",
+            "extra": "iterations: 64\ncpu: 10753512.5 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 51232.01196817094,
+            "unit": "ns/iter",
+            "extra": "iterations: 46373\ncpu: 14394.481702714937 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 21713366.308000002,
+            "unit": "ns/iter",
+            "extra": "iterations: 1000\ncpu: 22086.700000000903 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 104139903.16666616,
+            "unit": "ns/iter",
+            "extra": "iterations: 6\ncpu: 103849833.33333331 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 103918150.16666566,
+            "unit": "ns/iter",
+            "extra": "iterations: 6\ncpu: 103645883.33333336 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 103380467.28571522,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 102989214.28571425 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 12296397.206896638,
+            "unit": "ns/iter",
+            "extra": "iterations: 58\ncpu: 11890770.689655168 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_noWorkSteal",
+            "value": 4699596471.999996,
+            "unit": "ns/iter",
+            "extra": "iterations: 1\ncpu: 339211900.0000005 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_withWorkSteal",
+            "value": 471918022.9000003,
+            "unit": "ns/iter",
+            "extra": "iterations: 10\ncpu: 41557320.000000075 ns\nthreads: 1"
           }
         ]
       }
