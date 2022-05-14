@@ -99,7 +99,8 @@ int main(int argc, char *argv[]) {
             asio::io_context::work work(io_context);
             io_context.run();
         });
-        async_simple::coro::syncAwait(start(io_context, "127.0.0.1", "9980"));
+        async_simple::executors::SimpleExecutor e(10);
+        async_simple::coro::syncAwait(start(io_context, "172.16.136.243", "9980").via(&e));
         io_context.stop();
         thd.join();
         std::cout << "Finished ok, client quit.\n";
