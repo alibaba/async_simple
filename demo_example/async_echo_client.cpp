@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
             io_context.run();
         });
         async_simple::executors::SimpleExecutor e(16);
-        async_simple::coro::syncAwait(start(io_context, "172.16.136.243", "9980").via(&e));
+        async_simple::coro::syncAwait(start(io_context, /*172.16.136.243*/"127.0.0.1", "9980").via(&e));
         io_context.stop();
         thd.join();
         std::cout << "Finished ok, client quit.\n";
