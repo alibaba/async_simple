@@ -57,9 +57,6 @@ async_simple::coro::Lazy<> task(asio::ip::tcp::socket& socket) {
     while (true) {
         co_await send();
         co_await recv();
-        // if (count++ > 2000000UL) {
-        //     exit(11);
-        // }
         count++;
     }
 }
