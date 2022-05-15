@@ -16,16 +16,27 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <chrono>
 #include "asio_util.hpp"
 #include <async_simple/coro/SpinLock.h>
+#include <async_simple/coro/Sleep.h>
+
+using namespace std::chrono_literals;
 
 static int concurrency = 4;
 static async_simple::coro::SpinLock g_wlock, g_rlock;
+static uint64_t count = 0;
 
-using asio::ip::tcp;
+async_simple::coro::Lazy<> show_qps() {
+    while (true) {
+        co_await async_simple::coro::sleep(1s);
+        std::cout << "qps: " << count << std::endl;
+        count = 0;
+    }
+}
 
-async_simple::coro::Lazy<int> task(asio::ip::tcp::socket& socket) {
-    const int max_length = 1024;
+async_simple::coro::Lazy<> task(asio::ip::tcp::socket& socket) {
+    const int max_length = 4096;
     char write_buf[max_length] = {"hello async_simple"};
     char read_buf[max_length];
     auto send = [&]() -> async_simple::coro::Lazy<> {
@@ -46,6 +57,10 @@ async_simple::coro::Lazy<int> task(asio::ip::tcp::socket& socket) {
     while (true) {
         co_await send();
         co_await recv();
+        // if (count++ > 2000000UL) {
+        //     exit(11);
+        // }
+        count++;
     }
 }
 
@@ -59,34 +74,13 @@ async_simple::coro::Lazy<void> start(asio::io_context &io_context,
     }
     std::cout << "Connect to " << host << ":" << port << " successfully.\n";
 
-    std::vector<async_simple::coro::Lazy<int>> input;
+    std::vector<async_simple::coro::Lazy<>> input;
     for (int i = 0; i < concurrency; ++i) {
         input.push_back(task(socket));
     }
+    input.push_back(show_qps());
     co_await async_simple::coro::collectAll(std::move(input));
 
-    // const int max_length = 1024;
-    // char write_buf[max_length] = {"hello async_simple"};
-    // char read_buf[max_length];
-    // const int count = 100000;
-    // for (int i = 0; i < count; ++i) {
-    //     co_await async_write(socket, asio::buffer(write_buf, max_length));
-    //     auto [error, reply_length] = co_await async_read_some(
-    //         socket, asio::buffer(read_buf, max_length));
-    //     if (error == asio::error::eof) {
-    //         std::cout << "eof at message index: " << i << '\n';
-    //         break;
-    //     } else if (error) {
-    //         std::cout << "error: " << error.message()
-    //                   << ", message index: " << i << '\n';
-    //         throw asio::system_error(error);
-    //     }
-    //
-    //     // handle read data as your wish.
-    // }
-    //
-    // std::cout << "Finished send and recieve " << count
-    //           << " messages, client will close.\n";
     std::error_code ignore_ec;
     socket.shutdown(asio::ip::tcp::socket::shutdown_both, ignore_ec);
     io_context.stop();
@@ -99,7 +93,7 @@ int main(int argc, char *argv[]) {
             asio::io_context::work work(io_context);
             io_context.run();
         });
-        async_simple::executors::SimpleExecutor e(10);
+        async_simple::executors::SimpleExecutor e(16);
         async_simple::coro::syncAwait(start(io_context, "172.16.136.243", "9980").via(&e));
         io_context.stop();
         thd.join();
