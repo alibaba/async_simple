@@ -27,8 +27,13 @@
 #include <atomic>
 #include <cassert>
 #include <functional>
+#include <iostream>
 #include <thread>
 #include <vector>
+
+#ifdef __linux__
+#include <pthread.h>
+#endif
 
 #include <async_simple/util/Queue.h>
 namespace async_simple::util {
@@ -52,7 +57,8 @@ public:
     };
 
     explicit ThreadPool(size_t threadNum = std::thread::hardware_concurrency(),
-                        bool enableWorkSteal = false);
+                        bool enableWorkSteal = false,
+                        bool enableCoreBindings = false);
     ~ThreadPool();
 
     ThreadPool::ERROR_TYPE scheduleById(std::function<void()> fn,
@@ -64,22 +70,38 @@ public:
 private:
     std::pair<size_t, ThreadPool *> *getCurrent() const;
     int32_t _threadNum;
+
     std::vector<Queue<WorkItem>> _queues;
     std::vector<std::thread> _threads;
-    bool _enableWorkSteal;
+
     std::atomic<bool> _stop;
+    bool _enableWorkSteal;
+    bool _enableCoreBindings;
 };
 
-inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal)
+#ifdef __linux__
+static void getCurrentCpus(std::vector<uint32_t> &ids) {
+    cpu_set_t set;
+    ids.clear();
+    if (sched_getaffinity(0, sizeof(set), &set) == 0)
+        for (uint32_t i = 0; i < CPU_SETSIZE; i++)
+            if (CPU_ISSET(i, &set))
+                ids.emplace_back(i);
+}
+#endif
+
+inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal,
+                              bool enableCoreBindings)
     : _threadNum(threadNum ? threadNum : std::thread::hardware_concurrency()),
       _queues(_threadNum),
+      _stop(false),
       _enableWorkSteal(enableWorkSteal),
-      _stop(false) {
+      _enableCoreBindings(enableCoreBindings) {
     auto worker = [this](size_t id) {
         auto current = getCurrent();
         current->first = id;
         current->second = this;
-        while (true) {
+        while (!_stop) {
             WorkItem workerItem = {};
             if (_enableWorkSteal) {
                 // Try to do work steal firstly.
@@ -93,19 +115,41 @@ inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal)
 
             // If _enableWorkSteal false or work steal failed, wait for a pop
             // task.
-            if (!workerItem.fn && !_queues[id].pop(workerItem)) {
-                break;
-            }
+            if (!workerItem.fn && !_queues[id].pop(workerItem))
+                continue;
 
-            if (workerItem.fn) {
+            if (workerItem.fn)
                 workerItem.fn();
-            }
         }
     };
 
     _threads.reserve(_threadNum);
+
+#ifdef __linux__
+    // Since the CPU IDs might not start at 0 and might not be continuous
+    // in the containers,
+    // we need to get the avaialable cpus at first.
+    std::vector<uint32_t> cpu_ids;
+    if (_enableCoreBindings)
+        getCurrentCpus(cpu_ids);
+#endif
+
     for (auto i = 0; i < _threadNum; ++i) {
         _threads.emplace_back(worker, i);
+
+#ifdef __linux__
+        if (!_enableCoreBindings)
+            continue;
+
+        // Run threads per core.
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(cpu_ids[i % cpu_ids.size()], &cpuset);
+        int rc = pthread_setaffinity_np(_threads[i].native_handle(),
+                                        sizeof(cpu_set_t), &cpuset);
+        if (rc != 0)
+            std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
+#endif
     }
 }
 

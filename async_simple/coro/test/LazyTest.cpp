@@ -417,7 +417,11 @@ TEST_F(LazyTest, testCollectAll) {
 }
 
 TEST_F(LazyTest, testCollectAllBatched) {
+#ifndef NDEBUG
+    int task_num = 500;
+#else
     int task_num = 5000;
+#endif
     long total = 0;
     for (auto i = 0; i < task_num; i++) {
         total += i;
