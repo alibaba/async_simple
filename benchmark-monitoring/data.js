@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1652758314589,
+  "lastUpdate": 1652759338376,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -2580,6 +2580,102 @@ window.BENCHMARK_DATA = {
             "value": 77111868.25000027,
             "unit": "ns/iter",
             "extra": "iterations: 12\ncpu: 58010624.99999994 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "68680648+ChuanqiXu9@users.noreply.github.com",
+            "name": "Chuanqi Xu",
+            "username": "ChuanqiXu9"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b9a07075ddad3f71c0a7f4bdfb8bd153acc39f84",
+          "message": "Don't include <pthread> in ThreadPool.h (#107)\n\nGiven we are already in linux system, we could call syscall directly.",
+          "timestamp": "2022-05-17T11:46:59+08:00",
+          "tree_id": "c1f1817f929dfa72ef0d082b392435da4e64f2c3",
+          "url": "https://github.com/alibaba/async_simple/commit/b9a07075ddad3f71c0a7f4bdfb8bd153acc39f84"
+        },
+        "date": 1652759337181,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 21874.916877143743,
+            "unit": "ns/iter",
+            "extra": "iterations: 48699\ncpu: 13922.19758105916 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 12467228.710526593,
+            "unit": "ns/iter",
+            "extra": "iterations: 76\ncpu: 10731969.736842103 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 17780.154270184372,
+            "unit": "ns/iter",
+            "extra": "iterations: 39003\ncpu: 17779.496448991107 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 10036716.97101435,
+            "unit": "ns/iter",
+            "extra": "iterations: 69\ncpu: 10030318.840579713 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 59163.17829284071,
+            "unit": "ns/iter",
+            "extra": "iterations: 40254\ncpu: 17391.792120037757 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 22926913.62799999,
+            "unit": "ns/iter",
+            "extra": "iterations: 1000\ncpu: 29672.899999999558 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 103384999.42856824,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103048171.42857139 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 103957208.00000115,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103632942.85714288 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 103391530.5714288,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103112914.28571437 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 11396363.875000251,
+            "unit": "ns/iter",
+            "extra": "iterations: 56\ncpu: 10844783.928571435 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_noWorkSteal",
+            "value": 446965200.33333325,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 216419166.66666698 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_withWorkSteal",
+            "value": 78936191.64285731,
+            "unit": "ns/iter",
+            "extra": "iterations: 14\ncpu: 52190207.14285718 ns\nthreads: 1"
           }
         ]
       }
