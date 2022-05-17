@@ -27,15 +27,11 @@ namespace coro {
 // be returned. Do not syncAwait in the same executor with Lazy, this may lead
 // to a deadlock.
 template <typename LazyType>
-inline auto syncAwait(LazyType&& lazy) ->
-    typename std::decay_t<LazyType>::ValueType {
-    logicAssert(lazy._coro.operator bool(),
-                "Lazy do not have a coroutine_handle");
-    auto executor = lazy._coro.promise()._executor;
-    if (executor) {
+inline auto syncAwait(LazyType &&lazy) {
+    auto executor = lazy.getExecutor();
+    if (executor)
         logicAssert(!executor->currentThreadInExecutor(),
                     "do not sync await in the same executor with Lazy");
-    }
 
     util::Condition cond;
     using ValueType = typename std::decay_t<LazyType>::ValueType;
@@ -48,6 +44,12 @@ inline auto syncAwait(LazyType&& lazy) ->
         });
     cond.acquire();
     return std::move(value).value();
+}
+
+// A simple wrapper to ease the use.
+template <typename LazyType>
+inline auto syncAwait(LazyType &&lazy, Executor *ex) {
+    return syncAwait(std::move(std::forward<LazyType>(lazy)).via(ex));
 }
 
 }  // namespace coro

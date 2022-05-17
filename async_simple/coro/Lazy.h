@@ -383,6 +383,8 @@ public:
         return RescheduleLazy<T>(std::exchange(_coro, nullptr));
     }
 
+    Executor* getExecutor() { return _coro.promise()._executor; }
+
     // Bind an executor only. Don't re-schedule.
     //
     // Users shouldn't use `setEx` directly. `setEx` is designed
@@ -423,9 +425,6 @@ public:
 private:
     Handle _coro;
     friend class RescheduleLazy<T>;
-
-    template <typename C>
-    friend typename std::decay_t<C>::ValueType syncAwait(C&&);
 
     template <typename LazyType, typename IAlloc, typename OAlloc, bool Para>
     friend struct detail::CollectAllAwaiter;
@@ -487,6 +486,8 @@ public:
     RescheduleLazy(RescheduleLazy&& other)
         : _coro(std::exchange(other._coro, nullptr)) {}
 
+    Executor* getExecutor() { return _coro.promise()._executor; }
+
     auto operator co_await() noexcept {
         return ValueAwaiter(std::exchange(_coro, nullptr));
     }
@@ -514,9 +515,6 @@ public:
 private:
     Handle _coro;
     friend class Lazy<T>;
-
-    template <typename C>
-    friend typename std::decay_t<C>::ValueType syncAwait(C&&);
 
     template <typename LazyType, typename IAlloc, typename OAlloc, bool Para>
     friend struct detail::CollectAllAwaiter;

@@ -177,8 +177,7 @@ int main() {
     f.wait();
 
     std::cout << "Calculating char counts asynchronously by coroutine.\n";
-    auto Task = CountCharInFilesCoro(Files, 'x').via(&executor);
-    auto ResCoro = syncAwait(std::move(Task));
+    auto ResCoro = syncAwait(CountCharInFilesCoro(Files, 'x'), &executor);
     std::cout << "Files contain " << ResCoro << " 'x' chars.\n";
 
     return 0;
