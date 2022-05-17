@@ -31,10 +31,6 @@
 #include <thread>
 #include <vector>
 
-#ifdef __linux__
-#include <pthread.h>
-#endif
-
 #include <async_simple/util/Queue.h>
 namespace async_simple::util {
 class ThreadPool {
@@ -145,10 +141,10 @@ inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal,
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
         CPU_SET(cpu_ids[i % cpu_ids.size()], &cpuset);
-        int rc = pthread_setaffinity_np(_threads[i].native_handle(),
-                                        sizeof(cpu_set_t), &cpuset);
+        int rc = sched_setaffinity(_threads[i].native_handle(),
+                                   sizeof(cpu_set_t), &cpuset);
         if (rc != 0)
-            std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
+            std::cerr << "Error calling sched_setaffinity: " << rc << "\n";
 #endif
     }
 }
