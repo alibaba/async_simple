@@ -74,54 +74,54 @@ TEST_F(ConditionVariableTest, testSingleWait) {
 }
 
 TEST_F(ConditionVariableTest, testMultiWait) {
-    // auto data = 0;
-    // Notifier notifier;
+    auto data = 0;
+    Notifier notifier;
 
-    // std::atomic<int> barrier(0);
-    // auto producer = [&]() -> Lazy<void> {
-    //     std::this_thread::sleep_for(100us);
-    //     data = 1;
-    //     notifier.notify();
-    //     co_return;
-    // };
-    // auto awaiter1 = [&]() -> Lazy<void> {
-    //     co_await notifier.wait();
-    //     EXPECT_EQ(1, data);
-    //     barrier.fetch_add(1, std::memory_order_relaxed);
-    //     co_return;
-    // };
-    // auto awaiter2 = [&]() -> Lazy<void> {
-    //     co_await notifier.wait();
-    //     EXPECT_EQ(1, data);
-    //     barrier.fetch_add(1, std::memory_order_relaxed);
-    //     co_return;
-    // };
-    // awaiter2().via(&_executor).start([](Try<void> var) {});
-    // awaiter1().via(&_executor).start([](Try<void> var) {});
-    // producer().via(&_executor).start([](Try<void> var) {});
-    // // spin wait
-    // while (barrier.load(std::memory_order_relaxed) < 2)
-    //     ;
+    std::atomic<int> barrier(0);
+    auto producer = [&]() -> Lazy<void> {
+        std::this_thread::sleep_for(100us);
+        data = 1;
+        notifier.notify();
+        co_return;
+    };
+    auto awaiter1 = [&]() -> Lazy<void> {
+        co_await notifier.wait();
+        EXPECT_EQ(1, data);
+        barrier.fetch_add(1, std::memory_order_relaxed);
+        co_return;
+    };
+    auto awaiter2 = [&]() -> Lazy<void> {
+        co_await notifier.wait();
+        EXPECT_EQ(1, data);
+        barrier.fetch_add(1, std::memory_order_relaxed);
+        co_return;
+    };
+    awaiter2().via(&_executor).start([](Try<void> var) {});
+    awaiter1().via(&_executor).start([](Try<void> var) {});
+    producer().via(&_executor).start([](Try<void> var) {});
+    // spin wait
+    while (barrier.load(std::memory_order_relaxed) < 2)
+        ;
 
-    // notifier.reset();
-    // std::atomic<size_t> latch(2);
-    // auto producer2 = [&]() -> Lazy<void> {
-    //     data = 0;
-    //     notifier.notify();
-    //     latch.fetch_sub(1u, std::memory_order_relaxed);
-    //     co_return;
-    // };
-    // auto awaiter3 = [&]() -> Lazy<void> {
-    //     co_await notifier.wait();
-    //     EXPECT_EQ(0, data);
-    //     latch.fetch_sub(1u, std::memory_order_relaxed);
-    //     co_return;
-    // };
-    // producer2().via(&_executor).start([](Try<void> var) {});
-    // awaiter3().via(&_executor).start([](Try<void> var) {});
-    // while (latch.load(std::memory_order_relaxed))
-    //     ;
-    // EXPECT_EQ(0, data);
+    notifier.reset();
+    std::atomic<size_t> latch(2);
+    auto producer2 = [&]() -> Lazy<void> {
+        data = 0;
+        notifier.notify();
+        latch.fetch_sub(1u, std::memory_order_relaxed);
+        co_return;
+    };
+    auto awaiter3 = [&]() -> Lazy<void> {
+        co_await notifier.wait();
+        EXPECT_EQ(0, data);
+        latch.fetch_sub(1u, std::memory_order_relaxed);
+        co_return;
+    };
+    producer2().via(&_executor).start([](Try<void> var) {});
+    awaiter3().via(&_executor).start([](Try<void> var) {});
+    while (latch.load(std::memory_order_relaxed))
+        ;
+    EXPECT_EQ(0, data);
 }
 
 TEST_F(ConditionVariableTest, testSingleWaitPredicate) {

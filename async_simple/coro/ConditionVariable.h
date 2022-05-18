@@ -24,7 +24,7 @@ namespace coro {
 template <class Lock>
 class ConditionVariableAwaiter;
 
-template <class Lock = void>
+template <class Lock>
 class ConditionVariable {
 public:
     ConditionVariable() noexcept {}
@@ -46,7 +46,7 @@ private:
     std::atomic<ConditionVariableAwaiter<Lock>*> _awaiters = nullptr;
 };
 
-template <class Lock = void>
+template <class Lock>
 class ConditionVariableAwaiter {
 public:
     ConditionVariableAwaiter(ConditionVariable<Lock>* cv, Lock& lock) noexcept
@@ -54,7 +54,7 @@ public:
 
     bool await_ready() const noexcept { return false; }
 
-    bool await_suspend(std::coroutine_handle<> continuation) noexcept {
+    void await_suspend(std::coroutine_handle<> continuation) noexcept {
         _continuation = continuation;
         std::unique_lock<Lock> lock{_lock, std::adopt_lock};
         auto awaitings = _cv->_awaiters.load(std::memory_order_relaxed);
@@ -63,7 +63,6 @@ public:
         } while (!_cv->_awaiters.compare_exchange_weak(
             awaitings, this, std::memory_order_acquire,
             std::memory_order_relaxed));
-        return true;
     }
     void await_resume() const noexcept {}
 
@@ -100,15 +99,17 @@ inline void ConditionVariable<Lock>::notify() noexcept {
 template <class Lock>
 inline void ConditionVariable<Lock>::resumeWaiters(
     ConditionVariableAwaiter<Lock>* awaiters) {
-    for (auto head = awaiters; head; head = head->_next) {
-        head->_continuation.resume();
+    while (awaiters) {
+        auto* prev = awaiters;
+        awaiters = awaiters->_next;
+        prev->_continuation.resume();
     }
 }
 
 template <>
-class ConditionVariableAwaiter<>;
+class ConditionVariableAwaiter<void>;
 template <>
-class ConditionVariable<> {
+class ConditionVariable<void> {
 public:
     using pointer_type = void*;
 
@@ -120,24 +121,24 @@ public:
     ConditionVariable& operator=(const ConditionVariable&) = delete;
 
     void notify() noexcept;
-    ConditionVariableAwaiter<> wait() noexcept;
+    ConditionVariableAwaiter<void> wait() noexcept;
     void reset() noexcept;
 
 private:
-    void resumeWaiters(ConditionVariableAwaiter<>* awaiters);
+    void resumeWaiters(ConditionVariableAwaiter<void>* awaiters);
 
 private:
-    friend class ConditionVariableAwaiter<>;
+    friend class ConditionVariableAwaiter<void>;
     std::atomic<pointer_type> _awaiters = nullptr;
 };
 
 template <>
-class ConditionVariableAwaiter<> {
+class ConditionVariableAwaiter<void> {
 public:
     using pointer_type = void*;
 
 public:
-    ConditionVariableAwaiter(ConditionVariable<>* cv) noexcept : _cv(cv) {}
+    ConditionVariableAwaiter(ConditionVariable<void>* cv) noexcept : _cv(cv) {}
 
     bool await_ready() const noexcept {
         return static_cast<pointer_type>(_cv) ==
@@ -150,7 +151,7 @@ public:
             if (awaitings == static_cast<pointer_type>(_cv)) {
                 return false;
             }
-            _next = static_cast<ConditionVariableAwaiter<>*>(awaitings);
+            _next = static_cast<ConditionVariableAwaiter<void>*>(awaitings);
         } while (!_cv->_awaiters.compare_exchange_weak(
             awaitings, static_cast<pointer_type>(this),
             std::memory_order_release, std::memory_order_acquire));
@@ -159,42 +160,42 @@ public:
     void await_resume() const noexcept {}
 
 public:
-    ConditionVariable<>* _cv;
+    ConditionVariable<void>* _cv;
 
 private:
-    friend class ConditionVariable<>;
-    ConditionVariableAwaiter<>* _next = nullptr;
+    friend class ConditionVariable<void>;
+    ConditionVariableAwaiter<void>* _next = nullptr;
     std::coroutine_handle<> _continuation;
 };
 
-inline ConditionVariableAwaiter<> ConditionVariable<>::wait() noexcept {
-    return ConditionVariableAwaiter<>{this};
+inline ConditionVariableAwaiter<void> ConditionVariable<void>::wait() noexcept {
+    return ConditionVariableAwaiter<void>{this};
 }
 
-inline void ConditionVariable<>::notify() noexcept {
+inline void ConditionVariable<void>::notify() noexcept {
     pointer_type self = static_cast<pointer_type>(this);
     pointer_type awaitings =
         _awaiters.exchange(self, std::memory_order_acq_rel);
     if (awaitings != self) {
-        resumeWaiters(static_cast<ConditionVariableAwaiter<>*>(awaitings));
+        resumeWaiters(static_cast<ConditionVariableAwaiter<void>*>(awaitings));
     }
 }
 
-inline void ConditionVariable<>::reset() noexcept {
+inline void ConditionVariable<void>::reset() noexcept {
     pointer_type self = static_cast<pointer_type>(this);
     _awaiters.compare_exchange_strong(self, nullptr, std::memory_order_relaxed);
 }
 
-inline void ConditionVariable<>::resumeWaiters(
-    ConditionVariableAwaiter<>* awaiters) {
+inline void ConditionVariable<void>::resumeWaiters(
+    ConditionVariableAwaiter<void>* awaiters) {
     while (awaiters) {
-        auto *prev = awaiters;
+        auto* prev = awaiters;
         awaiters = awaiters->_next;
         prev->_continuation.resume();
     }
 }
 
-using Notifier = ConditionVariable<>;
+using Notifier = ConditionVariable<void>;
 
 }  // namespace coro
 }  // namespace async_simple
