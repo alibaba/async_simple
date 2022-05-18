@@ -201,6 +201,17 @@ TEST_F(LazyTest, testSimpleAsync) {
     ASSERT_EQ(101, syncAwait(test().via(&_executor)));
 }
 
+TEST_F(LazyTest, testSimpleAsync2) {
+    auto test = [this]() -> Lazy<int> {
+        CHECK_EXECUTOR(&_executor);
+        auto ret = co_await plusOne();
+        CHECK_EXECUTOR(&_executor);
+        co_return ret;
+    };
+    triggerValue(100);
+    ASSERT_EQ(101, syncAwait(test(), &_executor));
+}
+
 TEST_F(LazyTest, testVia) {
     auto test = [this]() -> Lazy<int> {
         auto tid = std::this_thread::get_id();
