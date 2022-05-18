@@ -128,6 +128,10 @@ inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal,
     std::vector<uint32_t> cpu_ids;
     if (_enableCoreBindings)
         getCurrentCpus(cpu_ids);
+#else
+    // Avoid unused member warning.
+    // [[maybe_unused]] in non-static data members is ignored in GCC.
+    (void)_enableCoreBindings;
 #endif
 
     for (auto i = 0; i < _threadNum; ++i) {
