@@ -187,8 +187,10 @@ inline void ConditionVariable<>::reset() noexcept {
 
 inline void ConditionVariable<>::resumeWaiters(
     ConditionVariableAwaiter<>* awaiters) {
-    for (auto head = awaiters; head; head = head->_next) {
-        head->_continuation.resume();
+    while (awaiters) {
+        auto *prev = awaiters;
+        awaiters = awaiters->_next;
+        prev->_continuation.resume();
     }
 }
 
