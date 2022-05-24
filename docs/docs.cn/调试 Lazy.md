@@ -3,6 +3,7 @@
 # Print Coroutine Frame
 
 我们可以在 gdb/lldb 中通过以下命令打印协程帧的内存：
+
 ```
 p __coro_frame
 ```
@@ -10,6 +11,7 @@ p __coro_frame
 # Print Promise
 
 我们可以在 gdb/lldb 中通过以下命令打印当前协程 Promise 对象的内容。
+
 ```
 p __promise
 ```
@@ -19,8 +21,21 @@ p __promise
 此功能由 dbg/LazyStack.py 脚本实现，只对 async_simple 有效。
 
 我们可以通过以下命令打印出无栈协程的异步调用栈。
+
 ```
-source /path/to/async_simple/dbg/LazyStack.py
-lazy-bt # if you are in stackless coroutine context
-lazy-bt 0xffffffff # 0xffffffff should be the address of corresponding frame
+(gdb) source /path/to/async_simple/dbg/LazyStack.py
+(gdb) lazy-bt # if you are in stackless coroutine context
+(gdb) lazy-bt 0xffffffff # 0xffffffff should be the address of corresponding frame
+```
+
+# Print any coroutine frame
+
+本节所描述的方法只对 Clang (>= 15.x) 生效。此功能由 dbg/LazyStack.py 脚本实现，只对 async_simple 有效。
+
+`p __coro_frame` 可以打印当前协程帧中的内容，但无法打印非当前协程帧中的内容。
+我们可以使用 dbg/LazyStack.py 中实现的 `show-coro-frame` 命令来打印任意协程的内容。
+
+```
+(gdb) source /path/to/async_simple/dbg/LazyStack.py
+(gdb) show-coro-frame 0xffffffff # 0xffffffff should be the address of corresponding frame
 ```

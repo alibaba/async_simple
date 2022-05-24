@@ -9,6 +9,7 @@ The document is based on Clang (>= 11.0.1) only now.
 # Print Coroutine Frame
 
 To print the layout of a coroutine frame, we could use following command to print the layout of the frame for the current coroutine in gdb/lldb:
+
 ```
 p __coro_frame
 ```
@@ -16,6 +17,7 @@ p __coro_frame
 # Print Promise
 
 Promise is important data structure for each kind of coroutine. We could use following command to print the Promise object for the current frame in gdb/lld:
+
 ```
 p __promise
 ```
@@ -23,8 +25,20 @@ p __promise
 # Print asynchronous call stack
 
 This section is specified to async_simple. To get the backtrace for stackless coroutine in gdb, we could run:
+
 ```
-source /path/to/async_simple/dbg/LazyStack.py
-lazy-bt # if you are in stackless coroutine context
-lazy-bt 0xffffffff # 0xffffffff should be the address of corresponding frame
+(gdb) source /path/to/async_simple/dbg/LazyStack.py
+(gdb) lazy-bt # if you are in stackless coroutine context
+(gdb) lazy-bt 0xffffffff # 0xffffffff should be the address of corresponding frame
+```
+
+# Print any coroutine frame
+
+This section is specified to async_simple and it requires Clang (>= 15.x).
+
+To print any coroutine frame in gdb, we can run:
+
+```
+(gdb) source /path/to/async_simple/dbg/LazyStack.py
+(gdb) show-coro-frame 0xffffffff # 0xffffffff should be the address of corresponding frame
 ```

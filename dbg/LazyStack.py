@@ -100,7 +100,7 @@ class StacklessCoroutineFrameDecorator(FrameDecorator):
         self.resume_func = dereference(self.coro_frame.resume_addr)
         self.resume_func_block = gdb.block_for_pc(self.resume_func)
         if self.resume_func_block == None:
-            raise 'Not stackless coroutine.'
+            raise Exception('Not stackless coroutine.')
         self.line_info = gdb.find_pc_line(self.resume_func)
 
     def address(self):
@@ -119,6 +119,9 @@ class StacklessCoroutineFrameDecorator(FrameDecorator):
     def function(self):
         return self.resume_func_block.function.print_name
 
+    def func_linkage_name(self):
+        return self.resume_func_block.function.linkage_name
+
     def line(self):
         return self.line_info.line
 
@@ -129,14 +132,18 @@ class StripDecorator(FrameDecorator):
         f = frame.function()
         self.function_name = f
         self.elided_frames = None
+        self.linkage_name = frame.func_linkage_name() + ".coro_frame_ty"
         if not isinstance(f, str):
             self.template_arguments = []
             return
-    
+
     def __str__(self, shift = 2):
         addr = "" if self.address() == None else '%#x' % self.address() + " in "
         location = "" if self.filename() == None else " at " + self.filename() + ":" + str(self.line())
         return addr + self.function() + " " + str([str(args) for args in self.frame_args()]) + location
+
+    def frame_type_str(self):
+        return self.linkage_name
 
 class CoroutineFilter:
     def create_coroutine_frames(self, frame, task_addr, append_first = False):
@@ -184,3 +191,32 @@ class LazyStack(gdb.Command):
         return
 
 LazyStack()
+
+class ShowCoroFrame(gdb.Command):
+    def __init__(self):
+        super(ShowCoroFrame, self).__init__("show-coro-frame", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        argv = gdb.string_to_argv(arg)
+        if len(argv) != 1:
+            print("usage: show-coro-frame <address of coroutine frame>")
+            return
+
+        addr = int(argv[0], 16)
+        block = gdb.block_for_pc(long(gdb.Value(addr).cast(types.long_pointer).dereference()))
+        if block == None:
+            print "block " + str(addr) + "  is none."
+            return
+
+        # Disable demangling since gdb will treat names starting with `_Z`(The marker for Itanium ABI) specially.
+        gdb.execute("set demangle-style none")
+
+        Decorator = StacklessCoroutineFrameDecorator(None, StacklessCoroutineFrame(addr))
+        StrippedDecorator = StripDecorator(Decorator)
+        coro_frame_ptr_type = gdb.lookup_type(StrippedDecorator.frame_type_str()).pointer()
+        coro_frame = gdb.Value(addr).cast(coro_frame_ptr_type).dereference()
+
+        gdb.execute("set demangle-style auto")
+        gdb.write(coro_frame.format_string(pretty_structs = True))
+
+ShowCoroFrame()
