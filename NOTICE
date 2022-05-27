@@ -1,0 +1,39 @@
+========================================================
+async_simple
+Copyright (c) 2019-2022, Alibaba Group Holding Limited
+Licensed under the Apache License, Version 2.0
+===================================================================
+This product contains various third-party components under other open source licenses.
+This section summarizes those components and their licenses.
+Apache Software Foundation License 2.0
+--------------------------------------
+async_simple/Invoke.h
+async_simple/MoveWrapper.h
+async_simple/Try.h
+async_simple/uthread/internal/thread.cc  
+async_simple/uthread/internal/thread.h  
+async_simple/uthread/internal/thread_impl.h
+
+Apache-2.0 WITH LLVM-exception
+--------------------------------------
+async_simple/experimental/coroutine.h
+
+Boost Software License, Version 1.0
+--------------------------------------
+async_simple/uthread/internal/jump_arm64_aapcs_elf_gas.S
+async_simple/uthread/internal/jump_x86_64_sysv_elf_gas.S 
+async_simple/uthread/internal/make_arm64_aapcs_elf_gas.S 
+async_simple/uthread/internal/make_x86_64_sysv_elf_gas.S 
+async_simple/uthread/internal/ontop_arm64_aapcs_elf_gas.S 
+async_simple/uthread/internal/ontop_x86_64_sysv_elf_gas.S
+
+demo_example/asio
+----------------------------------
+Copyright (c) 2003-2021 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+
+Distributed under the Boost Software License, Version 1.0. (See accompanying
+file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+=================================================================== 
+The Future/Promise, Lazy and other components in this library borrow various ideas from folly.
+The http in demo_example borrows ideas from the example in the asio library, too.
