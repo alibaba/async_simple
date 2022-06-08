@@ -16,9 +16,7 @@
 #ifndef ASYNC_SIMPLE_EXECUTOR_H
 #define ASYNC_SIMPLE_EXECUTOR_H
 
-#include <async_simple/IOExecutor.h>
 #include <async_simple/experimental/coroutine.h>
-#include <async_simple/util/Condition.h>
 #include <chrono>
 #include <functional>
 #include <string>
@@ -58,6 +56,9 @@ struct CurrentExecutor {};
 //
 // User should derive from Executor and implement their scheduling
 // strategy.
+
+class IOExecutor;
+
 class Executor {
 public:
     // Context is an indentification for the context where an executor
@@ -71,8 +72,6 @@ public:
     // The schedulable function. Func should accept no argument and
     // return void.
     using Func = std::function<void()>;
-    class Awaitable;
-    class Awaiter;
     class TimeAwaitable;
     class TimeAwaiter;
 
@@ -110,37 +109,15 @@ public:
 
     const std::string &name() const { return _name; }
 
-    // Schedule inside a coroutine.
-    // Use
-    //  co_await executor.schedule()
-    // to schedule current execution
-    //
     // Use
     //  co_await executor.after(sometime)
     // to schedule current execution after some time.
-    Awaitable schedule();
     TimeAwaitable after(Duration dur);
 
     // IOExecutor accepts IO read/write requests.
     // Return nullptr if the exeuctor doesn't offer an IOExecutor.
     virtual IOExecutor *getIOExecutor() {
         throw std::logic_error("Not implemented");
-    }
-
-    // This method will block current thread until func complete.
-    // Return false if it fails to schedule func. Return true
-    // otherwise.
-    bool syncSchedule(Func func) {
-        util::Condition cond;
-        auto ret = schedule([f = std::move(func), &cond]() {
-            f();
-            cond.release();
-        });
-        if (!ret) {
-            return false;
-        }
-        cond.acquire();
-        return true;
     }
 
 private:
@@ -151,48 +128,8 @@ private:
         }).detach();
     }
 
+private:
     std::string _name;
-};
-
-// Awaiter to implement Executor::schedule.
-class Executor::Awaiter {
-public:
-    Awaiter(Executor *ex) : _ex(ex) {}
-
-public:
-    bool await_ready() const noexcept {
-        if (_ex->currentThreadInExecutor()) {
-            return true;
-        }
-        return false;
-    }
-
-    template <typename PromiseType>
-    void await_suspend(std::coroutine_handle<PromiseType> continuation) {
-        std::function<void()> func = [c = continuation]() mutable {
-            c.resume();
-        };
-        _ex->schedule(func);
-    }
-    void await_resume() const noexcept {}
-
-private:
-    Executor *_ex;
-};
-
-// Awaitable to implement Executor::schedule.
-class Executor::Awaitable {
-public:
-    Awaitable(Executor *ex) : _ex(ex) {}
-
-    auto coAwait(Executor *) { return Executor::Awaiter(_ex); }
-
-private:
-    Executor *_ex;
-};
-
-Executor::Awaitable inline Executor::schedule() {
-    return Executor::Awaitable(this);
 };
 
 // Awaiter to implement Executor::after.
