@@ -47,4 +47,4 @@ private:
 
 }  // namespace async_simple
 
-#endif  // ASYNC_SIMPLE_VALUE_H
+#endif  // ASYNC_SIMPLE_MOVEWRAPPER_H

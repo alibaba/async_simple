@@ -15,6 +15,9 @@
  */
 #include "Lazy.bench.h"
 
+#include "async_simple/coro/Collect.h"
+#include "async_simple/coro/Lazy.h"
+#include "async_simple/coro/SyncAwait.h"
 #include "async_simple/executors/SimpleExecutor.h"
 
 template <template <typename> typename LazyType, int N>

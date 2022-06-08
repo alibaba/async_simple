@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "async_simple/coro/Lazy.h"
 #include "benchmark/benchmark.h"
 
 void async_simple_Lazy_chain(benchmark::State& state);

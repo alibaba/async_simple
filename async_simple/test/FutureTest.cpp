@@ -15,6 +15,7 @@
  */
 #include <exception>
 
+#include <async_simple/Collect.h>
 #include <async_simple/Future.h>
 #include <async_simple/executors/SimpleExecutor.h>
 #include <async_simple/test/unittest.h>

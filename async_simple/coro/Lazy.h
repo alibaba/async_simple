@@ -18,8 +18,8 @@
 
 #include <async_simple/Common.h>
 #include <async_simple/Try.h>
-#include <async_simple/coro/CoAwait.h>
-#include <async_simple/coro/Util.h>
+#include <async_simple/coro/DetachedCoroutine.h>
+#include <async_simple/coro/ViaCoroutine.h>
 #include <async_simple/experimental/coroutine.h>
 #include <atomic>
 #include <cstdio>
@@ -534,7 +534,5 @@ inline Lazy<void> detail::LazyPromise<void>::get_return_object() noexcept {
 
 }  // namespace coro
 }  // namespace async_simple
-
-#include <async_simple/coro/LazyHelper.h>
 
 #endif

@@ -18,7 +18,7 @@
 
 #include <async_simple/Common.h>
 #include <async_simple/Try.h>
-#include <async_simple/coro/Event.h>
+#include <async_simple/coro/CountEvent.h>
 #include <async_simple/coro/Lazy.h>
 #include <async_simple/experimental/coroutine.h>
 #include <exception>

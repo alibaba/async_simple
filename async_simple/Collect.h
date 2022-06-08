@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* This header implements Helper for Future/Promise.
- *  It got included in `Future.h` so that the user shouldn't
- * include this directly.
- */
-#ifndef ASYNC_SIMPLE_HELPER_H
-#define ASYNC_SIMPLE_HELPER_H
+#ifndef ASYNC_SIMPLE_COLLECT_H
+#define ASYNC_SIMPLE_COLLECT_H
 
 #include <async_simple/Common.h>
+#include <async_simple/Future.h>
 #include <async_simple/Try.h>
 #include <exception>
 #include <iterator>
@@ -97,19 +94,6 @@ collectAll(Iter begin, Iter end) {
     return future;
 }
 
-// Make a ready Future
-template <typename T>
-Future<T> makeReadyFuture(T&& v) {
-    return Future<T>(Try<T>(std::forward<T>(v)));
-}
-template <typename T>
-Future<T> makeReadyFuture(Try<T>&& t) {
-    return Future<T>(std::move(t));
-}
-template <typename T>
-Future<T> makeReadyFuture(std::exception_ptr ex) {
-    return Future<T>(Try<T>(ex));
-}
 }  // namespace async_simple
 
-#endif  // ASYNC_SIMPLE_TRY_H
+#endif  // ASYNC_SIMPLE_COLLECT_H

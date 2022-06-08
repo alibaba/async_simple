@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef ASYNC_SIMPLE_CORO_UTIL_H
-#define ASYNC_SIMPLE_CORO_UTIL_H
+#ifndef ASYNC_SIMPLE_CORO_DETACHED_COROUTINE_H
+#define ASYNC_SIMPLE_CORO_DETACHED_COROUTINE_H
 
 #include <async_simple/Common.h>
 #include <async_simple/experimental/coroutine.h>

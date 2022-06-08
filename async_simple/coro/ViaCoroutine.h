@@ -22,8 +22,8 @@
  * ready we could checkin back. In this way, we simulate the process
  * that the awaitable get scheduled by the executor.
  */
-#ifndef ASYNC_SIMPLE_CORO_CO_AWAIT_H
-#define ASYNC_SIMPLE_CORO_CO_AWAIT_H
+#ifndef ASYNC_SIMPLE_CORO_VIA_COROUTINE_H
+#define ASYNC_SIMPLE_CORO_VIA_COROUTINE_H
 
 #include <async_simple/Common.h>
 #include <async_simple/Executor.h>
@@ -129,15 +129,14 @@ inline ViaCoroutine ViaCoroutine::promise_type::get_return_object() noexcept {
 template <typename Awaiter>
 struct [[nodiscard]] ViaAsyncAwaiter {
     template <typename Awaitable>
-    ViaAsyncAwaiter(Executor* ex, Awaitable&& awaitable)
+    ViaAsyncAwaiter(Executor * ex, Awaitable && awaitable)
         : _ex(ex),
           _awaiter(detail::getAwaiter(std::forward<Awaitable>(awaitable))),
           _viaCoroutine(ViaCoroutine::create(ex)) {}
 
     using HandleType = std::coroutine_handle<>;
-    using AwaitSuspendResultType =
-        decltype(std::declval<Awaiter&>().await_suspend(
-            std::declval<HandleType>()));
+    using AwaitSuspendResultType = decltype(
+        std::declval<Awaiter&>().await_suspend(std::declval<HandleType>()));
     bool await_ready() { return _awaiter.await_ready(); }
 
     AwaitSuspendResultType await_suspend(HandleType continuation) {

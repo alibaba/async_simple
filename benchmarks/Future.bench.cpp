@@ -15,6 +15,8 @@
  */
 #include "Future.bench.h"
 
+#include "async_simple/Collect.h"
+#include "async_simple/Future.h"
 #include "async_simple/executors/SimpleExecutor.h"
 
 #include <memory>
