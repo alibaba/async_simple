@@ -18,6 +18,7 @@
 
 #include <async_simple/Common.h>
 #include <async_simple/experimental/coroutine.h>
+#include <async_simple/util/Condition.h>
 #include <exception>
 
 namespace async_simple {
