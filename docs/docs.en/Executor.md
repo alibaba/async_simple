@@ -1,6 +1,6 @@
 ## Executor
 
-Executor is the key component for shceduling coroutine. A lot of the open-sourced coroutine frameworks would offer an executor, which contains thread pool and corresponding scheduling strategy. When user uses these frameworks, user couldn't use his/her original executor. So future\_lite designs a set of APIs to decouple coroutine with Executor. Programmers could use their original executor in async_simple by implementing these APIs.
+Executor is the key component for shceduling coroutine. A lot of the open-sourced coroutine frameworks would offer an executor, which contains thread pool and corresponding scheduling strategy. When user uses these frameworks, user couldn't use his/her original executor. So async_simple designs a set of APIs to decouple coroutine with Executor. Programmers could use their original executor in async_simple by implementing these APIs.
 
 ### Use Executor
 
@@ -50,7 +50,7 @@ public:
 
 #### SimpleExecutor
 
-SimpleExecutor is a simple executor used in unit test of future\_lite. SimpleExecutor implements the Executor mentioned above including a ThreadPool in `ThreadPool.h` and a simple SimpleIOExecutor which is used for submitting asynchronous IO request. User could implement their executor by mimicing the style of SimpleExecutor.
+SimpleExecutor is a simple executor used in unit test of async_simple. SimpleExecutor implements the Executor mentioned above including a ThreadPool in `ThreadPool.h` and a simple SimpleIOExecutor which is used for submitting asynchronous IO request. User could implement their executor by mimicing the style of SimpleExecutor.
 
 - Note: `SimpleExecutor/SimpleIOExecutor/ThreadPool.h` is designed to use in unit test. It may not be good enough to use in industry production.
 - The executor used in alibaba actually isn't open-sourced yet.

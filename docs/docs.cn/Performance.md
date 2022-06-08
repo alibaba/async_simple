@@ -166,5 +166,5 @@ async_simple_Lazy_collectAll    7880137 ns      7785291 ns           90
 ```
 
 从结果上看，Lazy 的切换性能并不坏。
-需要说明的是，这只是一个高度裁剪的测试用于简单展示 `future\_lite`，并不做任何性能比较的目的。
+需要说明的是，这只是一个高度裁剪的测试用于简单展示 `async_simple`，并不做任何性能比较的目的。
 而且 `Folly::Task` 有着更多的功能，例如 `Folly::Task` 在切换时会在 `AsyncStack` 记录上下文以增强程序的 Debug 性。
