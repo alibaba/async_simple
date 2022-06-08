@@ -1,6 +1,6 @@
 ## Executor
 
-Executor是调度协程的关键组件。绝大多数开源协程框架提供内置的调度器，一般包含线程池和调度策略。基于这些协程框架开发时，用户不得不抛弃原有调度器。考虑到这一点，future\_lite设计一套抽象API接口，解耦合了Executor与协程。用户实现这些抽象API接口即可将自己的调度器接入future\_lite，Lazy和Uthread协程在运行时则通过这些接口被调度执行。
+Executor是调度协程的关键组件。绝大多数开源协程框架提供内置的调度器，一般包含线程池和调度策略。基于这些协程框架开发时，用户不得不抛弃原有调度器。考虑到这一点，async_simple 设计一套抽象API接口，解耦合了Executor与协程。用户实现这些抽象API接口即可将自己的调度器接入 async_simple，Lazy和Uthread协程在运行时则通过这些接口被调度执行。
 
 ### 使用Executor
 
@@ -51,7 +51,7 @@ public:
 
 #### SimpleExecutor
 
-SimpleExecutor 为 future\_lite单元测试中使用的 Executor。SimpleExecutor 实现前面提到的Executor接口，包含`ThreadPool.h`中固定线程数的线程池，还包含 SimpleIOExecutor 用于异步提交本地IO请求。用户可以参考 SimpleExecutor 实现来接入业务的私有 Executor。
+SimpleExecutor 为 async_simple 单元测试中使用的 Executor。SimpleExecutor 实现前面提到的Executor接口，包含`ThreadPool.h`中固定线程数的线程池，还包含 SimpleIOExecutor 用于异步提交本地IO请求。用户可以参考 SimpleExecutor 实现来接入业务的私有 Executor。
 
 - 注意：`SimpleExecutor/SimpleIOExecutor/ThreadPool.h`设计为单元测试使用，不建议用于生产环境使用。从代码目录executors可找到完整代码。
 - alibaba内部私有Executor目前暂未开源。
