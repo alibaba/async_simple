@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "async_simple/Future.h"
 #include "benchmark/benchmark.h"
 
 void Future_chain(benchmark::State& state);

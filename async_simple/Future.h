@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef ASYNC_SIMPLE_H
-#define ASYNC_SIMPLE_H
+#ifndef ASYNC_SIMPLE_FUTURE_H
+#define ASYNC_SIMPLE_FUTURE_H
 
 #include <async_simple/Executor.h>
 #include <async_simple/FutureState.h>
@@ -308,9 +308,20 @@ private:
     collectAll(Iter begin, Iter end);
 };
 
+// Make a ready Future
+template <typename T>
+Future<T> makeReadyFuture(T&& v) {
+    return Future<T>(Try<T>(std::forward<T>(v)));
+}
+template <typename T>
+Future<T> makeReadyFuture(Try<T>&& t) {
+    return Future<T>(std::move(t));
+}
+template <typename T>
+Future<T> makeReadyFuture(std::exception_ptr ex) {
+    return Future<T>(Try<T>(ex));
+}
+
 }  // namespace async_simple
 
-///////////////////////////////////
-#include <async_simple/Helper.h>
-
-#endif  // ASYNC_SIMPLE_H
+#endif  // ASYNC_SIMPLE_FUTURE_H

@@ -15,6 +15,7 @@
  */
 #include <async_simple/coro/Lazy.h>
 #include <async_simple/coro/Sleep.h>
+#include <async_simple/coro/SyncAwait.h>
 #include <async_simple/executors/SimpleExecutor.h>
 #include <async_simple/test/unittest.h>
 #include <exception>
