@@ -18,12 +18,12 @@
 
 #include <stdexcept>
 
-#if defined(__clang__) && __clang_major__ < 12
-#define LIKELY
-#define UNLIKELY
-#else
+#if __has_cpp_attribute(likely) && __has_cpp_attribute(unlikely)
 #define LIKELY [[likely]]
 #define UNLIKELY [[unlikely]]
+#else
+#define LIKELY
+#define UNLIKELY
 #endif
 
 #ifdef _WIN32
