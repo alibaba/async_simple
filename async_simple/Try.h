@@ -20,6 +20,8 @@
 #include <async_simple/Unit.h>
 #include <cassert>
 #include <exception>
+#include <new>
+#include <utility>
 
 namespace async_simple {
 
