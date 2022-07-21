@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef ASYNC_SIMPLE_CONECTION_HPP
-#define ASYNC_SIMPLE_CONECTION_HPP
+#ifndef ASYNC_SIMPLE_CONNECTION_HPP
+#define ASYNC_SIMPLE_CONNECTION_HPP
 
 #include <fstream>
 #include "../../asio_util.hpp"

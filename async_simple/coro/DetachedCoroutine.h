@@ -31,7 +31,7 @@ namespace detail {
 
 // A detached coroutine. It would start to execute
 // immediately and throws the exception it met.
-// This could be used as the root of a coruotine
+// This could be used as the root of a coroutine
 // execution chain.
 //
 // But the user shouldn't use this directly. It may be

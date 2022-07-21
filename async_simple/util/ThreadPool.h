@@ -124,7 +124,7 @@ inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal,
 #ifdef __linux__
     // Since the CPU IDs might not start at 0 and might not be continuous
     // in the containers,
-    // we need to get the avaialable cpus at first.
+    // we need to get the available cpus at first.
     std::vector<uint32_t> cpu_ids;
     if (_enableCoreBindings)
         getCurrentCpus(cpu_ids);

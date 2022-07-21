@@ -50,7 +50,7 @@ struct CurrentExecutor {};
 // Executor is a scheduler for functions.
 //
 // Executor is a key component for scheduling coroutines.
-// Considering that there should be already an exeuctor
+// Considering that there should be already an executor
 // in most production-level programs, Executor is designed
 // to be able to fit the scheduling strategy in existing programs.
 //
@@ -61,7 +61,7 @@ class IOExecutor;
 
 class Executor {
 public:
-    // Context is an indentification for the context where an executor
+    // Context is an identification for the context where an executor
     // should run. See checkin/checkout for details.
     using Context = void *;
     static constexpr Context NULLCTX = nullptr;
@@ -95,7 +95,7 @@ public:
     }
 
     // checkout() return current "Context", which defined by executor
-    // implementation, then checkin(func, "Context") should schdule func to the
+    // implementation, then checkin(func, "Context") should schedule func to the
     // same "Context" as before.
     virtual size_t currentContextId() const { return 0; };
     virtual Context checkout() { return NULLCTX; }
@@ -115,7 +115,7 @@ public:
     TimeAwaitable after(Duration dur);
 
     // IOExecutor accepts IO read/write requests.
-    // Return nullptr if the exeuctor doesn't offer an IOExecutor.
+    // Return nullptr if the executor doesn't offer an IOExecutor.
     virtual IOExecutor *getIOExecutor() {
         throw std::logic_error("Not implemented");
     }

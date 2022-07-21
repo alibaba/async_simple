@@ -53,7 +53,7 @@ using AIOCallback = std::function<void(io_event_t&)>;
 
 // The IOExecutor would accept IO read/write requests.
 // After the user implements an IOExecutor, he should associate
-// the IOExecutor with the corresponding Exectuor implementation.
+// the IOExecutor with the corresponding Executor implementation.
 class IOExecutor {
 public:
     using Func = std::function<void()>;

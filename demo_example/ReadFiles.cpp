@@ -128,7 +128,7 @@ Future<uint64_t> CountCharInFilesAsync(const std::vector<FileName> &Files,
 }
 
 /////////////////////////////////////////
-/////////// Corotuine Part //////////////
+/////////// Coroutine Part //////////////
 /////////////////////////////////////////
 
 // The *Impl is not the key point for this example, code readers

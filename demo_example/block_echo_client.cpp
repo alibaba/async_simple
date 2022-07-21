@@ -47,7 +47,7 @@ void start(asio::io_context& io_context, std::string host, std::string port) {
         // handle read data as your wish.
     }
 
-    std::cout << "Finished send and recieve " << count
+    std::cout << "Finished send and receive " << count
               << " messages, client will close.\n";
     std::error_code ignore_ec;
     socket.shutdown(asio::ip::tcp::socket::shutdown_both, ignore_ec);

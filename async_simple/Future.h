@@ -25,7 +25,7 @@
 
 namespace async_simple {
 
-// The well-known Future/Promise pairs mimic a producer/consuerm pair.
+// The well-known Future/Promise pairs mimic a producer/consumer pair.
 // The Future stands for the consumer-side.
 //
 // Future's implementation is thread-safe so that Future and Promise
@@ -35,7 +35,7 @@ namespace async_simple {
 // method. It would blocking the current thread by using condition variable.
 //
 // To get the value of Future asynchronously, user could use `thenValue(F)`
-// or `thenTry(F)`. See the seperate comments for details.
+// or `thenTry(F)`. See the separate comments for details.
 //
 // User shouldn't access Future after Future called `get()`, `thenValue(F)`,
 // or `thenTry(F)`.
@@ -222,7 +222,7 @@ private:
         }
     }
 
-    // continaution returns a future
+    // continuation returns a future
     template <typename F, typename R>
     std::enable_if_t<R::ReturnsFuture::value,
                      Future<typename R::ReturnsFuture::Inner>>
@@ -266,7 +266,7 @@ private:
         return newFuture;
     }
 
-    // continaution returns a value
+    // continuation returns a value
     template <typename F, typename R>
     std::enable_if_t<!(R::ReturnsFuture::value),
                      Future<typename R::ReturnsFuture::Inner>>

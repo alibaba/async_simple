@@ -25,7 +25,7 @@ namespace async_simple {
 template <typename T>
 class Future;
 
-// The well-known Future/Promise pair mimics a producer/consuerm pair.
+// The well-known Future/Promise pair mimics a producer/consumer pair.
 // The Promise stands for the producer-side.
 //
 // We could get a Future from the Promise by calling getFuture(). And
