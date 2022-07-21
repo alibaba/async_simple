@@ -16,7 +16,6 @@
 #include "Time.h"
 #include "../unittest.h"
 
-import experimental.coroutine;
 import async_simple;
 import std;
 
@@ -66,7 +65,7 @@ public:
 
             bool await_ready() { return false; }
             void await_suspend(
-                std::experimental::coroutine_handle<> continuation) noexcept {
+                std::coroutine_handle<> continuation) noexcept {
                 test->applyValue(
                     [this, c = std::move(continuation)](int v) mutable {
                         value = v;
@@ -89,7 +88,7 @@ public:
 
             bool await_ready() { return false; }
             void await_suspend(
-                std::experimental::coroutine_handle<> continuation) noexcept {
+                std::coroutine_handle<> continuation) noexcept {
                 std::thread([c = continuation]() mutable {
                     c.resume();
                 }).detach();
@@ -110,7 +109,7 @@ public:
 
             bool await_ready() { return false; }
             void await_suspend(
-                std::experimental::coroutine_handle<> continuation) noexcept {
+                std::coroutine_handle<> continuation) noexcept {
                 std::thread([c = continuation]() mutable {
                     c.resume();
                 }).detach();
@@ -132,7 +131,7 @@ public:
 
             bool await_ready() { return false; }
             void await_suspend(
-                std::experimental::coroutine_handle<> continuation) noexcept {
+                std::coroutine_handle<> continuation) noexcept {
                 std::thread([c = continuation]() mutable {
                     usleep(rand() % 1000 + 1);
                     c.resume();
@@ -152,7 +151,7 @@ public:
             ValueAwaiter() {}
             bool await_ready() { return false; }
             void await_suspend(
-                std::experimental::coroutine_handle<> continuation) noexcept {
+                std::coroutine_handle<> continuation) noexcept {
                 std::thread([c = continuation]() mutable {
                     usleep(rand() % 1000000 + 1);
                     c.resume();
@@ -1118,7 +1117,7 @@ Lazy<int> getValue(A x) {
 
         bool await_ready() { return false; }
         void await_suspend(
-            std::experimental::coroutine_handle<> continuation) noexcept {
+            std::coroutine_handle<> continuation) noexcept {
             std::thread([c = std::move(continuation)]() mutable {
                 c.resume();
             }).detach();

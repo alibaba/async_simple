@@ -1,5 +1,4 @@
 import async_simple;
-import experimental.coroutine;
 
 import std;
 

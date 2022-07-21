@@ -19,9 +19,7 @@ module;
 #include <functional>
 #endif
 
-module async_simple:Invoke;
-
-import std;
+export module async_simple:Invoke;
 
 namespace async_simple {
 

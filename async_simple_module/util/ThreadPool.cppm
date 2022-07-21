@@ -32,37 +32,37 @@ public:
         bool autoSchedule = false;
         std::function<void()> fn = nullptr;
     };
-    static constexpr size_t DEFAULT_THREAD_NUM = 4;
+    static constexpr std::size_t DEFAULT_THREAD_NUM = 4;
     enum ERROR_TYPE {
         ERROR_NONE = 0,
         ERROR_POOL_ITEM_IS_NULL,
     };
 
-    explicit ThreadPool(size_t threadNum = DEFAULT_THREAD_NUM,
+    explicit ThreadPool(std::size_t threadNum = DEFAULT_THREAD_NUM,
                         bool enableWorkSteal = false);
     ~ThreadPool();
 
     ThreadPool::ERROR_TYPE scheduleById(std::function<void()> fn,
-                                        size_t id = -1);
-    size_t getCurrentId() const;
-    size_t getItemCount() const;
-    size_t getThreadNum() const { return _threadNum; }
+                                        std::size_t id = -1);
+    std::size_t getCurrentId() const;
+    std::size_t getItemCount() const;
+    std::size_t getThreadNum() const { return _threadNum; }
 
 private:
-    std::pair<size_t, ThreadPool *> *getCurrent() const;
-    size_t _threadNum;
+    std::pair<std::size_t, ThreadPool *> *getCurrent() const;
+    std::size_t _threadNum;
     std::vector<Queue<WorkItem>> _queues;
     std::vector<std::thread> _threads;
     std::atomic<bool> _stop;
     bool _enableWorkSteal;
 };
 
-inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal)
+inline ThreadPool::ThreadPool(std::size_t threadNum, bool enableWorkSteal)
     : _threadNum(threadNum ? threadNum : DEFAULT_THREAD_NUM),
       _queues(_threadNum),
       _stop(false),
       _enableWorkSteal(enableWorkSteal) {
-    auto worker = [this](size_t id) {
+    auto worker = [this](std::size_t id) {
         auto current = getCurrent();
         current->first = id;
         current->second = this;
@@ -78,9 +78,8 @@ inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal)
                 }
             }
 
-            if (!workerItem.fn && !_queues[id].pop(workerItem)) {
+            if (!workerItem.fn && !_queues[id].pop(workerItem))
                 break;
-            }
 
             if (workerItem.fn) {
                 workerItem.fn();
@@ -89,7 +88,7 @@ inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal)
     };
 
     _threads.reserve(_threadNum);
-    for (size_t i = 0; i < _threadNum; ++i) {
+    for (std::size_t i = 0; i < _threadNum; ++i) {
         _threads.emplace_back(worker, i);
     }
 }
@@ -103,10 +102,9 @@ inline ThreadPool::~ThreadPool() {
 }
 
 inline ThreadPool::ERROR_TYPE ThreadPool::scheduleById(std::function<void()> fn,
-                                                       size_t id) {
-    if (nullptr == fn) {
+                                                       std::size_t id) {
+    if (nullptr == fn)
         return ERROR_POOL_ITEM_IS_NULL;
-    }
 
     if (id == -1) {
         if (_enableWorkSteal) {
@@ -118,7 +116,7 @@ inline ThreadPool::ERROR_TYPE ThreadPool::scheduleById(std::function<void()> fn,
             }
         }
 
-        id = rand() % _threadNum;
+        id = std::rand() % _threadNum;
         _queues[id].push(WorkItem{false, std::move(fn)});
     } else {
         assert(id < _threadNum);
@@ -128,12 +126,12 @@ inline ThreadPool::ERROR_TYPE ThreadPool::scheduleById(std::function<void()> fn,
     return ERROR_NONE;
 }
 
-inline std::pair<size_t, ThreadPool *> *ThreadPool::getCurrent() const {
-    static thread_local std::pair<size_t, ThreadPool *> current(-1, nullptr);
+inline std::pair<std::size_t, ThreadPool *> *ThreadPool::getCurrent() const {
+    static thread_local std::pair<std::size_t, ThreadPool *> current(-1, nullptr);
     return &current;
 }
 
-inline size_t ThreadPool::getCurrentId() const {
+inline std::size_t ThreadPool::getCurrentId() const {
     auto current = getCurrent();
     if (this == current->second) {
         return current->first;
@@ -141,9 +139,9 @@ inline size_t ThreadPool::getCurrentId() const {
     return -1;
 }
 
-inline size_t ThreadPool::getItemCount() const {
-    size_t ret = 0;
-    for (size_t i = 0; i < _threadNum; ++i) {
+inline std::size_t ThreadPool::getItemCount() const {
+    std::size_t ret = 0;
+    for (std::size_t i = 0; i < _threadNum; ++i) {
         ret += _queues[i].size();
     }
     return ret;

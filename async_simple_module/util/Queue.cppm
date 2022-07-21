@@ -26,7 +26,7 @@ public:
 
     void push(T &&item) {
         {
-            std::scoped_lock guard(_mutex);
+            std::scoped_lock<std::mutex> guard(_mutex);
             _queue.push(std::move(item));
         }
         _cond.notify_one();
@@ -34,7 +34,7 @@ public:
 
     bool try_push(const T &item) {
         {
-            std::unique_lock lock(_mutex, std::try_to_lock);
+            std::unique_lock<std::mutex> lock(_mutex, std::try_to_lock_in_modules);
             if (!lock)
                 return false;
             _queue.push(item);
@@ -44,7 +44,7 @@ public:
     }
 
     bool pop(T &item) {
-        std::unique_lock lock(_mutex);
+        std::unique_lock<std::mutex> lock(_mutex);
         _cond.wait(lock, [&]() { return !_queue.empty() || _stop; });
         if (_queue.empty())
             return false;
@@ -56,7 +56,7 @@ public:
     // non-blocking pop an item, maybe pop failed.
     // predict is an extension pop condition, default is null.
     bool try_pop(T &item, bool (*predict)(T &) = nullptr) {
-        std::unique_lock lock(_mutex, std::try_to_lock);
+        std::unique_lock<std::mutex> lock(_mutex, std::try_to_lock_in_modules);
         if (!lock || _queue.empty())
             return false;
 
@@ -70,18 +70,18 @@ public:
     }
 
     std::size_t size() const {
-        std::scoped_lock guard(_mutex);
+        std::scoped_lock<std::mutex> guard(_mutex);
         return _queue.size();
     }
 
     bool empty() const {
-        std::scoped_lock guard(_mutex);
+        std::scoped_lock<std::mutex> guard(_mutex);
         return _queue.empty();
     }
 
     void stop() {
         {
-            std::scoped_lock guard(_mutex);
+            std::scoped_lock<std::mutex> guard(_mutex);
             _stop = true;
         }
         _cond.notify_all();

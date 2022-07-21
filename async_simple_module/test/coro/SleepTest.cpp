@@ -15,7 +15,6 @@
  */
 #include "../unittest.h"
 
-import experimental.coroutine;
 import async_simple;
 import std;
 

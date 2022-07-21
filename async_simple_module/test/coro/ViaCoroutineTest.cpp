@@ -16,8 +16,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-import experimental.coroutine;
-
 import async_simple;
 
 import std;
@@ -58,7 +56,7 @@ class Awaiter {
 public:
     bool await_ready() noexcept { return false; }
     bool await_suspend(
-        std::experimental::coroutine_handle<> continuation) noexcept {
+        std::coroutine_handle<> continuation) noexcept {
         return false;
     }
     void await_resume() noexcept {}

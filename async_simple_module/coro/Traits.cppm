@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module async_simple:coro.Traits;
+export module async_simple:coro.Traits;
 import std;
 
 namespace async_simple {
@@ -26,35 +26,35 @@ namespace detail {
 template <typename T>
 class HasCoAwaitMethod {
     template <typename C>
-    static int8_t test(decltype(std::declval<C>().coAwait(nullptr))*);
+    static std::int8_t test(decltype(std::declval<C>().coAwait(nullptr))*);
 
     template <typename C>
-    static int16_t test(...);
+    static std::int16_t test(...);
 
 public:
-    static constexpr bool value = (sizeof(test<T>(nullptr)) == sizeof(int8_t));
+    static constexpr bool value = (sizeof(test<T>(nullptr)) == sizeof(std::int8_t));
 };
 
 template <typename T>
 class HasMemberCoAwaitOperator {
     template <typename C>
-    static int8_t test(decltype(std::declval<C>().operator co_await())*);
+    static std::int8_t test(decltype(std::declval<C>().operator co_await())*);
     template <typename C>
-    static int16_t test(...);
+    static std::int16_t test(...);
 
 public:
-    static constexpr bool value = (sizeof(test<T>(nullptr)) == sizeof(int8_t));
+    static constexpr bool value = (sizeof(test<T>(nullptr)) == sizeof(std::int8_t));
 };
 
 template <typename T>
 class HasGlobalCoAwaitOperator {
     template <typename C>
-    static int8_t test(decltype(operator co_await(std::declval<C>()))*);
+    static std::int8_t test(decltype(operator co_await(std::declval<C>()))*);
     template <typename C>
-    static int16_t test(...);
+    static std::int16_t test(...);
 
 public:
-    static constexpr bool value = (sizeof(test<T>(nullptr)) == sizeof(int8_t));
+    static constexpr bool value = (sizeof(test<T>(nullptr)) == sizeof(std::int8_t));
 };
 
 template <

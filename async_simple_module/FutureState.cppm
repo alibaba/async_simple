@@ -28,7 +28,7 @@ namespace async_simple {
 // Users shouldn't care about it.
 namespace detail {
 
-enum class State : uint8_t {
+enum class State : std::uint8_t {
     START = 0,
     ONLY_RESULT = 1 << 0,
     ONLY_CONTINUATION = 1 << 1,
@@ -36,11 +36,11 @@ enum class State : uint8_t {
 };
 
 constexpr State operator|(State lhs, State rhs) {
-    return State((uint8_t)lhs | (uint8_t)rhs);
+    return State((std::uint8_t)lhs | (std::uint8_t)rhs);
 }
 
 constexpr State operator&(State lhs, State rhs) {
-    return State((uint8_t)lhs & (uint8_t)rhs);
+    return State((std::uint8_t)lhs & (std::uint8_t)rhs);
 }
 
 }  // namespace detail
@@ -174,8 +174,8 @@ public:
     }
     void setForceSched(bool force = true) {
         if (!_executor && force) {
-            fprintf(stderr,"executor is nullptr, can not set force schedule "
-                         "continaution\n");
+            std::fprintf(stderr,"executor is nullptr, can not set force schedule "
+                                "continaution\n");
             return;
         }
         _forceSched = force;
@@ -310,8 +310,8 @@ private:
 
 private:
     std::atomic<detail::State> _state;
-    std::atomic<uint8_t> _attached;
-    std::atomic<uint8_t> _continuationRef;
+    std::atomic<std::uint8_t> _attached;
+    std::atomic<std::uint8_t> _continuationRef;
     Try<T> _try;
     union {
         Continuation _continuation;

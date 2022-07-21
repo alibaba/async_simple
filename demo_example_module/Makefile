@@ -1,13 +1,14 @@
 .PHONY:clean build ReadFiles CountChar async-httpd httpd http
 
-OPT_FLAGS ?= -O2 -DNDEBUG -g -fmodules_aggressive_function_reduction -flto=thin
+STD_MODULE_PATH=../third_party_module/stdmodules
+OPT_FLAGS ?= -O2 -DNDEBUG -g $(STL_PATH) -fprebuilt-module-path=$(STD_MODULE_PATH) -Wno-unused-command-line-argument
 OBJECT_CFLAGS ?= -std=c++20 -Wall -Werror $(OPT_FLAGS)
-INTERFACE_CFLAGS ?= $(OBJECT_CFLAGS) --precompile
-LINK_CFLAGS ?= -fuse-ld=lld
+INTERFACE_CFLAGS ?= $(OBJECT_CFLAGS) --precompile $(STL_PATH)
+LINK_CFLAGS =
 EXECUTABLE_CFLAGS ?= $(OBJECT_CFLAGS) $(LINK_CFLAGS)
 
-TEST_DEPENDENCY_LIB = -lpthread -laio -lasync_simple -lstdmodule
-TEST_DEPENDENCY_DIR = -L../async_simple_module -L/usr/local/lib64
+TEST_DEPENDENCY_LIB = -lpthread -laio -lasync_simple -lstd
+TEST_DEPENDENCY_DIR = -L../async_simple_module -L/usr/local/lib64 -L$(STD_MODULE_PATH)
 DEPENDENCY = $(TEST_DEPENDENCY_DIR) $(TEST_DEPENDENCY_LIB) -Wl,-rpath=../async_simple_module
 
 ASIO_PATH ?= ../third_party_module/asio

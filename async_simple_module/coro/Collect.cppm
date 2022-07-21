@@ -19,8 +19,6 @@ module;
 
 export module async_simple:coro.Collect;
 
-import experimental.coroutine;;
-
 import :Try;
 import :coro.Event;
 import :coro.Lazy;
@@ -46,25 +44,25 @@ namespace detail {
 
 template <typename T>
 struct CollectAnyResult {
-    CollectAnyResult() : _idx(static_cast<size_t>(-1)), _value() {}
-    CollectAnyResult(size_t idx, T&& value)
+    CollectAnyResult() : _idx(static_cast<std::size_t>(-1)), _value() {}
+    CollectAnyResult(std::size_t idx, T&& value)
         : _idx(idx), _value(std::move(value)) {}
 
     CollectAnyResult(const CollectAnyResult&) = delete;
     CollectAnyResult& operator=(const CollectAnyResult&) = delete;
     CollectAnyResult(CollectAnyResult&& other)
         : _idx(std::move(other._idx)), _value(std::move(other._value)) {
-        other._idx = static_cast<size_t>(-1);
+        other._idx = static_cast<std::size_t>(-1);
     }
 
-    size_t _idx;
+    std::size_t _idx;
     Try<T> _value;
 };
 
 template <>
 struct CollectAnyResult<void> {
-    CollectAnyResult() : _idx(static_cast<size_t>(-1)) {}
-    size_t _idx;
+    CollectAnyResult() : _idx(static_cast<std::size_t>(-1)) {}
+    std::size_t _idx;
     Try<void> _value;
 };
 
@@ -85,18 +83,18 @@ struct CollectAnyAwaiter {
         return _input.empty() || (_result && _result->_idx != -1);
     }
 
-    void await_suspend(std::experimental::coroutine_handle<> continuation) {
+    void await_suspend(std::coroutine_handle<> continuation) {
         auto promise_type =
-            static_cast<std::experimental::coroutine_handle<LazyPromiseBase>*>(
-                &continuation)
-                ->promise();
+            std::coroutine_handle<LazyPromiseBase>::from_address(
+                continuation.address())
+                .promise();
         auto executor = promise_type._executor;
         // Make local copies to shared_ptr to avoid deleting objects too early
         // if any coroutine finishes before this function.
         std::vector<LazyType, InAlloc> input(std::move(_input));
         auto result = std::make_shared<ResultType>();
         auto event = std::make_shared<detail::CountEvent>(input.size());
-        size_t i = 0;
+        std::size_t i = 0;
 
         _result = result;
         for (i = 0; i < input.size() && (result->_idx == -1); ++i) {
@@ -161,13 +159,13 @@ struct CollectAllAwaiter {
 
     inline bool await_ready() const noexcept { return _input.empty(); }
     inline void await_suspend(
-        std::experimental::coroutine_handle<> continuation) {
+        std::coroutine_handle<> continuation) {
         auto promise_type =
-            static_cast<std::experimental::coroutine_handle<LazyPromiseBase>*>(
-                &continuation)
-                ->promise();
+            std::coroutine_handle<LazyPromiseBase>::from_address(
+                continuation.address())
+                .promise();
         auto executor = promise_type._executor;
-        for (size_t i = 0; i < _input.size(); ++i) {
+        for (std::size_t i = 0; i < _input.size(); ++i) {
             auto& exec = _input[i]._coro.promise()._executor;
             if (exec == nullptr) {
                 exec = executor;
@@ -252,7 +250,7 @@ inline auto collectAllImpl(std::vector<LazyType<T>, IAlloc>&& input,
 template <bool Para, typename T, template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>,
           typename OAlloc = std::allocator<Try<T>>>
-inline auto collectAllWindowedImpl(size_t maxConcurrency,
+inline auto collectAllWindowedImpl(std::size_t maxConcurrency,
                                    bool yield /*yield between two batchs*/,
                                    std::vector<LazyType<T>, IAlloc>&& input,
                                    OAlloc out_alloc = OAlloc())
@@ -262,16 +260,16 @@ inline auto collectAllWindowedImpl(size_t maxConcurrency,
         detail::SimpleCollectAllAwaitable<T, IAlloc, OAlloc, Para>,
         detail::CollectAllAwaiter<LazyType<T>, IAlloc, OAlloc, Para>>;
     std::vector<Try<T>, OAlloc> output(out_alloc);
-    size_t input_size = input.size();
+    std::size_t input_size = input.size();
     // maxConcurrency == 0;
     // input_size <= maxConcurrency size;
     // act just like CollectAll.
     if (maxConcurrency == 0 || input_size <= maxConcurrency) {
         co_return co_await AT(std::move(input), out_alloc);
     }
-    size_t start = 0;
+    std::size_t start = 0;
     while (start < input_size) {
-        size_t end = std::min(input_size, start + maxConcurrency);
+        std::size_t end = std::min(input_size, start + maxConcurrency);
         std::vector<LazyType<T>, IAlloc> tmp_group(input.get_allocator());
         for (; start < end; ++start) {
             tmp_group.push_back(std::move(input[start]));
@@ -303,7 +301,7 @@ Lazy<void> makeWraperTask(LazyType<Ts>&& awaitable, Try<Ts>& result) {
 }
 
 template <bool Para, template <typename> typename LazyType, typename... Ts,
-          size_t... Indices>
+          std::size_t... Indices>
 inline auto collectAllVariadicImpl(std::index_sequence<Indices...>,
                                    LazyType<Ts>&&... awaitables)
     -> Lazy<std::tuple<Try<Ts>...>> {
@@ -385,7 +383,7 @@ inline auto collectAllPara(LazyType<Ts>&&... inputs)
 export template <typename T, template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>,
           typename OAlloc = std::allocator<Try<T>>>
-inline auto collectAllWindowed(size_t maxConcurrency,
+inline auto collectAllWindowed(std::size_t maxConcurrency,
                                bool yield /*yield between two batchs*/,
                                std::vector<LazyType<T>, IAlloc>&& input,
                                OAlloc out_alloc = OAlloc())
@@ -402,7 +400,7 @@ inline auto collectAllWindowed(size_t maxConcurrency,
 export template <typename T, template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>,
           typename OAlloc = std::allocator<Try<T>>>
-inline auto collectAllWindowedPara(size_t maxConcurrency,
+inline auto collectAllWindowedPara(std::size_t maxConcurrency,
                                    bool yield /*yield between two batchs*/,
                                    std::vector<LazyType<T>, IAlloc>&& input,
                                    OAlloc out_alloc = OAlloc())

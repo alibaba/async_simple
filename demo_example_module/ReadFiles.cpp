@@ -1,5 +1,4 @@
 import async_simple;
-import experimental.coroutine;
 import std;
 
 
@@ -14,8 +13,8 @@ using FileName = std::string;
 
 // The *Impl is not the key point for this example, code readers
 // could ignore this.
-uint64_t CountCharInFileImpl(const FileName &File, char c) {
-    uint64_t Ret = 0;
+std::uint64_t CountCharInFileImpl(const FileName &File, char c) {
+    std::uint64_t Ret = 0;
     std::ifstream infile(File);
     std::string line;
     while (std::getline(infile, line))
@@ -23,8 +22,8 @@ uint64_t CountCharInFileImpl(const FileName &File, char c) {
     return Ret;
 }
 
-uint64_t CountCharInFiles(const std::vector<FileName> &Files, char c) {
-    uint64_t ReadSize = 0;
+std::uint64_t CountCharInFiles(const std::vector<FileName> &Files, char c) {
+    std::uint64_t ReadSize = 0;
     for (const auto &File : Files)
         ReadSize += CountCharInFileImpl(File, c);
     return ReadSize;
@@ -76,8 +75,8 @@ Future<Unit> do_for_each(RangeTy &&Range, Callable &&func) {
 
 // The *Impl is not the key point for this example, code readers
 // could ignore this.
-Future<uint64_t> CountCharInFileAsyncImpl(const FileName &File, char c) {
-    uint64_t Ret = 0;
+Future<std::uint64_t> CountCharInFileAsyncImpl(const FileName &File, char c) {
+    std::uint64_t Ret = 0;
     std::ifstream infile(File);
     std::string line;
     while (std::getline(infile, line))
@@ -85,17 +84,17 @@ Future<uint64_t> CountCharInFileAsyncImpl(const FileName &File, char c) {
     return makeReadyFuture(std::move(Ret));
 }
 
-Future<uint64_t> CountCharInFilesAsync(const std::vector<FileName> &Files, char c) {
+Future<std::uint64_t> CountCharInFilesAsync(const std::vector<FileName> &Files, char c) {
     // std::shared_ptr is necessary here. Since ReadSize may be used after
     // CountCharInFilesAsync function ends.
-    auto ReadSize = std::make_shared<uint64_t>(0);
+    auto ReadSize = std::make_shared<std::uint64_t>(0);
     // We need to introduce another API `do_for_each` here.
     return do_for_each(std::move(Files), [ReadSize, c](auto &&File){
         return CountCharInFileAsyncImpl(File, c).thenValue([ReadSize](auto &&Size) {
             *ReadSize += Size;
             return makeReadyFuture(Unit());
         });
-    }).thenTry([ReadSize] (auto&&) { return makeReadyFuture<uint64_t>(*ReadSize); });;
+    }).thenTry([ReadSize] (auto&&) { return makeReadyFuture<std::uint64_t>(*ReadSize); });;
 }
 
 /////////////////////////////////////////
@@ -104,8 +103,8 @@ Future<uint64_t> CountCharInFilesAsync(const std::vector<FileName> &Files, char 
 
 // The *Impl is not the key point for this example, code readers
 // could ignore this.
-Lazy<uint64_t> CountCharFileCoroImpl(const FileName &File, char c) {
-    uint64_t Ret = 0;
+Lazy<std::uint64_t> CountCharFileCoroImpl(const FileName &File, char c) {
+    std::uint64_t Ret = 0;
     std::ifstream infile(File);
     std::string line;
     while (std::getline(infile, line))
@@ -113,8 +112,8 @@ Lazy<uint64_t> CountCharFileCoroImpl(const FileName &File, char c) {
     co_return Ret;
 }
 
-Lazy<uint64_t> CountCharInFilesCoro(const std::vector<FileName> &Files, char c) {
-    uint64_t ReadSize = 0;
+Lazy<std::uint64_t> CountCharInFilesCoro(const std::vector<FileName> &Files, char c) {
+    std::uint64_t ReadSize = 0;
     for (const auto &File : Files)
         ReadSize += co_await CountCharFileCoroImpl(File, c);
     co_return ReadSize;

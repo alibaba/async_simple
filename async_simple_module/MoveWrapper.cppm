@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-module async_simple:MoveWrapper;
+export module async_simple:MoveWrapper;
 import std;
 
 namespace async_simple {
