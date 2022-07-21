@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module async_simple:coro.Task;
+export module async_simple:coro.Task;
 
-import experimental.coroutine;
 import std;
 
 namespace async_simple {
@@ -36,11 +35,11 @@ template <typename T>
 class [[nodiscard]] Task {
 public:
     using promise_type = detail::TaskPromise<T>;
-    using Handle = std::experimental::coroutine_handle<promise_type>;
+    using Handle = std::coroutine_handle<promise_type>;
     struct Awaiter {
         constexpr bool await_ready() const noexcept { return true; }
         void await_suspend(
-            std::experimental::coroutine_handle<> continuation) const noexcept {
+            std::coroutine_handle<> continuation) const noexcept {
         }
         inline __attribute__((__always_inline__))  T await_resume() noexcept {
             return std::move(task->stealValue());
@@ -102,11 +101,11 @@ template <>
 class [[nodiscard]] Task<void> {
 public:
     using promise_type = detail::TaskPromise<void>;
-    using Handle = std::experimental::coroutine_handle<promise_type>;
+    using Handle = std::coroutine_handle<promise_type>;
     struct Awaiter {
         constexpr bool await_ready() const noexcept { return true; }
         void await_suspend(
-            std::experimental::coroutine_handle<> continuation) const noexcept {
+            std::coroutine_handle<> continuation) const noexcept {
         }
         inline __attribute__((__always_inline__))  void await_resume() const noexcept {}
         Awaiter() = default;
@@ -128,11 +127,11 @@ public:
 namespace detail {
 
 struct TaskPromiseBase {
-    constexpr std::experimental::suspend_never initial_suspend() const
+    constexpr std::suspend_never initial_suspend() const
         noexcept {
         return {};
     }
-    constexpr std::experimental::suspend_never final_suspend() const noexcept {
+    constexpr std::suspend_never final_suspend() const noexcept {
         return {};
     }
     void unhandled_exception() const noexcept {}

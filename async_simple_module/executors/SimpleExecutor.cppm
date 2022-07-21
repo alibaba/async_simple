@@ -42,7 +42,7 @@ public:
 
     union ContextUnion {
         Context ctx;
-        int64_t id;
+        std::int64_t id;
     };
 
 public:

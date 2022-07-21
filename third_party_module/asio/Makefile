@@ -1,4 +1,4 @@
-OPT_FLAGS ?= -O2 -DNDEBUG -g -fmodules_aggressive_function_reduction -flto=thin
+OPT_FLAGS ?= -O2 -DNDEBUG -g
 OBJECT_CFLAGS ?= -std=c++20 -Wall -Werror $(OPT_FLAGS)
 INTERFACE_CFLAGS ?= $(OBJECT_CFLAGS) --precompile
 

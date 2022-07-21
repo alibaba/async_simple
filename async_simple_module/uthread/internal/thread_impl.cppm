@@ -20,43 +20,4 @@
  * Copyright (C) 2016 ScyllaDB.
  */
 
-module;
-
 export module async_simple:uthread.thread_impl;
-
-namespace async_simple {
-namespace uthread {
-namespace internal {
-
-typedef void* fcontext_t;
-struct transfer_t {
-    fcontext_t fctx;
-    void* data;
-};
-
-class thread_context;
-
-struct jmp_buf_link {
-    fcontext_t fcontext;
-    jmp_buf_link* link = nullptr;
-    thread_context* thread = nullptr;
-
-public:
-    void switch_in();
-    void switch_out();
-    void initial_switch_in_completed();
-};
-
-extern thread_local jmp_buf_link* g_current_context;
-namespace thread_impl {
-
-inline thread_context* get() { return g_current_context->thread; }
-void switch_in(thread_context* to);
-void switch_out(thread_context* from);
-bool can_switch_out();
-
-}  // namespace thread_impl
-
-}  // namespace internal
-}  // namespace uthread
-}  // namespace async_simple

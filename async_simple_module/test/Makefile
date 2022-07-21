@@ -1,15 +1,15 @@
 .PHONY:clean test build
 
-OPT_FLAGS ?= -O2 -g -DNDEBUG -fmodules_aggressive_function_reduction -flto=thin
-OBJECT_CFLAGS ?= -std=c++20 $(OPT_FLAGS) -Wall -Werror
+STD_MODULE_PATH=../../third_party_module/stdmodules
+OPT_FLAGS = -O2 -g -DNDEBUG -fprebuilt-module-path=$(STD_MODULE_PATH)
+OBJECT_CFLAGS = -std=c++20 $(OPT_FLAGS) -Wall -Werror
 INTERFACE_CFLAGS ?= $(OBJECT_CFLAGS) --precompile
-EXECUTABLE_CFLAGS ?= $(OBJECT_CFLAGS) -fuse-ld=lld
+EXECUTABLE_CFLAGS ?= $(OBJECT_CFLAGS)
 
-# We can't put `-lstdmodule` by default in compiler since we couldn't require user to get
-# libstdmodule if they don't use C++20 modules.
-TEST_DEPENDENCY_LIB = -lasync_simple -laio -lgtest -lgmock -lpthread -lstdmodule
-TEST_DEPENDENCY_DIR = -L../ -L/usr/local/lib64 -L/usr/lib64 -L/usr/lib
-TEST_DEPENDENCY = $(TEST_DEPENDENCY_DIR) $(TEST_DEPENDENCY_LIB) -Wl,-rpath=.. -Wl,-rpath=/usr/lib
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+TEST_DEPENDENCY_LIB = -lasync_simple -laio -lgtest -lgmock -lpthread -lstd
+TEST_DEPENDENCY_DIR = -L../ -L/usr/local/lib64 -L/usr/lib64 -L/usr/lib -L$(STD_MODULE_PATH)
+TEST_DEPENDENCY = $(TEST_DEPENDENCY_DIR) $(TEST_DEPENDENCY_LIB) -Wl,-rpath=$(ROOT_DIR)/..
 
 test: build
 	./async_simple_test.out

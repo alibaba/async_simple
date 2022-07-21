@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module async_simple:coro.Util;
+export module async_simple:coro.Util;
 
-import experimental.coroutine;
 import std;
 
 namespace async_simple {
@@ -33,17 +32,17 @@ namespace detail {
 // better to use `Lazy::start()`.
 struct DetachedCoroutine {
     struct promise_type {
-        std::experimental::suspend_never initial_suspend() noexcept {
+        std::suspend_never initial_suspend() noexcept {
             return {};
         }
-        std::experimental::suspend_never final_suspend() noexcept { return {}; }
+        std::suspend_never final_suspend() noexcept { return {}; }
         void return_void() noexcept {}
         void unhandled_exception() {
             try {
                 std::rethrow_exception(std::current_exception());
             } catch (const std::exception& e) {
-                fprintf(stderr, "find exception %s\n", e.what());
-                fflush(stderr);
+                std::fprintf(stderr, "find exception %s\n", e.what());
+                std::fflush(stderr);
                 std::rethrow_exception(std::current_exception());
             }
         }
@@ -62,7 +61,7 @@ struct ReadyAwaiter {
     ReadyAwaiter(T value) : _value(std::move(value)) {}
 
     bool await_ready() const noexcept { return true; }
-    void await_suspend(CoroHandle<>) const noexcept {}
+    void await_suspend(std::coroutine_handle<>) const noexcept {}
     T await_resume() noexcept { return std::move(_value); }
 
     T _value;

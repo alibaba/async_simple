@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module async_simple:Common;
+export module async_simple:Common;
 import std;
 namespace async_simple {
 // Different from assert, logicAssert is meaningful in

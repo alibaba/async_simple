@@ -21,7 +21,7 @@ using asio::ip::tcp;
 async_simple::coro::Lazy<void> session(tcp::socket sock) {
     int msg_index = 0;
     for (;;) {
-        const size_t max_length = 1024;
+        const std::size_t max_length = 1024;
         char data[max_length];
         auto [error, length] =
             co_await async_read_some(sock, asio::buffer(data, max_length));

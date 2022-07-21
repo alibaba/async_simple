@@ -93,7 +93,7 @@ private:
 
         // Open the file to send back.
         std::string full_path = doc_root_ + request_path;
-        std::ifstream is(full_path.c_str(), std::ios::in | std::ios::binary);
+        std::ifstream is(full_path.c_str(), std::ios_base::openmode(std::ios::in | std::ios::binary));
         if (!is) {
             rep = build_response(status_type::not_found);
             return;

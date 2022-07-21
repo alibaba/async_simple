@@ -15,7 +15,7 @@
  */
 module;
 #include <cassert>
-module async_simple:LocalState;
+export module async_simple:LocalState;
 
 import :Executor;
 import :Try;

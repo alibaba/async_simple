@@ -13,11 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module;
+export module async_simple:coro.Event;
 
-module async_simple:coro.Event;
-
-import experimental.coroutine;
 import std;
 
 namespace async_simple {
@@ -38,7 +35,7 @@ public:
         : _count(other._count.exchange(0, std::memory_order_relaxed)),
           _awaitingCoro(std::exchange(other._awaitingCoro, nullptr)) {}
 
-    [[nodiscard]] CoroHandle<> down(std::size_t n = 1) {
+    [[nodiscard]] std::coroutine_handle<> down(std::size_t n = 1) {
         // read acquire and write release, _awaitingCoro store can not be
         // reordered after this barrier
         auto oldCount = _count.fetch_sub(n, std::memory_order_acq_rel);
@@ -50,7 +47,7 @@ public:
             return nullptr;
             // return nullptr instead of noop_coroutine could save one time
             // for accessing the memory.
-            // return std::experimental::noop_coroutine();
+            // return std::noop_coroutine();
         }
     }
     [[nodiscard]] std::size_t downCount(std::size_t n = 1) {
@@ -58,11 +55,11 @@ public:
         return _count.fetch_sub(n, std::memory_order_acq_rel);
     }
 
-    void setAwaitingCoro(CoroHandle<> h) { _awaitingCoro = h; }
+    void setAwaitingCoro(std::coroutine_handle<> h) { _awaitingCoro = h; }
 
 private:
     std::atomic<std::size_t> _count;
-    CoroHandle<> _awaitingCoro;
+    std::coroutine_handle<> _awaitingCoro;
 };
 
 }  // namespace detail

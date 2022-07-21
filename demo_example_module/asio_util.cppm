@@ -16,18 +16,17 @@
 export module asio_util;
 import std;
 export import async_simple;
-export import experimental.coroutine;
 export import asio;
 export template <typename AsioBuffer>
-std::pair<asio::error_code, size_t> read_some(asio::ip::tcp::socket& sock,
+std::pair<asio::error_code, std::size_t> read_some(asio::ip::tcp::socket& sock,
                                               AsioBuffer&& buffer) {
     asio::error_code error;
-    size_t length = sock.read_some(std::forward<AsioBuffer>(buffer), error);
+    std::size_t length = sock.read_some(std::forward<AsioBuffer>(buffer), error);
     return std::make_pair(error, length);
 }
 
 export template <typename AsioBuffer>
-std::pair<asio::error_code, size_t> write(asio::ip::tcp::socket& sock,
+std::pair<asio::error_code, std::size_t> write(asio::ip::tcp::socket& sock,
                                           AsioBuffer&& buffer) {
     asio::error_code error;
     auto length = asio::write(sock, std::forward<AsioBuffer>(buffer), error);
@@ -81,7 +80,7 @@ public:
                     asio::ip::tcp::socket socket)
         : acceptor_(acceptor), socket_(std::move(socket)) {}
     bool await_ready() const noexcept { return false; }
-    void await_suspend(std::experimental::coroutine_handle<> handle) {
+    void await_suspend(std::coroutine_handle<> handle) {
         acceptor_.async_accept([this, handle](auto ec, auto socket) mutable {
             ec_ = ec;
             socket_ = std::move(socket);
@@ -115,7 +114,7 @@ public:
         : socket_(socket), buffer_(buffer) {}
     bool await_ready() { return false; }
     auto await_resume() { return std::make_pair(ec_, size_); }
-    void await_suspend(std::experimental::coroutine_handle<> handle) {
+    void await_suspend(std::coroutine_handle<> handle) {
         socket_.async_read_some(std::move(buffer_),
                                 [this, handle](auto ec, auto size) mutable {
                                     ec_ = ec;
@@ -132,11 +131,11 @@ private:
     AsioBuffer buffer_;
 
     std::error_code ec_{};
-    size_t size_{0};
+    std::size_t size_{0};
 };
 
 export template <typename AsioBuffer>
-inline async_simple::coro::Lazy<std::pair<std::error_code, size_t>>
+inline async_simple::coro::Lazy<std::pair<std::error_code, std::size_t>>
 async_read_some(asio::ip::tcp::socket& socket, AsioBuffer&& buffer) noexcept {
     co_return co_await ReadSomeAwaiter{socket, std::move(buffer)};
 }
@@ -148,7 +147,7 @@ public:
         : socket_(socket), buffer_(buffer) {}
     bool await_ready() { return false; }
     auto await_resume() { return std::make_pair(ec_, size_); }
-    void await_suspend(std::experimental::coroutine_handle<> handle) {
+    void await_suspend(std::coroutine_handle<> handle) {
         asio::async_read(socket_, buffer_,
                          [this, handle](auto ec, auto size) mutable {
                              ec_ = ec;
@@ -165,11 +164,11 @@ private:
     AsioBuffer& buffer_;
 
     std::error_code ec_{};
-    size_t size_{0};
+    std::size_t size_{0};
 };
 
 export template <typename AsioBuffer>
-inline async_simple::coro::Lazy<std::pair<std::error_code, size_t>> async_read(
+inline async_simple::coro::Lazy<std::pair<std::error_code, std::size_t>> async_read(
     asio::ip::tcp::socket& socket, AsioBuffer& buffer) noexcept {
     co_return co_await ReadAwaiter{socket, buffer};
 }
@@ -182,7 +181,7 @@ public:
         : socket_(socket), buffer_(buffer), delim_(delim) {}
     bool await_ready() { return false; }
     auto await_resume() { return std::make_pair(ec_, size_); }
-    void await_suspend(std::experimental::coroutine_handle<> handle) {
+    void await_suspend(std::coroutine_handle<> handle) {
         asio::async_read_until(socket_, buffer_, delim_,
                                [this, handle](auto ec, auto size) mutable {
                                    ec_ = ec;
@@ -200,11 +199,11 @@ private:
     std::string_view delim_;
 
     std::error_code ec_{};
-    size_t size_{0};
+    std::size_t size_{0};
 };
 
 export template <typename AsioBuffer>
-inline async_simple::coro::Lazy<std::pair<std::error_code, size_t>>
+inline async_simple::coro::Lazy<std::pair<std::error_code, std::size_t>>
 async_read_until(asio::ip::tcp::socket& socket, AsioBuffer& buffer,
                  std::string_view delim) noexcept {
     co_return co_await ReadUntilAwaiter{socket, buffer, delim};
@@ -217,7 +216,7 @@ public:
         : socket_(socket), buffer_(std::move(buffer)) {}
     bool await_ready() { return false; }
     auto await_resume() { return std::make_pair(ec_, size_); }
-    void await_suspend(std::experimental::coroutine_handle<> handle) {
+    void await_suspend(std::coroutine_handle<> handle) {
         asio::async_write(socket_, std::move(buffer_),
                           [this, handle](auto ec, auto size) mutable {
                               ec_ = ec;
@@ -234,11 +233,11 @@ private:
     AsioBuffer buffer_;
 
     std::error_code ec_{};
-    size_t size_{0};
+    std::size_t size_{0};
 };
 
 export template <typename AsioBuffer>
-inline async_simple::coro::Lazy<std::pair<std::error_code, size_t>> async_write(
+inline async_simple::coro::Lazy<std::pair<std::error_code, std::size_t>> async_write(
     asio::ip::tcp::socket& socket, AsioBuffer&& buffer) noexcept {
     co_return co_await WriteAwaiter{socket, std::move(buffer)};
 }
@@ -252,7 +251,7 @@ public:
           host_(host),
           port_(port) {}
     bool await_ready() const noexcept { return false; }
-    void await_suspend(std::experimental::coroutine_handle<> handle) {
+    void await_suspend(std::coroutine_handle<> handle) {
         asio::ip::tcp::resolver resolver(io_context_);
         auto endpoints = resolver.resolve(host_, port_);
         asio::async_connect(socket_, endpoints,

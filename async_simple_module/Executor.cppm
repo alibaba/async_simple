@@ -15,8 +15,6 @@
  */
 export module async_simple:Executor;
 
-import experimental.coroutine;;
-
 import :util.Condition;
 import :IOExecutor;
 import std;
@@ -26,7 +24,7 @@ namespace async_simple {
 // It contains the number of pending task
 // for the executor now.
 export struct ExecutorStat {
-    size_t pendingTaskCount = 0;
+    std::size_t pendingTaskCount = 0;
     ExecutorStat() = default;
 };
 // Options for a schedule.
@@ -63,7 +61,7 @@ public:
     static constexpr Context NULLCTX = nullptr;
 
     // A time duration in microseconds.
-    using Duration = std::chrono::duration<int64_t, std::micro>;
+    using Duration = std::chrono::duration<std::int64_t, std::micro>;
 
     // The schedulable function. Func should accept no argument and
     // return void.
@@ -91,7 +89,7 @@ public:
     // checkout() return current "Context", which defined by executor
     // implementation, then checkin(func, "Context") should schdule func to the
     // same "Context" as before.
-    virtual size_t currentContextId() const { return 0; };
+    virtual std::size_t currentContextId() const { return 0; };
     virtual Context checkout() { return NULLCTX; }
     virtual bool checkin(Func func, Context ctx, ScheduleOptions opts) {
         return schedule(std::move(func));
@@ -160,7 +158,7 @@ public:
 
     template <typename PromiseType>
     void await_suspend(
-        std::experimental::coroutine_handle<PromiseType> continuation) {
+        std::coroutine_handle<PromiseType> continuation) {
         std::function<void()> func = [c = continuation]() mutable {
             c.resume();
         };
@@ -197,7 +195,7 @@ public:
 
     template <typename PromiseType>
     void await_suspend(
-        std::experimental::coroutine_handle<PromiseType> continuation) {
+        std::coroutine_handle<PromiseType> continuation) {
         std::function<void()> func = [c = continuation]() mutable {
             c.resume();
         };

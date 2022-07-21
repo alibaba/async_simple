@@ -2,14 +2,31 @@ The branch is used to test the compiler support of C++20 modules, explore the
 practice with C++20 modules and compare the coding style between header based
 and named module based.
 
-The non-module version lives in the async_simple directory and the module
-version lives in async_simple_module and third_party_module directory. We could
-find the usage of named modules in async_simple_module and we could find the
-methods to wrap a existing library into a named module in third_party_module
-directory.
+# Structure
+
+The modules code lives in `*_module` direcotories. The third_party_module/stdmodules
+provides an implementation for std modules. The third_party_module/asio provides an
+implementation for a named wrapper for the asio library. Both the std modules and async_simple
+modules are wrappers for header in fact. The async_simple_module provides
+async_simple module, which rewrites the whole implementation by named modules. We could
+find the practice of named modules in it. The async_simple_module/test tests that the runtime
+behavior is still fine. The demo_example_module provides some demo examples 
+(including some sync/async http client/servers) by using async_simple module, std module and
+asio module.
+
+# Build System
 
 Due to the lack of modules support for C++20 modules in linux environments,
 the build script is written in Makefile.
 
-This could be compiled by an internal branch of clang and we're going to
-contirbute it.
+# ToolChain requirement
+
+Compiler: clang15.x
+STL Libraries: libstdc++10.3
+Other dependencies: libaio, gtest, gmock
+
+# How to run
+
+```
+make -j
+```

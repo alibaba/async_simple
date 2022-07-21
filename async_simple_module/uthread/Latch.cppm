@@ -17,6 +17,7 @@ module;
 
 export module async_simple:uthread.Latch;
 import :Future;
+import :uthread.Await;
 import std;
 
 import :Executor;
@@ -62,7 +63,7 @@ public:
         if (_skip) {
             return;
         }
-        _promise.getFuture().via(ex).get();
+        uthread::await(_promise.getFuture().via(ex));
     }
     std::size_t currentCount() const {
         return _count.load(std::memory_order_acquire);

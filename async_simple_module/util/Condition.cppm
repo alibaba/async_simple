@@ -22,7 +22,7 @@ module;
 #include <limits>
 #include <errno.h>
 
-module async_simple:util.Condition;
+export module async_simple:util.Condition;
 
 import :Common;
 
