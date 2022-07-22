@@ -21,7 +21,7 @@
  * of the corresponding awaited uthread finished. Then the current uthread would
  * check in.
  *
- * The available shcedule policy includes Launch::Schedule and Launch::Current.
+ * The available schedule policy includes Launch::Schedule and Launch::Current.
  * See Async.h for details.
  *
  * Example:

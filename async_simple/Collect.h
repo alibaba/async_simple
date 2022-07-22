@@ -29,7 +29,7 @@ namespace async_simple {
 
 // collectAll - collect all the values for a range of futures.
 //
-// The arguments includes a begin iterator and a end iterator.
+// The arguments include a begin iterator and a end iterator.
 // The arguments specifying a range for the futures to be collected.
 //
 // For a range of `Future<T>`, the return type of collectAll would
@@ -40,12 +40,12 @@ namespace async_simple {
 //
 // This is a non-blocking API. It wouldn't block the execution even
 // if there are futures doesn't have a value. For each Future inputted,
-// if it has a result, the result is fowarded to the corresponding fields
-// of the returned future. If it wouldn't have a result, it would fullfill
+// if it has a result, the result is forwarded to the corresponding fields
+// of the returned future. If it wouldn't have a result, it would fulfill
 // the corresponding field in the returned future once it has a result.
 //
 // Since the returned type is a future. So the user wants to get its value
-// could use `get()` method synchrously or `then*()` method asynchrously.
+// could use `get()` method synchronously or `then*()` method asynchronously.
 template <typename Iter>
 inline Future<std::vector<
     Try<typename std::iterator_traits<Iter>::value_type::value_type>>>

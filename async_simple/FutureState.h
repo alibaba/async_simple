@@ -55,7 +55,7 @@ constexpr State operator&(State lhs, State rhs) {
 
 // FutureState is a shared state between Future and Promise.
 //
-// This is the key component for Future/Promsie. It guarantees
+// This is the key component for Future/Promise. It guarantees
 // the thread safety and call executor to schedule when necessary.
 //
 // Users should **never** use FutureState directly.
@@ -238,7 +238,7 @@ public:
                         std::memory_order_release)) {
                     return;
                 }
-                // state has already transfered, fallthrough
+                // state has already transferred, fallthrough
                 assert(_state.load(std::memory_order_relaxed) ==
                        detail::State::ONLY_RESULT);
             case detail::State::ONLY_RESULT:

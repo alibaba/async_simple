@@ -59,7 +59,7 @@ async_simple::coro::Lazy<void> start_server(asio::io_context& io_context,
             std::cout << "Accept failed, error: " << error.message() << '\n';
             continue;
         }
-        std::cout << "New client comming.\n";
+        std::cout << "New client coming.\n";
         session(std::move(socket)).via(E).detach();
     }
 }

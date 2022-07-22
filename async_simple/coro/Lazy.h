@@ -34,15 +34,15 @@ namespace coro {
 template <typename T>
 class Lazy;
 
-// In the middle of the exuection of one coroutine, if we want to give out the
-// rights to execute back to the executor, to make it shcedule other tasks to
+// In the middle of the execution of one coroutine, if we want to give out the
+// rights to execute back to the executor, to make it schedule other tasks to
 // execute, we could write:
 //
 // ```C++
 //  co_await Yield();
 // ```
 //
-// This would suspend the executing coruotine.
+// This would suspend the executing coroutine.
 struct Yield {};
 
 namespace detail {
@@ -252,7 +252,7 @@ struct LazyAwaiterBase {
 }  // namespace detail
 
 // Lazy is a coroutine task which would be executed lazily.
-// The user who wants use Lazy should declare a function whose return type
+// The user who wants to use Lazy should declare a function whose return type
 // is Lazy<T>. T is the type you want the function to return originally.
 // And if the function doesn't want to return any thing, use Lazy<>.
 //
@@ -301,7 +301,7 @@ struct LazyAwaiterBase {
 // ```
 //
 // There is no executor instance in a Lazy. To specify an executor to schedule
-// the exeuction of the Lazy and corresponding Lazy tasks inside, user could use
+// the execution of the Lazy and corresponding Lazy tasks inside, user could use
 // `Lazy::via` to assign an executor for this Lazy. `Lazy::via` would return a
 // RescheduleLazy. User should use the returned RescheduleLazy directly. The
 // Lazy which called `via()` shouldn't be used any more.
