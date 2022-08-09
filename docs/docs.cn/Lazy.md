@@ -350,7 +350,10 @@ Lazy<int> batch_sum(size_t total_number, size_t batch_size)  {
 ### collectAny
 
 当我们只需要等待所有计算任务中的任意一个任务完成时，我们可以使用 `collectAny` 来获取第一个完成的任务结果。此时其他尚未完成的任务的结果会被忽略。
-collectAny 接受的参数为 `std::vector<Lazy<T>>`。返回类型为 `Lazy<CollectAnyResult<T>>`。
+
+collectAll 接受两种类型的参数：
+- 参数类型：`std::vector<Lazy<T>>`。 返回类型： `Lazy<CollectAnyResult<T>>`。
+- 参数类型: `Lazy<T1>, Lazy<T2>, Lazy<T3>, ...`。 返回类型： `std::variant<Try<T1>, Try<T2>, Try<T3>, ...>`。
 
 CollectAnyResult 的数据结构为：
 ```C++
@@ -376,5 +379,12 @@ Lazy<void> foo() {
         std::cout << "It failed.\n";
     else
         std::cout << "Its result: " << any_result._value.value() << "\n";
+}
+Lazy<void> foo_var() {
+  auto res=collectAny(ComputingTask<int>(1),ComputingTask<int>(2),ComputingTask<double>(3.14f));
+  std::cout<< "Index: " << res.index();
+  std::visit([](auto &&value){
+    std::cout<<"Value: "<< value <<std::endl;
+  },res);
 }
 ```
