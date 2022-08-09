@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1660021752491,
+  "lastUpdate": 1660036376986,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -4020,6 +4020,102 @@ window.BENCHMARK_DATA = {
             "value": 75460870.76922975,
             "unit": "ns/iter",
             "extra": "iterations: 13\ncpu: 49998107.69230761 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "51276909+poor-circle@users.noreply.github.com",
+            "name": "saipubw",
+            "username": "poor-circle"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "04885f0a59f9a848a67d43d6be2bb9ad2e32d739",
+          "message": "add variadic support for collectAny (#131)",
+          "timestamp": "2022-08-09T17:10:59+08:00",
+          "tree_id": "66f0e66abfe73d9af01969211e8c6b21d5bc2256",
+          "url": "https://github.com/alibaba/async_simple/commit/04885f0a59f9a848a67d43d6be2bb9ad2e32d739"
+        },
+        "date": 1660036375960,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 33212.30084239098,
+            "unit": "ns/iter",
+            "extra": "iterations: 111231\ncpu: 21152.669669426683 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 13086995.539999861,
+            "unit": "ns/iter",
+            "extra": "iterations: 50\ncpu: 10827027.999999998 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 38597.052074292675,
+            "unit": "ns/iter",
+            "extra": "iterations: 17283\ncpu: 38574.17115084188 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 11465053.274193797,
+            "unit": "ns/iter",
+            "extra": "iterations: 62\ncpu: 11454951.61290322 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 106004.51571298366,
+            "unit": "ns/iter",
+            "extra": "iterations: 31789\ncpu: 24167.46673377582 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 31079009.35000032,
+            "unit": "ns/iter",
+            "extra": "iterations: 100\ncpu: 38989.99999999653 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 104526788.85714509,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103234385.71428576 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 103947099.85713948,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103632828.57142866 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 103919256.85714146,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 102164757.14285712 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 12086291.968253748,
+            "unit": "ns/iter",
+            "extra": "iterations: 63\ncpu: 11018255.555555554 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_noWorkSteal",
+            "value": 644436918.5000198,
+            "unit": "ns/iter",
+            "extra": "iterations: 2\ncpu: 315832999.9999996 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_withWorkSteal",
+            "value": 108524551.16666704,
+            "unit": "ns/iter",
+            "extra": "iterations: 12\ncpu: 66639458.3333334 ns\nthreads: 1"
           }
         ]
       }
