@@ -988,6 +988,39 @@ TEST_F(LazyTest, testCollectAllVariadic) {
         CHECK_EXECUTOR(&e1);
     };
     syncAwait(test3().via(&e1));
+
+    // void task
+    auto test4 = [this, &e2]() -> Lazy<> {
+        CHECK_EXECUTOR(&e2);
+        auto combinedLazy = collectAll(
+            // test temporary object
+            getValue(2), makeVoidTask(), testExcept());
+        CHECK_EXECUTOR(&e2);
+
+        auto out_tuple = co_await std::move(combinedLazy);
+        EXPECT_EQ(3u, std::tuple_size<decltype(out_tuple)>::value);
+
+        auto v_try_int = std::get<0>(std::move(out_tuple));
+        auto v_try_void01 = std::get<1>(std::move(out_tuple));
+        auto v_try_void02 = std::get<2>(std::move(out_tuple));
+
+        EXPECT_EQ(2u, v_try_int.value());
+
+        bool b1 = std::is_same_v<Try<void>, decltype(v_try_void01)>;
+        bool b2 = std::is_same_v<Try<void>, decltype(v_try_void02)>;
+        try {  // v_try_void02 throw exception
+            EXPECT_TRUE(true);
+            v_try_void02.value();
+            EXPECT_TRUE(false);
+        } catch (const std::runtime_error& e) {
+            EXPECT_TRUE(true);
+        }
+        EXPECT_TRUE(b1);
+        EXPECT_TRUE(b2);
+
+        CHECK_EXECUTOR(&e2);
+    };
+    syncAwait(test4().via(&e2));
 }
 
 TEST_F(LazyTest, testCollectAny) {

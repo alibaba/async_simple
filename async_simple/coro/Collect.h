@@ -350,8 +350,10 @@ inline auto collectAllPara(std::vector<LazyType<T>, IAlloc>&& input,
 // LazyType tasks in one thread,and producing a tuple of Try values containing
 // each of the results.
 template <template <typename> typename LazyType, typename... Ts>
-inline auto collectAll(LazyType<Ts>&&... inputs)
-    -> Lazy<std::tuple<Try<Ts>...>> {
+// The temporary object's life-time which binding to reference(inputs) won't
+// be extended to next time of coroutine resume. Just Copy inputs to avoid
+// crash.
+inline auto collectAll(LazyType<Ts>... inputs) -> Lazy<std::tuple<Try<Ts>...>> {
     if constexpr (0 == sizeof...(Ts)) {
         co_return std::tuple<>{};
     } else {
@@ -364,7 +366,7 @@ inline auto collectAll(LazyType<Ts>&&... inputs)
 // used to concurrently co_await on some different kinds of LazyType tasks in
 // executor,and producing a tuple of Try values containing each of the results.
 template <template <typename> typename LazyType, typename... Ts>
-inline auto collectAllPara(LazyType<Ts>&&... inputs)
+inline auto collectAllPara(LazyType<Ts>... inputs)
     -> Lazy<std::tuple<Try<Ts>...>> {
     if constexpr (0 == sizeof...(Ts)) {
         co_return std::tuple<>{};
