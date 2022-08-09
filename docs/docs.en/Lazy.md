@@ -348,7 +348,8 @@ Lazy<int> batch_sum(size_t total_number, size_t batch_size)  {
 
 Sometimes we need only a result of a lot of tasks. We could use `collectAny` in this case. `collectAny` would return the result of the first task get completed. All other tasks would detached and their results would be ignored.
 
-The argument of `collectAny` is `std::vector<Lazy<T>>`. The return type is `Lazy<CollectAnyResult<T>>`.
+- Argument type: `std::vector<Lazy<T>>`. Return type:  `Lazy<CollectAnyResult<T>>`.
+- Argument type: `Lazy<T1>, Lazy<T2>, Lazy<T3>, ...`. Return type: `std::variant<Try<T1>, Try<T2>, Try<T3>, ...>`.
 
 The structure of `CollectAnyResult` would be:
 ```C++
@@ -375,5 +376,12 @@ Lazy<void> foo() {
         std::cout << "It failed.\n";
     else
         std::cout << "Its result: " << any_result._value.value() << "\n";
+}
+Lazy<void> foo_var() {
+  auto res=collectAny(ComputingTask<int>(1),ComputingTask<int>(2),ComputingTask<double>(3.14f));
+  std::cout<< "Index: " << res.index();
+  std::visit([](auto &&value){
+    std::cout<<"Value: "<< value <<std::endl;
+  },res);
 }
 ```

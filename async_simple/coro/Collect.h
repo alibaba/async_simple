@@ -22,6 +22,11 @@
 #include <async_simple/coro/Lazy.h>
 #include <async_simple/experimental/coroutine.h>
 #include <exception>
+#include <memory>
+#include <optional>
+#include <type_traits>
+#include <utility>
+#include <variant>
 #include <vector>
 
 namespace async_simple {
@@ -86,9 +91,10 @@ struct CollectAnyAwaiter {
                 continuation.address())
                 .promise();
         auto executor = promise_type._executor;
+        // we should take care of input's life-time after resume.
+        std::vector<LazyType, InAlloc> input(std::move(_input));
         // Make local copies to shared_ptr to avoid deleting objects too early
         // if any coroutine finishes before this function.
-        std::vector<LazyType, InAlloc> input(std::move(_input));
         auto result = std::make_shared<ResultType>();
         auto event = std::make_shared<detail::CountEvent>(input.size());
 
@@ -120,6 +126,83 @@ struct CollectAnyAwaiter {
 
     std::vector<LazyType, InAlloc> _input;
     std::shared_ptr<ResultType> _result;
+};
+
+template <template <typename> typename LazyType, typename... Ts>
+struct CollectAnyVariadicAwaiter {
+    using ResultType = std::variant<Try<Ts>...>;
+    using InputType = std::tuple<LazyType<Ts>...>;
+
+    CollectAnyVariadicAwaiter(LazyType<Ts>&&... inputs)
+        : _input(std::make_unique<InputType>(std::move(inputs)...)),
+          _result(nullptr) {}
+
+    CollectAnyVariadicAwaiter(const CollectAnyVariadicAwaiter&) = delete;
+    CollectAnyVariadicAwaiter& operator=(const CollectAnyVariadicAwaiter&) =
+        delete;
+    CollectAnyVariadicAwaiter(CollectAnyVariadicAwaiter&& other)
+        : _input(std::move(other._input)), _result(std::move(other._result)) {}
+
+    bool await_ready() const noexcept {
+        return std::tuple_size<InputType>() == 0 ||
+               (_result && _result->has_value());
+    }
+
+    template <size_t... index>
+    void await_suspend_impl(std::index_sequence<index...>,
+                            std::coroutine_handle<> continuation) {
+        auto promise_type =
+            std::coroutine_handle<LazyPromiseBase>::from_address(
+                continuation.address())
+                .promise();
+        auto executor = promise_type._executor;
+
+        auto input = std::move(_input);
+        // Make local copies to shared_ptr to avoid deleting objects too early
+        // if any coroutine finishes before this function.
+        auto result = std::make_shared<std::optional<ResultType>>();
+        auto event =
+            std::make_shared<detail::CountEvent>(std::tuple_size<InputType>());
+
+        _result = result;
+
+        (
+            [&]() {
+                if (result->has_value()) {
+                    return;
+                }
+                if (!std::get<index>(*input)._coro.promise()._executor) {
+                    std::get<index>(*input)._coro.promise()._executor =
+                        executor;
+                }
+                std::get<index>(*input).start(
+                    [r = result, c = continuation,
+                     e = event](std::variant_alternative_t<index, ResultType>&&
+                                    res) mutable {
+                        assert(e != nullptr);
+                        auto count = e->downCount();
+                        if (count == std::tuple_size<InputType>() + 1) {
+                            *r = ResultType{std::in_place_index_t<index>(),
+                                            std::move(res)};
+                            c.resume();
+                        }
+                    });
+            }(),
+            ...);
+    }
+
+    void await_suspend(std::coroutine_handle<> continuation) {
+        await_suspend_impl(std::make_index_sequence<sizeof...(Ts)>{},
+                           std::move(continuation));
+    }
+
+    auto await_resume() {
+        assert(_result != nullptr);
+        return std::move(_result->value());
+    }
+
+    std::unique_ptr<std::tuple<LazyType<Ts>...>> _input;
+    std::shared_ptr<std::optional<ResultType>> _result;
 };
 
 template <typename T, typename InAlloc>
@@ -218,18 +301,6 @@ struct SimpleCollectAllAwaitable {
 
 }  // namespace detail
 
-// collectAny
-template <typename T, template <typename> typename LazyType,
-          typename IAlloc = std::allocator<LazyType<T>>>
-inline auto collectAny(std::vector<LazyType<T>, IAlloc>&& input)
-    -> Lazy<detail::CollectAnyResult<T>> {
-    using AT =
-        std::conditional_t<std::is_same_v<LazyType<T>, Lazy<T>>,
-                           detail::SimpleCollectAnyAwaitable<T, IAlloc>,
-                           detail::CollectAnyAwaiter<LazyType<T>, IAlloc>>;
-    co_return co_await AT(std::move(input));
-}
-
 namespace detail {
 
 template <bool Para, typename T, template <typename> typename LazyType,
@@ -318,7 +389,36 @@ inline auto collectAllVariadicImpl(std::index_sequence<Indices...>,
     co_await collectAllImpl<Para>(std::move(wraper_tasks));
     co_return std::move(results);
 }
+
+// collectAny
+
+template <typename T, template <typename> typename LazyType,
+          typename IAlloc = std::allocator<LazyType<T>>>
+inline auto collectAnyImpl(std::vector<LazyType<T>, IAlloc>&& input)
+    -> Lazy<detail::CollectAnyResult<T>> {
+    using AT =
+        std::conditional_t<std::is_same_v<LazyType<T>, Lazy<T>>,
+                           detail::SimpleCollectAnyAwaitable<T, IAlloc>,
+                           detail::CollectAnyAwaiter<LazyType<T>, IAlloc>>;
+    co_return co_await AT(std::move(input));
+}
+
 }  // namespace detail
+
+template <typename T, template <typename> typename LazyType,
+          typename IAlloc = std::allocator<LazyType<T>>>
+inline auto collectAny(std::vector<LazyType<T>, IAlloc>&& input)
+    -> Lazy<detail::CollectAnyResult<T>> {
+    co_return co_await detail::collectAnyImpl(std::move(input));
+}
+
+template <template <typename> typename LazyType, typename... Ts>
+inline auto collectAny(LazyType<Ts>... awaitables)
+    -> Lazy<std::variant<Try<Ts>...>> {
+    static_assert(sizeof...(Ts), "collectAny need at least one param!");
+    co_return co_await detail::CollectAnyVariadicAwaiter(
+        std::move(awaitables)...);
+}
 
 // The collectAll() function can be used to co_await on a vector of LazyType
 // tasks in **one thread**,and producing a vector of Try values containing each

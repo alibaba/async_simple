@@ -51,6 +51,10 @@ struct CollectAllAwaiter;
 
 template <typename LazyType, typename IAlloc>
 struct CollectAnyAwaiter;
+
+template <template <typename> typename LazyType, typename... Ts>
+struct CollectAnyVariadicAwaiter;
+
 }  // namespace detail
 
 namespace detail {
@@ -431,6 +435,9 @@ private:
 
     template <typename LazyType, typename IAlloc>
     friend struct detail::CollectAnyAwaiter;
+
+    template <template <typename> typename LazyType, typename... Ts>
+    friend struct detail::CollectAnyVariadicAwaiter;
 };
 
 // A RescheduleLazy is a Lazy with an executor. The executor of a RescheduleLazy
@@ -521,6 +528,9 @@ private:
 
     template <typename LazyType, typename IAlloc>
     friend struct detail::CollectAnyAwaiter;
+
+    template <template <typename> typename LazyType, typename... Ts>
+    friend struct detail::CollectAnyVariadicAwaiter;
 };
 
 template <typename T>
