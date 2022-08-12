@@ -99,7 +99,8 @@ public:
     // same "Context" as before.
     virtual size_t currentContextId() const { return 0; };
     virtual Context checkout() { return NULLCTX; }
-    virtual bool checkin(Func func, Context ctx, ScheduleOptions opts) {
+    virtual bool checkin(Func func, [[maybe_unused]] Context ctx,
+                         [[maybe_unused]] ScheduleOptions opts) {
         return schedule(std::move(func));
     }
     virtual bool checkin(Func func, Context ctx) {
