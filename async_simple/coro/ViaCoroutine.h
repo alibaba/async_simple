@@ -94,7 +94,7 @@ public:
         : _coro(std::exchange(other._coro, nullptr)) {}
 
 public:
-    static ViaCoroutine create(Executor* ex) { co_return; }
+    static ViaCoroutine create([[maybe_unused]] Executor* ex) { co_return; }
 
 public:
     void checkin() {
