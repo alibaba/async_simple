@@ -261,7 +261,7 @@ struct CollectAllAwaiter {
             };
             if (Para == true && _input.size() > 1) {
                 if (exec != nullptr)
-                    LIKELY {
+                    AS_LIKELY {
                         exec->schedule(func);
                         continue;
                     }

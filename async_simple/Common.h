@@ -19,11 +19,11 @@
 #include <stdexcept>
 
 #if __has_cpp_attribute(likely) && __has_cpp_attribute(unlikely)
-#define LIKELY [[likely]]
-#define UNLIKELY [[unlikely]]
+#define AS_LIKELY [[likely]]
+#define AS_UNLIKELY [[unlikely]]
 #else
-#define LIKELY
-#define UNLIKELY
+#define AS_LIKELY
+#define AS_UNLIKELY
 #endif
 
 #ifdef _WIN32
@@ -41,7 +41,7 @@ namespace async_simple {
 // there is a bug in the user code.
 inline void logicAssert(bool x, const char* errorMsg) {
     if (x)
-        LIKELY { return; }
+        AS_LIKELY { return; }
     throw std::logic_error(errorMsg);
 }
 
