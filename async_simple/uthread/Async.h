@@ -59,7 +59,7 @@ template <class T, class F,
                                   T>::type* = nullptr>
 inline void async(F&& f, Executor* ex) {
     if (!ex)
-        UNLIKELY { return; }
+        AS_UNLIKELY { return; }
     ex->schedule([f = std::move(f), ex]() {
         Uthread uth(Attribute{ex}, std::move(f));
         uth.detach();
@@ -72,7 +72,7 @@ template <class T, class F, class C,
                                   T>::type* = nullptr>
 inline void async(F&& f, C&& c, Executor* ex) {
     if (!ex)
-        UNLIKELY { return; }
+        AS_UNLIKELY { return; }
     ex->schedule([f = std::move(f), c = std::move(c), ex]() {
         Uthread uth(Attribute{ex}, std::move(f));
         uth.join(std::move(c));

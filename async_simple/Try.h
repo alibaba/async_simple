@@ -138,7 +138,7 @@ public:
 private:
     AS_INLINE void checkHasTry() const {
         if (_contains == Contains::VALUE)
-            LIKELY { return; }
+            AS_LIKELY { return; }
         else if (_contains == Contains::EXCEPTION) {
             std::rethrow_exception(_error);
         } else if (_contains == Contains::NOTHING) {
