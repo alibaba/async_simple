@@ -79,6 +79,39 @@ TEST_F(SleepTest, testSleep) {
     };
 
     syncAwait(sleepTask2().via(&e1));
+
+    auto sleepTask3 = [&]() -> Lazy<> {
+        class Executor : public async_simple::Executor {
+        public:
+            Executor() = default;
+            virtual bool schedule(Func) override { return true; }
+            virtual void schedule(Func func, Duration dur) override {
+                std::thread([this, func = std::move(func), dur]() {
+                    id = std::this_thread::get_id();
+                    std::this_thread::sleep_for(dur);
+                    func();
+                }).detach();
+            }
+
+            std::thread::id id;
+        };
+        Executor ex;
+        auto startTime = std::chrono::system_clock::now();
+        co_await coro::sleep(&ex, 900ms);
+        auto endTime = std::chrono::system_clock::now();
+
+        std::cout << std::this_thread::get_id() << std::endl;
+        std::cout << ex.id << std::endl;
+
+        EXPECT_EQ(std::this_thread::get_id(), ex.id);
+
+        auto duration = endTime - startTime;
+        cout << std::chrono::duration_cast<std::chrono::milliseconds>(duration)
+                    .count()
+             << endl;
+    };
+
+    syncAwait(sleepTask3().via(&e1));
 }
 
 }  // namespace coro
