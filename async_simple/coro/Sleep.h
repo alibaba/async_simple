@@ -36,6 +36,13 @@ Lazy<void> sleep(std::chrono::duration<Rep, Period> dur) {
     co_return co_await ex->after(
         std::chrono::duration_cast<Executor::Duration>(dur));
 }
+
+template <typename Rep, typename Period>
+Lazy<void> sleep(Executor* ex, std::chrono::duration<Rep, Period> dur) {
+    co_return co_await ex->after(
+        std::chrono::duration_cast<Executor::Duration>(dur));
+}
+
 }  // namespace coro
 }  // namespace async_simple
 
