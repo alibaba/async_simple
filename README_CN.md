@@ -109,6 +109,12 @@ make install
 
 更多文档介绍见目录[docs](./docs/docs.cn)。
 
+# 存在问题？
+
+如果在使用时遇到任何问题，我们建议先阅读 [文档](./docs/docs.cn), [issues](https://github.com/alibaba/async_simple/issues)
+以及 [discussions](https://github.com/alibaba/async_simple/discussions).
+如果你没有找到满意的答案，可以提一个 [Issue](https://github.com/alibaba/async_simple/issues) 或者在 [discussions](https://github.com/alibaba/async_simple/discussions) 中开启讨论。具体地，对于缺陷报告以及功能增强，我们建议提一个 [Issue](https://github.com/alibaba/async_simple/issues)；而对于如何使用等问题，我们建议在 [discussions](https://github.com/alibaba/async_simple/discussions) 中开启讨论。
+
 # 示例依赖
 
 注意目前示例代码包含了单独[asio](https://github.com/chriskohlhoff/asio/tree/master/asio)代码。对应Commit: f70f65ae54351c209c3a24704624144bfe8e70a3

@@ -74,6 +74,7 @@ cmake .. && sudo make install
 ## Install Clang Compiler
 
 Required Compiler: clang (>= 11.0.1) or gcc (>= 10.3)
+
 ## Demo example dependency
 
 Demo example depends on standalone asio(https://github.com/chriskohlhoff/asio/tree/master/asio), the commit id:f70f65ae54351c209c3a24704624144bfe8e70a3
@@ -92,6 +93,14 @@ make install # sudo if required
 # Get Started
 
 After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with API, here is a [demo](./docs/docs.en/GetStarted.md) use Lazy to count char in a file.
+
+# Questions
+
+For questions, we suggest to read [docs](./docs/docs.en), [issues](https://github.com/alibaba/async_simple/issues)
+and [discussions](https://github.com/alibaba/async_simple/discussions) first.
+If there is no satisfying answer, you could file an [issues](https://github.com/alibaba/async_simple/issues)
+or start a thread in [discussions](https://github.com/alibaba/async_simple/discussions).
+Specifically, for defect report or feature enhancement, it'd be better to file an [issues](https://github.com/alibaba/async_simple/issues). And for how-to-use questions, it'd be better to start a thread in [discussions](https://github.com/alibaba/async_simple/discussions).
 
 # How to Contribute
 1. Read the [How to fix issue](./docs/docs.en/HowToFixIssue.md) document firstly.
