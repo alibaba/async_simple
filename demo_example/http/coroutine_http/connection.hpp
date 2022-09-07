@@ -17,7 +17,7 @@
 #define ASYNC_SIMPLE_CONNECTION_HPP
 
 #include <fstream>
-#include "../../asio_util.hpp"
+#include "../../asio_coro_util.hpp"
 #include "../http_request.hpp"
 #include "../http_response.hpp"
 
