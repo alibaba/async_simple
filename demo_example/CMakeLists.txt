@@ -7,7 +7,7 @@ target_link_libraries(ReadFiles async_simple)
 add_custom_command(
         TARGET ReadFiles POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-                ${CMAKE_SOURCE_DIR}/demo_example/Input
+                ${CMAKE_CURRENT_SOURCE_DIR}/Input
                 ${CMAKE_CURRENT_BINARY_DIR}/Input)
 
 include_directories(asio)
