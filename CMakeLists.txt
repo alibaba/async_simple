@@ -1,11 +1,19 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 project(async_simple CXX C ASM)
 enable_testing()
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_library(libasync_simple INTERFACE)
+target_include_directories(libasync_simple INTERFACE
+        $<BUILD_INTERFACE:${async_simple_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include>
+        )
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
-find_package(Threads)
+find_package(Threads REQUIRED)
+target_link_libraries(libasync_simple INTERFACE Threads::Threads)
 find_package(Aio)
 
 find_package(Benchmark)
@@ -15,8 +23,9 @@ option(ASYNC_SIMPLE_ENABLE_TESTS "Build the tests" ON)
 if(LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
     message(STATUS "aio found")
     message(STATUS "aio: ${LIBAIO_INCLUDE_DIR}, ${LIBAIO_LIBRARIES}.")
+    target_link_libraries(libasync_simple INTERFACE ${LIBAIO_LIBRARIES})
 else()
-    add_compile_definitions(ASYNC_SIMPLE_HAS_NOT_AIO)
+    target_compile_definitions(libasync_simple INTERFACE ASYNC_SIMPLE_HAS_NOT_AIO)
 endif()
 
 if (${ASYNC_SIMPLE_ENABLE_TESTS})
@@ -73,19 +82,11 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 set(HEADERS_PATH
-    ${PROJECT_SOURCE_DIR}
     ${GTEST_INCLUDE_DIR}
     ${GMOCK_INCLUDE_DIR}
     ${AIO_INCLUDE_DIR}
     )
 include_directories(${HEADERS_PATH})
-
-set(deplibs)
-list(APPEND deplibs ${CMAKE_THREAD_LIBS_INIT})
-if(LIBAIO_LIBRARIES)
-    list(APPEND deplibs ${LIBAIO_LIBRARIES})
-endif()
-
 set(testdeplibs)
 list(APPEND testdeplibs ${GTEST_LIBRARIES})
 list(APPEND testdeplibs ${GMOCK_LIBRARIES})
