@@ -104,3 +104,14 @@ public:
 Foo f;
 uthread::await(ex, &Foo::bar, &f, Ts&&...);
 ```
+
+- 异步等待 futures `Future<T>`. 虽然我们实现了 `Future<T>::wait`, 但这个接口不会触发有栈协程切换. 在有栈协程中，我们需要调用 `uthread::await(Future<T>)` 来触发有栈切换。
+
+```cpp
+#include <async_simple/uthread/Await.h>
+using namespace async_simple;
+
+Promise<int> p;
+// ...
+uthread::await(p.getFuture());
+```

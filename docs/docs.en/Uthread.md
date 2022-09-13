@@ -106,3 +106,13 @@ Foo f;
 uthread::await(ex, &Foo::bar, &f, Ts&&...);
 ```
 
+- Await futures `Future<T>`. Although we implemented `Future<T>::wait`, it wouldn't call stackful switch in/out. We need to call `uthread::await` to trigger stackful switching.
+
+```cpp
+#include <async_simple/uthread/Await.h>
+using namespace async_simple;
+
+Promise<int> p;
+// ...
+uthread::await(p.getFuture());
+```
