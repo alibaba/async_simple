@@ -39,13 +39,12 @@ public:
 private:
     Future<T> _future;
 };
+}  // namespace coro
 
 template <typename T>
 auto operator co_await(T&& future) requires IsFuture<std::decay_t<T>>::value {
-    return FutureAwaiter(std::move(future));
+    return coro::FutureAwaiter(std::move(future));
 }
-
-}  // namespace coro
 }  // namespace async_simple
 
 #endif
