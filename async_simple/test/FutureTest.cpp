@@ -430,7 +430,8 @@ TEST_F(FutureTest, testCollectReadyFutures) {
                  .thenValue([&executed, n](vector<Try<Dummy>>&& vec) {
                      EXPECT_EQ(n, vec.size());
                      for (size_t i = 0; i < vec.size(); ++i) {
-                         EXPECT_EQ(i, vec[i].value().value);
+                         EXPECT_EQ(
+                             i, static_cast<decltype(i)>(vec[i].value().value));
                      }
                      executed = true;
                  });

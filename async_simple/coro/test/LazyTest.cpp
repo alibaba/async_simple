@@ -467,7 +467,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e1);
-        EXPECT_EQ(task_num, out.size());
+        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
         co_await CurrentExecutor();
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
@@ -512,7 +512,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e2);
-        EXPECT_EQ(task_num, out.size());
+        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
         co_await CurrentExecutor();
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
@@ -536,7 +536,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
 
         auto out = co_await std::move(combinedLazy);
 
-        EXPECT_EQ(task_num, out.size());
+        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
         CHECK_EXECUTOR(&e2);
         co_await CurrentExecutor();
     };
@@ -558,7 +558,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e3);
-        EXPECT_EQ(task_num, out.size());
+        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
@@ -581,7 +581,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         CHECK_EXECUTOR(&e3);
         auto out = co_await std::move(combinedLazy);
 
-        EXPECT_EQ(task_num, out.size());
+        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
         CHECK_EXECUTOR(&e3);
     };
     syncAwait(test3Void().via(&e3));
@@ -599,7 +599,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
             collectAllWindowed(10, false, std::move(input), outAlloc);
         CHECK_EXECUTOR(&e4);
         auto out = co_await std::move(combinedLazy);
-        EXPECT_EQ(task_num, out.size());
+        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
         CHECK_EXECUTOR(&e4);
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
@@ -633,7 +633,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e6);
-        EXPECT_EQ(task_num, out.size());
+        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
@@ -663,7 +663,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
 
         auto out = co_await std::move(combinedLazy);
 
-        EXPECT_EQ(task_num, out.size());
+        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
         CHECK_EXECUTOR(&e6);
     };
     syncAwait(test5Void().via(&e6));
@@ -687,7 +687,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e6);
-        EXPECT_EQ(task_num, out.size());
+        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
@@ -713,7 +713,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto combinedLazy = collectAllWindowed(10, false, std::move(input));
         CHECK_EXECUTOR(&e6);
         auto out = co_await std::move(combinedLazy);
-        EXPECT_EQ(task_num, out.size());
+        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
         CHECK_EXECUTOR(&e6);
     };
     syncAwait(test6Void().via(&e6));
@@ -741,7 +741,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e6);
-        EXPECT_EQ(task_num, out.size());
+        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
@@ -772,7 +772,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         CHECK_EXECUTOR(&e6);
         auto out = co_await std::move(combinedLazy);
 
-        EXPECT_EQ(task_num, out.size());
+        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
         CHECK_EXECUTOR(&e6);
     };
     syncAwait(test7Void().via(&e6));
@@ -800,7 +800,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e6);
-        EXPECT_EQ(task_num, out.size());
+        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
@@ -920,7 +920,7 @@ TEST_F(LazyTest, testCollectAllVariadic) {
         auto v_try_void01 = std::get<1>(std::move(out_tuple));
         auto v_try_void02 = std::get<2>(std::move(out_tuple));
 
-        EXPECT_EQ(2u, v_try_int.value());
+        EXPECT_EQ(2, v_try_int.value());
 
         bool b1 = std::is_same_v<Try<void>, decltype(v_try_void01)>;
         bool b2 = std::is_same_v<Try<void>, decltype(v_try_void02)>;
@@ -985,7 +985,7 @@ TEST_F(LazyTest, testCollectAllVariadic) {
         auto v_try_void01 = std::get<1>(std::move(out_tuple));
         auto v_try_void02 = std::get<2>(std::move(out_tuple));
 
-        EXPECT_EQ(2u, v_try_int.value());
+        EXPECT_EQ(2, v_try_int.value());
         bool b1 = std::is_same_v<Try<void>, decltype(v_try_void01)>;
         bool b2 = std::is_same_v<Try<void>, decltype(v_try_void02)>;
         EXPECT_TRUE(b1);
@@ -1010,7 +1010,7 @@ TEST_F(LazyTest, testCollectAllVariadic) {
         auto v_try_void01 = std::get<1>(std::move(out_tuple));
         auto v_try_void02 = std::get<2>(std::move(out_tuple));
 
-        EXPECT_EQ(2u, v_try_int.value());
+        EXPECT_EQ(2, v_try_int.value());
 
         bool b1 = std::is_same_v<Try<void>, decltype(v_try_void01)>;
         bool b2 = std::is_same_v<Try<void>, decltype(v_try_void02)>;
@@ -1061,7 +1061,7 @@ TEST_F(LazyTest, testCollectAny) {
         auto combinedLazy = collectAny(std::move(input));
         auto out = co_await std::move(combinedLazy);
         EXPECT_GT(out._value.value(), 0);
-        EXPECT_GE(out._idx, 0);
+        EXPECT_GE(out._idx, 0u);
         co_return out._value.value();
     };
     ASSERT_GT(syncAwait(test().via(&e1)), 0);
@@ -1088,7 +1088,7 @@ TEST_F(LazyTest, testCollectAny) {
         auto out = co_await std::move(combinedLazy);
 
         EXPECT_GT(out._value.value(), 10);
-        EXPECT_GE(out._idx, 0);
+        EXPECT_GE(out._idx, 0u);
         co_return out._value.value();
     };
     ASSERT_GT(syncAwait(test2().via(&e3)), 10);
@@ -1117,7 +1117,7 @@ TEST_F(LazyTest, testCollectAnyVariadic) {
         auto out = co_await std::move(combinedLazy);
         EXPECT_EQ(std::visit([](const auto& o) { return o.value() == 1; }, out),
                   true);
-        EXPECT_GE(out.index(), 0);
+        EXPECT_GE(out.index(), 0u);
         co_return out;
     };
     ASSERT_EQ(std::visit([](const auto& o) { return o.value() == 1; },
@@ -1147,7 +1147,7 @@ TEST_F(LazyTest, testCollectAnyVariadic) {
 
         EXPECT_EQ(std::visit([](const auto& o) { return o.value() == 1; }, out),
                   true);
-        EXPECT_GE(out.index(), 0);
+        EXPECT_GE(out.index(), 0u);
         co_return out;
     };
 
@@ -1166,7 +1166,7 @@ TEST_F(LazyTest, testCollectAnyVariadic) {
             getValueWithSleep(std::set<int>{1, 2, 3}, 190ms).via(&e2));
         CHECK_EXECUTOR(&e3);
         auto ret = co_await std::move(combinedLazy);
-        EXPECT_EQ(ret.index(), 2);
+        EXPECT_EQ(ret.index(), 2u);
         auto out = std::get<2>(std::move(ret));
         co_return out;
     };
@@ -1403,7 +1403,7 @@ TEST_F(LazyTest, testcollectAllParallel) {
         ss.insert(out[6].value());
         ss.insert(out[7].value());
         // FIXME: input tasks maybe run not in different thread.
-        EXPECT_GT(ss.size(), 2);
+        EXPECT_GT(ss.size(), 2u);
     };
     syncAwait(test2().via(&e1));
 }
@@ -1448,7 +1448,7 @@ TEST_F(LazyTest, testBatchedcollectAll) {
         ss.insert(out[5].value());
         ss.insert(out[6].value());
         // FIXME: input tasks maybe run not in different thread.
-        EXPECT_GT(ss.size(), 1);
+        EXPECT_GT(ss.size(), 1u);
     };
     syncAwait(test1().via(&e1));
 
