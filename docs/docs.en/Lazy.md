@@ -245,6 +245,15 @@ In the above example, `task1...task4` represents a task chain consists of Lazy. 
 
 So we could assign the executor at the root the task chain simply.
 
+# Yield
+
+Sometimes we may want the executing Lazy to yield out. (For example, we found the Lazy has been executed for a long time)
+We can yield it by `co_await async_simple::coro::Yield();` in the Lazy.
+
+# Get the Current Executor
+
+We can get the current executor in a Lazy by `co_await async_simple::CurrentExecutor{};`
+
 # Collect
 
 ## CollectAll
