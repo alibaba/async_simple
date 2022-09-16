@@ -467,7 +467,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e1);
-        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
+        EXPECT_EQ(static_cast<size_t>(task_num), out.size());
         co_await CurrentExecutor();
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
@@ -512,7 +512,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e2);
-        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
+        EXPECT_EQ(static_cast<size_t>(task_num), out.size());
         co_await CurrentExecutor();
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
@@ -536,7 +536,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
 
         auto out = co_await std::move(combinedLazy);
 
-        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
+        EXPECT_EQ(static_cast<size_t>(task_num), out.size());
         CHECK_EXECUTOR(&e2);
         co_await CurrentExecutor();
     };
@@ -558,7 +558,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e3);
-        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
+        EXPECT_EQ(static_cast<size_t>(task_num), out.size());
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
@@ -581,7 +581,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         CHECK_EXECUTOR(&e3);
         auto out = co_await std::move(combinedLazy);
 
-        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
+        EXPECT_EQ(static_cast<size_t>(task_num), out.size());
         CHECK_EXECUTOR(&e3);
     };
     syncAwait(test3Void().via(&e3));
@@ -599,7 +599,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
             collectAllWindowed(10, false, std::move(input), outAlloc);
         CHECK_EXECUTOR(&e4);
         auto out = co_await std::move(combinedLazy);
-        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
+        EXPECT_EQ(static_cast<size_t>(task_num), out.size());
         CHECK_EXECUTOR(&e4);
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
@@ -633,7 +633,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e6);
-        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
+        EXPECT_EQ(static_cast<size_t>(task_num), out.size());
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
@@ -663,7 +663,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
 
         auto out = co_await std::move(combinedLazy);
 
-        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
+        EXPECT_EQ(static_cast<size_t>(task_num), out.size());
         CHECK_EXECUTOR(&e6);
     };
     syncAwait(test5Void().via(&e6));
@@ -687,7 +687,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e6);
-        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
+        EXPECT_EQ(static_cast<size_t>(task_num), out.size());
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
@@ -713,7 +713,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto combinedLazy = collectAllWindowed(10, false, std::move(input));
         CHECK_EXECUTOR(&e6);
         auto out = co_await std::move(combinedLazy);
-        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
+        EXPECT_EQ(static_cast<size_t>(task_num), out.size());
         CHECK_EXECUTOR(&e6);
     };
     syncAwait(test6Void().via(&e6));
@@ -741,7 +741,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e6);
-        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
+        EXPECT_EQ(static_cast<size_t>(task_num), out.size());
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
@@ -772,7 +772,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         CHECK_EXECUTOR(&e6);
         auto out = co_await std::move(combinedLazy);
 
-        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
+        EXPECT_EQ(static_cast<size_t>(task_num), out.size());
         CHECK_EXECUTOR(&e6);
     };
     syncAwait(test7Void().via(&e6));
@@ -800,7 +800,7 @@ TEST_F(LazyTest, testCollectAllBatched) {
         auto out = co_await std::move(combinedLazy);
 
         CHECK_EXECUTOR(&e6);
-        EXPECT_EQ(static_cast<decltype(out.size())>(task_num), out.size());
+        EXPECT_EQ(static_cast<size_t>(task_num), out.size());
         int sum = 0;
         for (size_t i = 0; i < out.size(); i++) {
             sum += out[i].value();
