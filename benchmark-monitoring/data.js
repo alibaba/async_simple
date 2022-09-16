@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663296416037,
+  "lastUpdate": 1663309000507,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -5460,6 +5460,102 @@ window.BENCHMARK_DATA = {
             "value": 79271235.9999996,
             "unit": "ns/iter",
             "extra": "iterations: 10\ncpu: 52797170.000000015 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yedeng.yd@linux.alibaba.com",
+            "name": "Chuanqi Xu",
+            "username": "ChuanqiXu9"
+          },
+          "committer": {
+            "email": "yedeng.yd@linux.alibaba.com",
+            "name": "Chuanqi Xu",
+            "username": "ChuanqiXu9"
+          },
+          "distinct": true,
+          "id": "fefe80f04a700d00e53d62231545c80cba3f4f2b",
+          "message": "Handle the use-after-return sanitizer\n\nNewer Compiler-rt will enable `Use-After-Return` by default and it\ncauses some test case fails.\n\nCloses https://github.com/alibaba/async_simple/issues/149.",
+          "timestamp": "2022-09-16T14:14:06+08:00",
+          "tree_id": "c3c60233520c152e5ce7c3cb235dc54a700d82a3",
+          "url": "https://github.com/alibaba/async_simple/commit/fefe80f04a700d00e53d62231545c80cba3f4f2b"
+        },
+        "date": 1663308999562,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 18780.26955607102,
+            "unit": "ns/iter",
+            "extra": "iterations: 69403\ncpu: 11269.949425817327 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 13337365.734693257,
+            "unit": "ns/iter",
+            "extra": "iterations: 49\ncpu: 11379965.306122452 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 24596.098990751572,
+            "unit": "ns/iter",
+            "extra": "iterations: 28437\ncpu: 24591.753701163972 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 10752618.677966023,
+            "unit": "ns/iter",
+            "extra": "iterations: 59\ncpu: 10750225.423728818 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 57670.062438665045,
+            "unit": "ns/iter",
+            "extra": "iterations: 40760\ncpu: 17219.619725220815 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 26519857.9500003,
+            "unit": "ns/iter",
+            "extra": "iterations: 100\ncpu: 27803.00000000402 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 103919755.99999829,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103606714.28571436 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 103934460.42857184,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103531014.28571434 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 104482334.42857763,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 104147999.99999997 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 11161783.199999647,
+            "unit": "ns/iter",
+            "extra": "iterations: 65\ncpu: 10483255.384615378 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_noWorkSteal",
+            "value": 936399742.4999865,
+            "unit": "ns/iter",
+            "extra": "iterations: 2\ncpu: 482773149.9999999 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_withWorkSteal",
+            "value": 108968606.2727279,
+            "unit": "ns/iter",
+            "extra": "iterations: 11\ncpu: 67552300.00000009 ns\nthreads: 1"
           }
         ]
       }
