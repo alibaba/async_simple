@@ -115,3 +115,7 @@ Promise<int> p;
 // ...
 uthread::await(p.getFuture());
 ```
+
+## Sanitizer
+
+高版本的 Compiler-rt 默认会检测 `Use-After-Return` 的情况。而因为 Uthread 不能很好的处理这个情况，所以当我们在开启高版本 Compiler-rt 后使用 Uthread 时，需要使用 `-fsanitize-address-use-after-return=never` 这个选项来禁止检测 `Use-After-Return`.

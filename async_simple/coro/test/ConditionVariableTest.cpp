@@ -174,18 +174,20 @@ TEST_F(ConditionVariableTest, testSingleWaitPredicateWithScopeLock) {
         auto scoper = co_await mutex.coScopedLock();
         var = 1;
         cv.notify();
-        latch.fetch_sub(1u, std::memory_order_relaxed);
         co_return;
     };
     auto awaiter = [&]() -> Lazy<void> {
         auto scoper = co_await mutex.coScopedLock();
         co_await cv.wait(mutex, [&] { return var > 0; });
         EXPECT_EQ(1, var);
-        latch.fetch_sub(1u, std::memory_order_relaxed);
         co_return;
     };
-    awaiter().via(&_executor).start([](Try<void> var) {});
-    producer().via(&_executor).start([](Try<void> var) {});
+    awaiter().via(&_executor).start([&](Try<void> var) {
+        latch.fetch_sub(1u, std::memory_order_relaxed);
+    });
+    producer().via(&_executor).start([&](Try<void> var) {
+        latch.fetch_sub(1u, std::memory_order_relaxed);
+    });
     while (latch.load(std::memory_order_relaxed))
         ;
 }

@@ -3,6 +3,11 @@ file(GLOB executors_src "executors/*.cpp")
 
 if(UTHREAD)
   file(GLOB uthread_src "uthread/internal/*.cc")
+  # Compiler-rt15 enables new sanitizer option sanitize-address-use-after-return,
+  # But it can't take user thread well. So disable it for thread.cc as a workaround.
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set_property(SOURCE ${uthread_src} PROPERTY COMPILE_FLAGS -fsanitize-address-use-after-return=never)
+  endif()
   if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
     file(GLOB uthread_asm_src "uthread/internal/*arm64_aapcs_elf*")
   elseif ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")

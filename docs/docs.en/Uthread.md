@@ -116,3 +116,7 @@ Promise<int> p;
 // ...
 uthread::await(p.getFuture());
 ```
+
+## Sanitizer
+
+Newer Compiler-rt will enable `Use-After-Return` by default. But it can't take care of Uthread well, so when we use Uthread with newer compiler-rt, we need to disable `Use-After-Return` explicitly by `-fsanitize-address-use-after-return=never`.
