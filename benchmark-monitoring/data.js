@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663232307481,
+  "lastUpdate": 1663296416037,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -5364,6 +5364,102 @@ window.BENCHMARK_DATA = {
             "value": 99955275.49999963,
             "unit": "ns/iter",
             "extra": "iterations: 10\ncpu: 64665839.99999998 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "651932351@qq.com",
+            "name": "MO NAN",
+            "username": "morebtcg"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f223bae3d3b2bfc31ee2408b080533704841b732",
+          "message": "Fix comparison of integer expressions of different signedness in unit… (#146)\n\n* Fix comparison of integer expressions of different signedness in unit test\r\n\r\n* Use size_t instead of decltype(out.size())",
+          "timestamp": "2022-09-16T10:45:10+08:00",
+          "tree_id": "28153dbaef1aebe7390d947f27ef8ab8e0cbca0c",
+          "url": "https://github.com/alibaba/async_simple/commit/f223bae3d3b2bfc31ee2408b080533704841b732"
+        },
+        "date": 1663296415464,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 16981.455829999846,
+            "unit": "ns/iter",
+            "extra": "iterations: 100000\ncpu: 10809.366 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 14596119.9795927,
+            "unit": "ns/iter",
+            "extra": "iterations: 49\ncpu: 11756626.530612243 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 23615.595755466595,
+            "unit": "ns/iter",
+            "extra": "iterations: 29591\ncpu: 23609.04666959548 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 8995856.756409893,
+            "unit": "ns/iter",
+            "extra": "iterations: 78\ncpu: 8927247.43589744 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 51614.775751731446,
+            "unit": "ns/iter",
+            "extra": "iterations: 45628\ncpu: 15492.107916191806 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 22696115.752000026,
+            "unit": "ns/iter",
+            "extra": "iterations: 1000\ncpu: 21673.199999999506 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 103369974.14286283,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 100103471.42857131 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 104476526.9999987,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103369642.85714284 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 103901750.28572099,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103597514.2857143 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 11338848.190475693,
+            "unit": "ns/iter",
+            "extra": "iterations: 63\ncpu: 10793968.253968252 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_noWorkSteal",
+            "value": 473599378.2500003,
+            "unit": "ns/iter",
+            "extra": "iterations: 4\ncpu: 212417349.99999994 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_withWorkSteal",
+            "value": 79271235.9999996,
+            "unit": "ns/iter",
+            "extra": "iterations: 10\ncpu: 52797170.000000015 ns\nthreads: 1"
           }
         ]
       }
