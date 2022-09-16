@@ -72,7 +72,7 @@ using namespace async_simple::util;
 
 void TestBasic(ThreadPool& pool) {
     EXPECT_EQ(ThreadPool::ERROR_TYPE::ERROR_NONE, pool.scheduleById([] {}));
-    EXPECT_GE(pool.getItemCount(), 0);
+    EXPECT_GE(pool.getItemCount(), 0u);
 
     EXPECT_EQ(ThreadPool::ERROR_TYPE::ERROR_POOL_ITEM_IS_NULL,
               pool.scheduleById(nullptr));
@@ -83,7 +83,9 @@ void TestBasic(ThreadPool& pool) {
 
 TEST(ThreadTest, BasicTest) {
     ThreadPool pool;
-    EXPECT_EQ(std::thread::hardware_concurrency(), pool.getThreadNum());
+    EXPECT_EQ(std::thread::hardware_concurrency(),
+              static_cast<decltype(std::thread::hardware_concurrency())>(
+                  pool.getThreadNum()));
     ThreadPool pool1(2);
     EXPECT_EQ(2, pool1.getThreadNum());
 

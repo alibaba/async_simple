@@ -382,7 +382,7 @@ TEST_F(UthreadTest, testCollectAllSimple) {
     async<Launch::Schedule>(
         [&running, &n, ex, fs = std::move(fs)]() mutable {
             collectAll<Launch::Schedule>(fs.begin(), fs.end(), ex);
-            EXPECT_EQ(0, n);
+            EXPECT_EQ(0u, n);
             running--;
         },
         ex);
