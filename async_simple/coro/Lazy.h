@@ -253,6 +253,106 @@ struct LazyAwaiterBase {
     }
 };
 
+template <typename T, bool reschedule>
+class LazyBase {
+public:
+    using promise_type = detail::LazyPromise<T>;
+    using Handle = CoroHandle<promise_type>;
+    using ValueType = T;
+
+    struct AwaiterBase : public detail::LazyAwaiterBase<T> {
+        using Base = detail::LazyAwaiterBase<T>;
+        AwaiterBase(Handle coro) : Base(coro) {}
+
+        AS_INLINE void await_suspend(
+            std::coroutine_handle<> continuation) noexcept {
+            // current coro started, caller becomes my continuation
+            auto& pr = this->_handle.promise();
+            pr._continuation = continuation;
+            if constexpr (reschedule) {
+                // executor schedule performed
+                logicAssert(pr._executor, "RescheduleLazy need executor");
+                pr._executor->schedule(
+                    [h = this->_handle]() mutable { h.resume(); });
+            } else {
+                this->_handle.resume();
+            }
+        }
+    };
+
+    struct TryAwaiter : public AwaiterBase {
+        TryAwaiter(Handle coro) : AwaiterBase(coro) {}
+        AS_INLINE Try<T> await_resume() noexcept {
+            return AwaiterBase::awaitResumeTry();
+        };
+    };
+
+    struct ValueAwaiter : public AwaiterBase {
+        ValueAwaiter(Handle coro) : AwaiterBase(coro) {}
+        AS_INLINE T await_resume() { return AwaiterBase::awaitResume(); }
+    };
+
+    ~LazyBase() {
+        if (_coro) {
+            _coro.destroy();
+            _coro = nullptr;
+        }
+    };
+    explicit LazyBase(Handle coro) : _coro(coro) {}
+    LazyBase(LazyBase&& other) : _coro(std::move(other._coro)) {
+        other._coro = nullptr;
+    }
+
+    LazyBase(const LazyBase&) = delete;
+    LazyBase& operator=(const LazyBase&) = delete;
+
+    Executor* getExecutor() { return _coro.promise()._executor; }
+
+    // Bind an executor only. Don't re-schedule.
+    //
+    // Users shouldn't use `setEx` directly. `setEx` is designed
+    // for internal purpose only. See uthread/Await.h/await for details.
+    Lazy<T> setEx(Executor* ex) && {
+        logicAssert(_coro.operator bool(),
+                    "Lazy do not have a coroutine_handle");
+        _coro.promise()._executor = ex;
+        return Lazy<T>(std::exchange(_coro, nullptr));
+    }
+
+    template <typename F>
+    void start(F&& callback) {
+        // callback should take a single Try<T> as parameter, return value will
+        // be ignored. a detached coroutine will not suspend at initial/final
+        // suspend point.
+        auto launchCoro = [](LazyBase lazy,
+                             std::decay_t<F> cb) -> detail::DetachedCoroutine {
+            cb(std::move(co_await lazy.coAwaitTry()));
+        };
+        [[maybe_unused]] auto detached =
+            launchCoro(std::move(*this), std::forward<F>(callback));
+    }
+
+    bool isReady() const { return !_coro || _coro.done(); }
+
+    auto operator co_await() {
+        return ValueAwaiter(std::exchange(_coro, nullptr));
+    }
+
+    auto coAwaitTry() { return TryAwaiter(std::exchange(_coro, nullptr)); }
+
+protected:
+    Handle _coro;
+
+    template <typename LazyType, typename IAlloc, typename OAlloc, bool Para>
+    friend struct detail::CollectAllAwaiter;
+
+    template <typename LazyType, typename IAlloc>
+    friend struct detail::CollectAnyAwaiter;
+
+    template <template <typename> typename LazyType, typename... Ts>
+    friend struct detail::CollectAnyVariadicAwaiter;
+};
+
 }  // namespace detail
 
 // Lazy is a coroutine task which would be executed lazily.
@@ -333,111 +433,27 @@ struct LazyAwaiterBase {
 // should implement `coAwait(Executor*)` member method. Then the caller would
 // pass its executor instance to the awaitable.
 template <typename T = void>
-class [[nodiscard]] Lazy {
+class [[nodiscard]] Lazy : public detail::LazyBase<T, /*reschedule=*/false> {
+    using Base = detail::LazyBase<T, false>;
+
 public:
-    using promise_type = detail::LazyPromise<T>;
-    using Handle = CoroHandle<promise_type>;
-    using ValueType = T;
-
-    struct AwaiterBase : public detail::LazyAwaiterBase<T> {
-        using Base = detail::LazyAwaiterBase<T>;
-        AwaiterBase(Handle coro) : Base(coro) {}
-
-        AS_INLINE std::coroutine_handle<> await_suspend(
-            std::coroutine_handle<> continuation) noexcept {
-            // current coro started, caller becomes my continuation
-            Base::_handle.promise()._continuation = continuation;
-            return Base::_handle;
-        }
-    };
-
-    struct TryAwaiter : public AwaiterBase {
-        TryAwaiter(Handle coro) : AwaiterBase(coro) {}
-        AS_INLINE Try<T> await_resume() noexcept {
-            return AwaiterBase::awaitResumeTry();
-        };
-    };
-
-    struct ValueAwaiter : public AwaiterBase {
-        ValueAwaiter(Handle coro) : AwaiterBase(coro) {}
-        AS_INLINE T await_resume() { return AwaiterBase::awaitResume(); }
-    };
-
-    ~Lazy() {
-        if (_coro) {
-            _coro.destroy();
-            _coro = nullptr;
-        }
-    };
-    explicit Lazy(Handle coro) : _coro(coro) {}
-    Lazy(Lazy&& other) : _coro(std::move(other._coro)) {
-        other._coro = nullptr;
-    }
-
-    Lazy(const Lazy&) = delete;
-    Lazy& operator=(const Lazy&) = delete;
+    using Base::Base;
 
     // Bind an executor to a Lazy, and convert it to RescheduleLazy.
     // You can only call via on rvalue, i.e. a Lazy is not accessible after
     // via() called.
     RescheduleLazy<T> via(Executor* ex) && {
-        logicAssert(_coro.operator bool(),
+        logicAssert(this->_coro.operator bool(),
                     "Lazy do not have a coroutine_handle");
-        _coro.promise()._executor = ex;
-        return RescheduleLazy<T>(std::exchange(_coro, nullptr));
-    }
-
-    Executor* getExecutor() { return _coro.promise()._executor; }
-
-    // Bind an executor only. Don't re-schedule.
-    //
-    // Users shouldn't use `setEx` directly. `setEx` is designed
-    // for internal purpose only. See uthread/Await.h/await for details.
-    Lazy<T> setEx(Executor* ex) && {
-        logicAssert(_coro.operator bool(),
-                    "Lazy do not have a coroutine_handle");
-        _coro.promise()._executor = ex;
-        return Lazy<T>(std::exchange(_coro, nullptr));
-    }
-
-    template <typename F>
-    void start(F&& callback) {
-        // callback should take a single Try<T> as parameter, return value will
-        // be ignored. a detached coroutine will not suspend at initial/final
-        // suspend point.
-        auto launchCoro = [](Lazy lazy,
-                             std::decay_t<F> cb) -> detail::DetachedCoroutine {
-            cb(std::move(co_await lazy.coAwaitTry()));
-        };
-        [[maybe_unused]] auto detached =
-            launchCoro(std::move(*this), std::forward<F>(callback));
-    }
-
-    bool isReady() const { return !_coro || _coro.done(); }
-
-    auto operator co_await() {
-        return ValueAwaiter(std::exchange(_coro, nullptr));
+        this->_coro.promise()._executor = ex;
+        return RescheduleLazy<T>(std::exchange(this->_coro, nullptr));
     }
 
     auto coAwait(Executor* ex) {
         // derived lazy inherits executor
-        _coro.promise()._executor = ex;
-        return ValueAwaiter(std::exchange(_coro, nullptr));
+        this->_coro.promise()._executor = ex;
+        return typename Base::ValueAwaiter(std::exchange(this->_coro, nullptr));
     }
-    auto coAwaitTry() { return TryAwaiter(std::exchange(_coro, nullptr)); }
-
-private:
-    Handle _coro;
-    friend class RescheduleLazy<T>;
-
-    template <typename LazyType, typename IAlloc, typename OAlloc, bool Para>
-    friend struct detail::CollectAllAwaiter;
-
-    template <typename LazyType, typename IAlloc>
-    friend struct detail::CollectAnyAwaiter;
-
-    template <template <typename> typename LazyType, typename... Ts>
-    friend struct detail::CollectAnyVariadicAwaiter;
 };
 
 // A RescheduleLazy is a Lazy with an executor. The executor of a RescheduleLazy
@@ -452,85 +468,20 @@ private:
 // submit a task to resume the corresponding Lazy task to the executor. Then the
 // executor would execute the Lazy task later.
 template <typename T = void>
-class [[nodiscard]] RescheduleLazy {
-public:
-    using ValueType = typename Lazy<T>::ValueType;
-    using Handle = typename Lazy<T>::Handle;
-
-private:
-    struct AwaiterBase : public detail::LazyAwaiterBase<T> {
-        using Base = detail::LazyAwaiterBase<T>;
-        AwaiterBase(Handle coro) : Base(coro) {}
-        inline void await_suspend(CoroHandle<> continuation) {
-            auto& pr = Base::_handle.promise();
-            pr._continuation = continuation;
-            // if co_await on RescheduleLazy, executor schedule performed
-            std::function<void()> func = [h = Base::_handle]() mutable {
-                h.resume();
-            };
-            pr._executor->schedule(func);
-        }
-    };
-    struct ValueAwaiter : public AwaiterBase {
-        ValueAwaiter(Handle coro) : AwaiterBase(coro) {}
-
-        AS_INLINE T await_resume() { return AwaiterBase::awaitResume(); }
-    };
-
-    struct TryAwaiter : public AwaiterBase {
-        TryAwaiter(Handle coro) : AwaiterBase(coro) {}
-        AS_INLINE Try<T> await_resume() noexcept {
-            return AwaiterBase::awaitResumeTry();
-        };
-    };
-
-private:
-    RescheduleLazy(Handle coro) : _coro(coro) {}
+class [[nodiscard]] RescheduleLazy
+    : public detail::LazyBase<T, /*reschedule=*/true> {
+    using Base = detail::LazyBase<T, true>;
 
 public:
-    RescheduleLazy(const RescheduleLazy&) = delete;
-    RescheduleLazy& operator=(const RescheduleLazy&) = delete;
-    RescheduleLazy(RescheduleLazy&& other)
-        : _coro(std::exchange(other._coro, nullptr)) {}
-
-    Executor* getExecutor() { return _coro.promise()._executor; }
-
-    auto operator co_await() noexcept {
-        return ValueAwaiter(std::exchange(_coro, nullptr));
-    }
-
-    auto coAwaitTry() { return TryAwaiter(std::exchange(_coro, nullptr)); }
-
-    template <typename F>
-    void start(F&& callback) {
-        auto launchCoro = [](RescheduleLazy lazy,
-                             std::decay_t<F> cb) -> detail::DetachedCoroutine {
-            cb(std::move(co_await lazy.coAwaitTry()));
-        };
-        [[maybe_unused]] auto detached =
-            launchCoro(std::move(*this), std::forward<F>(callback));
-    }
+    using Base::Base;
 
     void detach() {
-        start([](auto&& t) {
+        this->start([](auto&& t) {
             if (t.hasError()) {
                 std::rethrow_exception(t.getException());
             }
         });
     }
-
-private:
-    Handle _coro;
-    friend class Lazy<T>;
-
-    template <typename LazyType, typename IAlloc, typename OAlloc, bool Para>
-    friend struct detail::CollectAllAwaiter;
-
-    template <typename LazyType, typename IAlloc>
-    friend struct detail::CollectAnyAwaiter;
-
-    template <template <typename> typename LazyType, typename... Ts>
-    friend struct detail::CollectAnyVariadicAwaiter;
 };
 
 template <typename T>
