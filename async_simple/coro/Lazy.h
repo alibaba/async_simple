@@ -264,7 +264,7 @@ public:
         using Base = detail::LazyAwaiterBase<T>;
         AwaiterBase(Handle coro) : Base(coro) {}
 
-        AS_INLINE void await_suspend(
+        AS_INLINE std::coroutine_handle<> await_suspend(
             std::coroutine_handle<> continuation) noexcept {
             // current coro started, caller becomes my continuation
             auto& pr = this->_handle.promise();
@@ -274,9 +274,9 @@ public:
                 logicAssert(pr._executor, "RescheduleLazy need executor");
                 pr._executor->schedule(
                     [h = this->_handle]() mutable { h.resume(); });
-            } else {
-                this->_handle.resume();
+                return std::noop_coroutine();
             }
+            return this->_handle;
         }
     };
 
