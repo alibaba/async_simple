@@ -320,17 +320,6 @@ public:
 
     Executor* getExecutor() { return _coro.promise()._executor; }
 
-    // Bind an executor only. Don't re-schedule.
-    //
-    // Users shouldn't use `setEx` directly. `setEx` is designed
-    // for internal purpose only. See uthread/Await.h/await for details.
-    Lazy<T> setEx(Executor* ex) && {
-        logicAssert(_coro.operator bool(),
-                    "Lazy do not have a coroutine_handle");
-        _coro.promise()._executor = ex;
-        return Lazy<T>(std::exchange(_coro, nullptr));
-    }
-
     template <typename F>
     void start(F&& callback) {
         // callback should take a single Try<T> as parameter, return value will
@@ -461,11 +450,25 @@ public:
         return RescheduleLazy<T>(std::exchange(this->_coro, nullptr));
     }
 
+    // Bind an executor only. Don't re-schedule.
+    //
+    // Users shouldn't use `setEx` directly. `setEx` is designed
+    // for internal purpose only. See uthread/Await.h/await for details.
+    Lazy<T> setEx(Executor* ex) && {
+        logicAssert(this->_coro.operator bool(),
+                    "Lazy do not have a coroutine_handle");
+        this->_coro.promise()._executor = ex;
+        return Lazy<T>(std::exchange(this->_coro, nullptr));
+    }
+
     auto coAwait(Executor* ex) {
         // derived lazy inherits executor
         this->_coro.promise()._executor = ex;
         return typename Base::ValueAwaiter(std::exchange(this->_coro, nullptr));
     }
+
+private:
+    friend class RescheduleLazy<T>;
 };
 
 // A RescheduleLazy is a Lazy with an executor. The executor of a RescheduleLazy
@@ -485,8 +488,6 @@ class [[nodiscard]] RescheduleLazy
     using Base = detail::LazyBase<T, true>;
 
 public:
-    using Base::Base;
-
     void detach() {
         this->start([](auto&& t) {
             if (t.hasError()) {
@@ -494,6 +495,9 @@ public:
             }
         });
     }
+
+private:
+    using Base::Base;
 };
 
 template <typename T>
