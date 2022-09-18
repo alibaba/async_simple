@@ -1316,13 +1316,13 @@ Lazy<int> lazy_fn<0>() {
 TEST_F(LazyTest, testLazyPerf) {
     // The code compiled by GCC with Debug would fail
     // if test_loop is 5000.
-// #ifndef NDEBUG
+#ifndef NDEBUG
     auto test_loop = 50;
     auto expected_sum = 23250;
-// #else
-//     auto test_loop = 5000;
-//     auto expected_sum = 2325000;
-// #endif
+#else
+    auto test_loop = 5000;
+    auto expected_sum = 2325000;
+#endif
 
     auto total = 0;
 
