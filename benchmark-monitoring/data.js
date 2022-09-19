@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663565100399,
+  "lastUpdate": 1663565209421,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -5748,6 +5748,102 @@ window.BENCHMARK_DATA = {
             "value": 81945812.25000046,
             "unit": "ns/iter",
             "extra": "iterations: 12\ncpu: 61536916.66666669 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yedeng.yd@linux.alibaba.com",
+            "name": "Chuanqi Xu",
+            "username": "ChuanqiXu9"
+          },
+          "committer": {
+            "email": "yedeng.yd@linux.alibaba.com",
+            "name": "Chuanqi Xu",
+            "username": "ChuanqiXu9"
+          },
+          "distinct": true,
+          "id": "26e4ad515a156dc0e5b5ad12bd5312b08464006d",
+          "message": "Only add -fsanitize-address-use-after-return=never after clang13\n\nThe lower version of clang can't recognize the option and gcc can't\nrecognize it too.\n\nCloses https://github.com/alibaba/async_simple/issues/158",
+          "timestamp": "2022-09-19T13:24:38+08:00",
+          "tree_id": "7f5b727afc30abc6ef288b6e8deb871772fb050a",
+          "url": "https://github.com/alibaba/async_simple/commit/26e4ad515a156dc0e5b5ad12bd5312b08464006d"
+        },
+        "date": 1663565207504,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 25235.459615288262,
+            "unit": "ns/iter",
+            "extra": "iterations: 59837\ncpu: 15697.163962097033 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 13287765.32653065,
+            "unit": "ns/iter",
+            "extra": "iterations: 49\ncpu: 10496695.918367347 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 83291.48650937376,
+            "unit": "ns/iter",
+            "extra": "iterations: 8265\ncpu: 83285.57773744706 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 11907791.934426256,
+            "unit": "ns/iter",
+            "extra": "iterations: 61\ncpu: 11905831.147540988 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 117850.41716417893,
+            "unit": "ns/iter",
+            "extra": "iterations: 37520\ncpu: 17436.607142857138 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 25104773.51999981,
+            "unit": "ns/iter",
+            "extra": "iterations: 100\ncpu: 26754.000000002165 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 103909401.2857171,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103643642.8571428 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 104115566.8571402,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103533199.99999997 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 103380580.14286031,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103104857.14285722 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 10996404.046874631,
+            "unit": "ns/iter",
+            "extra": "iterations: 64\ncpu: 10284626.56250001 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_noWorkSteal",
+            "value": 624171251.5000018,
+            "unit": "ns/iter",
+            "extra": "iterations: 2\ncpu: 299344850.00000024 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_withWorkSteal",
+            "value": 99312089.80000009,
+            "unit": "ns/iter",
+            "extra": "iterations: 10\ncpu: 65660420.00000004 ns\nthreads: 1"
           }
         ]
       }
