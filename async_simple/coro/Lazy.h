@@ -22,6 +22,7 @@
 #include <async_simple/coro/ViaCoroutine.h>
 #include <async_simple/experimental/coroutine.h>
 #include <atomic>
+#include <concepts>
 #include <cstdio>
 #include <exception>
 
@@ -275,15 +276,13 @@ public:
         }
 
     private:
-        template <typename R,
-                  std::enable_if_t<!std::is_same_v<R, void>, int> = 0>
-        R awaitSuspendImpl() noexcept {
+        template <std::same_as<std::coroutine_handle<>> R>
+        auto awaitSuspendImpl() noexcept {
             return this->_handle;
         }
 
-        template <typename R,
-                  std::enable_if_t<std::is_same_v<R, void>, int> = 0>
-        R awaitSuspendImpl() noexcept {
+        template <std::same_as<void> R>
+        auto awaitSuspendImpl() noexcept {
             // executor schedule performed
             auto& pr = this->_handle.promise();
             logicAssert(pr._executor, "RescheduleLazy need executor");
