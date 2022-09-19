@@ -73,7 +73,7 @@ cmake .. && sudo make install
 
 ## Install Clang Compiler
 
-Required Compiler: clang (>= 11.0.1) or gcc (>= 10.3)
+Required Compiler: clang (>= 13.0.0) or gcc (>= 10.3)
 
 ## Demo example dependency
 
@@ -106,7 +106,7 @@ Specifically, for defect report or feature enhancement, it'd be better to file a
 1. Read the [How to fix issue](./docs/docs.en/HowToFixIssue.md) document firstly.
 2. Run tests and `git-clang-format HEAD^` locally for the change.
 3. Create a PR, fill in the PR template.
-4. Choose one or more reviewers from contributors: (ChuanqiXu9, RainMark, foreverhy, qicosmos).
+4. Choose one or more reviewers from contributors: (e.g., ChuanqiXu9, RainMark, foreverhy, qicosmos).
 5. Get approved and merged.
 
 # Performance Monitoring
