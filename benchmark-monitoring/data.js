@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663565209421,
+  "lastUpdate": 1663565510969,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -5844,6 +5844,102 @@ window.BENCHMARK_DATA = {
             "value": 99312089.80000009,
             "unit": "ns/iter",
             "extra": "iterations: 10\ncpu: 65660420.00000004 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yedeng.yd@linux.alibaba.com",
+            "name": "Chuanqi Xu",
+            "username": "ChuanqiXu9"
+          },
+          "committer": {
+            "email": "yedeng.yd@linux.alibaba.com",
+            "name": "Chuanqi Xu",
+            "username": "ChuanqiXu9"
+          },
+          "distinct": true,
+          "id": "7c3993f62d840729c647cecd7493b071e9a29a07",
+          "message": "Update compiler requirement and How-to-contributions section\n\nPreviously we require clang11. However, its support for concepts and new\nc++ features is relatively not satisfying. So we require clang13 as\nthe lowest version of compiler now.\n\nAlso we edit the how-to-contribute section to encourage more people to\nreview the pull requests.",
+          "timestamp": "2022-09-19T13:26:40+08:00",
+          "tree_id": "b3fd22c5d024b8ff625542a4083424ae1c14b420",
+          "url": "https://github.com/alibaba/async_simple/commit/7c3993f62d840729c647cecd7493b071e9a29a07"
+        },
+        "date": 1663565510204,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 24079.301120000026,
+            "unit": "ns/iter",
+            "extra": "iterations: 100000\ncpu: 15838.147 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 11806296.830188956,
+            "unit": "ns/iter",
+            "extra": "iterations: 53\ncpu: 9753811.320754714 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 48859.35986062768,
+            "unit": "ns/iter",
+            "extra": "iterations: 14350\ncpu: 48823.33797909406 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 10272476.196970036,
+            "unit": "ns/iter",
+            "extra": "iterations: 66\ncpu: 10271030.3030303 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 71102.49005675747,
+            "unit": "ns/iter",
+            "extra": "iterations: 46866\ncpu: 15206.943199761019 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 23630832.891999975,
+            "unit": "ns/iter",
+            "extra": "iterations: 1000\ncpu: 35244.20000000017 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 104336330.99999692,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103709685.71428575 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 103932238.14285842,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103620671.42857143 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 103940938.28571321,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103670671.42857143 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 12236489.732142022,
+            "unit": "ns/iter",
+            "extra": "iterations: 56\ncpu: 11758925.000000006 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_noWorkSteal",
+            "value": 776348689.4999971,
+            "unit": "ns/iter",
+            "extra": "iterations: 2\ncpu: 366228650.00000006 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_withWorkSteal",
+            "value": 84738188.74999969,
+            "unit": "ns/iter",
+            "extra": "iterations: 12\ncpu: 58977141.666666746 ns\nthreads: 1"
           }
         ]
       }
