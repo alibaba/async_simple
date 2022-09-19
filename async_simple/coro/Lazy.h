@@ -24,6 +24,7 @@
 #include <atomic>
 #include <cstdio>
 #include <exception>
+#include <variant>
 
 namespace async_simple {
 
@@ -116,18 +117,7 @@ template <typename T>
 class LazyPromise : public LazyPromiseBase {
 public:
     LazyPromise() noexcept {}
-    ~LazyPromise() noexcept {
-        switch (_resultType) {
-            case result_type::value:
-                _value.~T();
-                break;
-            case result_type::exception:
-                _exception.~exception_ptr();
-                break;
-            default:
-                break;
-        }
-    }
+    ~LazyPromise() noexcept {}
 
     Lazy<T> get_return_object() noexcept;
 
@@ -135,45 +125,40 @@ public:
               typename = std::enable_if_t<std::is_convertible_v<V&&, T>>>
     void return_value(V&& value) noexcept(
         std::is_nothrow_constructible_v<T, V&&>) {
-        ::new (static_cast<void*>(std::addressof(_value)))
-            T(std::forward<V>(value));
-        _resultType = result_type::value;
+        _value.template emplace<T>(std::forward<V>(value));
     }
     void unhandled_exception() noexcept {
-        ::new (static_cast<void*>(std::addressof(_exception)))
-            std::exception_ptr(std::current_exception());
-        _resultType = result_type::exception;
+        _value.template emplace<std::exception_ptr>(std::current_exception());
     }
 
 public:
     T& result() & {
-        if (_resultType == result_type::exception)
-            AS_UNLIKELY { std::rethrow_exception(_exception); }
-        assert(_resultType == result_type::value);
-        return _value;
+        if (std::holds_alternative<std::exception_ptr>(_value))
+            AS_UNLIKELY {
+                std::rethrow_exception(std::get<std::exception_ptr>(_value));
+            }
+        assert(std::holds_alternative<T>(_value));
+        return std::get<T>(_value);
     }
     T&& result() && {
-        if (_resultType == result_type::exception)
-            AS_UNLIKELY { std::rethrow_exception(_exception); }
-        assert(_resultType == result_type::value);
-        return std::move(_value);
+        if (std::holds_alternative<std::exception_ptr>(_value))
+            AS_UNLIKELY {
+                std::rethrow_exception(std::get<std::exception_ptr>(_value));
+            }
+        assert(std::holds_alternative<T>(_value));
+        return std::move(std::get<T>(_value));
     }
 
     Try<T> tryResult() noexcept {
-        if (_resultType == result_type::exception)
-            AS_UNLIKELY { return Try<T>(_exception); }
+        if (std::holds_alternative<std::exception_ptr>(_value))
+            AS_UNLIKELY { return Try<T>(std::get<std::exception_ptr>(_value)); }
         else {
-            assert(_resultType == result_type::value);
-            return Try<T>(std::move(_value));
+            assert(std::holds_alternative<T>(_value));
+            return Try<T>(std::move(std::get<T>(_value)));
         }
     }
 
-    enum class result_type { empty, value, exception };
-    result_type _resultType = result_type::empty;
-    union {
-        T _value;
-        std::exception_ptr _exception;
-    };
+    std::variant<std::monostate, T, std::exception_ptr> _value;
 };
 
 template <>
