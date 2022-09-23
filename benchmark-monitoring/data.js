@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663922968847,
+  "lastUpdate": 1663923363232,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -6036,6 +6036,102 @@ window.BENCHMARK_DATA = {
             "value": 72855305.9230771,
             "unit": "ns/iter",
             "extra": "iterations: 13\ncpu: 57964630.76923075 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yedeng.yd@linux.alibaba.com",
+            "name": "Chuanqi Xu",
+            "username": "ChuanqiXu9"
+          },
+          "committer": {
+            "email": "yedeng.yd@linux.alibaba.com",
+            "name": "Chuanqi Xu",
+            "username": "ChuanqiXu9"
+          },
+          "distinct": true,
+          "id": "f8e0e6ca32b3d286ead5bdc5aa11b7465d8440c3",
+          "message": "Assert the lazy has an executor when yielding\n\nCloses https://github.com/alibaba/async_simple/issues/152",
+          "timestamp": "2022-09-23T16:52:06+08:00",
+          "tree_id": "393db90f406bf4100c2c225524ac53f60281cd43",
+          "url": "https://github.com/alibaba/async_simple/commit/f8e0e6ca32b3d286ead5bdc5aa11b7465d8440c3"
+        },
+        "date": 1663923362623,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 30853.388103755253,
+            "unit": "ns/iter",
+            "extra": "iterations: 62339\ncpu: 18354.471518631995 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 14043448.818181759,
+            "unit": "ns/iter",
+            "extra": "iterations: 44\ncpu: 11698688.636363637 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 61017.063768370346,
+            "unit": "ns/iter",
+            "extra": "iterations: 11432\ncpu: 61007.73268019591 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 13171130.884615514,
+            "unit": "ns/iter",
+            "extra": "iterations: 52\ncpu: 13168592.307692302 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 94013.11221674562,
+            "unit": "ns/iter",
+            "extra": "iterations: 32259\ncpu: 18087.104373973158 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 28758496.190000072,
+            "unit": "ns/iter",
+            "extra": "iterations: 100\ncpu: 35655.000000005544 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 104378230.42857173,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 102957385.71428575 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 104474050.57142793,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103840871.42857139 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 103930169.99999815,
+            "unit": "ns/iter",
+            "extra": "iterations: 6\ncpu: 103392350.00000001 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 11980373.968750069,
+            "unit": "ns/iter",
+            "extra": "iterations: 64\ncpu: 11420662.500000011 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_noWorkSteal",
+            "value": 1003371864.0000018,
+            "unit": "ns/iter",
+            "extra": "iterations: 2\ncpu: 481597550.00000006 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_withWorkSteal",
+            "value": 107256505.50000125,
+            "unit": "ns/iter",
+            "extra": "iterations: 10\ncpu: 69056659.99999985 ns\nthreads: 1"
           }
         ]
       }
