@@ -80,6 +80,8 @@ public:
         YieldAwaiter(Executor* executor) : _executor(executor) {}
         bool await_ready() const noexcept { return false; }
         void await_suspend(std::coroutine_handle<> handle) {
+            logicAssert(_executor,
+                        "Yielding is only meaningful with an executor!");
             std::function<void()> func = [h = std::move(handle)]() mutable {
                 h.resume();
             };
