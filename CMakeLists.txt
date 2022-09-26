@@ -131,7 +131,7 @@ else()
 endif()
 
 add_subdirectory(async_simple)
-option(ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE "Build the tests" ON)
+option(ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE "Build the demo example" ON)
 if (ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE)
     add_subdirectory(demo_example)
 endif ()
