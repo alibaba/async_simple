@@ -15,6 +15,7 @@
  */
 
 #include <async_simple/coro/Collect.h>
+#include <async_simple/coro/FutureAwaiter.h>
 #include <async_simple/coro/Lazy.h>
 #include <async_simple/coro/SyncAwait.h>
 #include <async_simple/executors/SimpleExecutor.h>
@@ -62,42 +63,12 @@ void Uthread_read_file_for(int num, const std::string &s, auto e) {
 }
 
 template <typename FileDescriptor, typename Buffer, typename Executor>
-struct ReadSomeAwaiter {
-public:
-    ReadSomeAwaiter(FileDescriptor fd, Buffer buffer, int buffer_size,
-                    int offset, Executor *e)
-        : fd_(fd),
-          buffer_(buffer),
-          buffer_size_(buffer_size),
-          offset_(offset),
-          e_(e) {}
-
-    bool await_ready() { return false; }
-
-    auto await_resume() { return size_; }
-
-    void await_suspend(std::coroutine_handle<> handle) {
-        e_->submitIO(fd_, IOCB_CMD_PREAD, buffer_, buffer_size_, offset_,
-                     [this, handle](io_event_t event) mutable {
-                         this->size_ = event.res;
-                         handle.resume();
-                     });
-    }
-
-private:
-    FileDescriptor fd_;
-    Buffer buffer_;
-    int buffer_size_;
-    int offset_;
-    Executor *e_;
-
-    uint64_t size_{};
-};
-
-template <typename FileDescriptor, typename Buffer, typename Executor>
-Lazy<uint64_t> async_read_some(FileDescriptor fd, Buffer buffer,
-                               int buffer_size, int offset, Executor *e) {
-    co_return co_await ReadSomeAwaiter(fd, buffer, buffer_size, offset, e);
+Lazy<std::size_t> async_read_some(FileDescriptor fd, Buffer buffer,
+                                  int buffer_size, int offset, Executor *e) {
+    Promise<std::size_t> p;
+    e->submitIO(fd, IOCB_CMD_PREAD, buffer, buffer_size, 0,
+                [&p](io_event_t event) { p.setValue(event.res); });
+    co_return co_await p.getFuture();
 }
 
 inline Lazy<std::size_t> async_read_file(const char *filename, IOExecutor *e) {
