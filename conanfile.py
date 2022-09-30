@@ -39,7 +39,6 @@ class AsyncSimpleConan(ConanFile):
     def generate(self):
         if not self.options.header_only:
             tc = CMakeToolchain(self)
-            tc.variables["ASYNC_SIMPLE_ENABLE_TESTS"] = False
             tc.variables["ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE"] = False
             tc.generate()
         deps = CMakeDeps(self)
