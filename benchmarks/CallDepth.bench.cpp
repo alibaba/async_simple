@@ -27,148 +27,31 @@ using namespace async_simple::coro;
 using namespace async_simple::executors;
 using namespace async_simple::uthread;
 namespace fs = std::filesystem;
-static int task_num = 10;
-struct Service {
-    void run() { service1(); }
+static int core_num = 1;
 
-    void service1() {
-        n--;
-        if (n == 0) {
-            read_db();
-            return;
-        }
-        int call_idx = n % 2;
-        if (call_idx == 0) {
-            return service2();
-        } else {
-            return service3();
-        }
+int sum(int n) {
+    if (n == 0) {
+        return 0;
     }
+    return n + sum(n - 1);
+}
 
-    void service2() {
-        n--;
-        if (n == 0) {
-            read_db();
-            return;
-        }
-        int call_idx = n % 2;
-        if (call_idx == 0) {
-            service1();
-        } else {
-            return service3();
-        }
-    }
-
-    void service3() {
-        n--;
-        if (n == 0) {
-            read_db();
-            return;
-        }
-        int call_idx = n % 2;
-        if (call_idx == 0) {
-            return service1();
-        } else {
-            return service2();
-        }
-    }
-
-    void read_db() {
-        using namespace async_simple::uthread;
-        std::vector<std::function<void()>> task_list;
-        for (int i = 0; i < m; ++i) {
-            task_list.emplace_back(
-                [this]() { Uthread_read_file(filename_, e_); });
-        }
-        collectAll<Launch::Schedule>(task_list.begin(), task_list.end(), e_);
-    }
-
-    int n;
-    int m;
-    const char *filename_;
-    SimpleExecutor *e_;
-};
-
-struct AsyncService {
-    Lazy<uint64_t> run(const char *filename, int n, IOExecutor *e, int m) {
-        co_return co_await service1(filename, n, e, m);
-    }
-
-    Lazy<uint64_t> service1(const char *filename, int n, IOExecutor *e, int m) {
-        n--;
-        if (n == 0) {
-            co_return co_await read_db(filename, e, m);
-        }
-        int call_idx = n % 2;
-        if (call_idx == 0) {
-            co_return co_await service2(filename, n, e, m);
-        } else {
-            co_return co_await service3(filename, n, e, m);
-        }
-    }
-
-    Lazy<uint64_t> service2(const char *filename, int n, IOExecutor *e, int m) {
-        n--;
-        if (n == 0) {
-            co_return co_await read_db(filename, e, m);
-        }
-        int call_idx = n % 2;
-        if (call_idx == 0) {
-            co_return co_await service1(filename, n, e, m);
-        } else {
-            co_return co_await service3(filename, n, e, m);
-        }
-    }
-
-    Lazy<uint64_t> service3(const char *filename, int n, IOExecutor *e, int m) {
-        n--;
-        if (n == 0) {
-            co_return co_await read_db(filename, e, m);
-        }
-        int call_idx = n % 2;
-        if (call_idx == 0) {
-            co_return co_await service1(filename, n, e, m);
-        } else {
-            co_return co_await service2(filename, n, e, m);
-        }
-    }
-
-    Lazy<uint64_t> read_db(const char *filename, IOExecutor *e, int m) {
-        std::vector<Lazy<std::size_t>> lazy_list;
-        for (int i = 0; i < m; i++) {
-            lazy_list.push_back(async_read_file(filename, e));
-        }
-        [[maybe_unused]] auto ret =
-            co_await collectAllPara(std::move(lazy_list));
+Lazy<int> lazy_sum(int n) {
+    if (n == 0) {
         co_return 0;
     }
-};
+    co_return n + co_await lazy_sum(n - 1);
+}
 
 void Uthread_call_depth_bench(benchmark::State &state) {
     using namespace async_simple::uthread;
     int n = state.range(0);
-    std::string s = std::string("test.") + std::to_string(4) + ".txt";
-    gen_file(s, 4);
-    auto core_num = std::thread::hardware_concurrency();
     SimpleExecutor e(core_num);
     for (auto _ : state) {
-        state.PauseTiming();
-        std::vector<std::function<void()>> task_list;
-        task_list.reserve(task_num);
         std::atomic<bool> running = true;
-        int m = 1;
-        for (int i = 0; i < task_num; ++i) {
-            task_list.emplace_back([n, m, s, e = &e]() {
-                Service service{
-                    .n = n, .m = m, .filename_ = s.c_str(), .e_ = e};
-                service.run();
-            });
-        }
-        state.ResumeTiming();
-        async<Launch::Schedule>(
-            [&running, &e, task_list]() mutable {
-                collectAll<Launch::Schedule>(task_list.begin(), task_list.end(),
-                                             &e);
+        async<Launch::Current>(
+            [&running, n]() mutable {
+                sum(n);
                 running = false;
             },
             &e);
@@ -180,25 +63,8 @@ void Uthread_call_depth_bench(benchmark::State &state) {
 void Lazy_call_depth_bench(benchmark::State &state) {
     using namespace async_simple::coro;
     int n = state.range(0);
-    auto file_size = 4;
-    std::string s = std::string("test.") + std::to_string(file_size) + ".txt";
-    gen_file(s, file_size);
-    auto core_num = std::thread::hardware_concurrency();
     SimpleExecutor e(core_num);
     for (auto _ : state) {
-        auto f = [&s, n, e = &e]() mutable -> Lazy<void> {
-            std::vector<Lazy<uint64_t>> lazy_list;
-            lazy_list.reserve(task_num);
-            int m = 1;
-            for (int i = 0; i < task_num; ++i) {
-                lazy_list.push_back(
-                    AsyncService().run(s.c_str(), n, e->getIOExecutor(), m));
-            }
-            [[maybe_unused]] auto ret =
-                co_await collectAllPara(std::move(lazy_list));
-            co_return;
-        };
-        syncAwait(collectAllPara(f().via(&e)));
+        syncAwait(lazy_sum(n));
     }
-    unlink(s.c_str());
 }
