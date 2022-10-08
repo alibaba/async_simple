@@ -91,6 +91,12 @@ make test # optional
 make install # sudo if required
 ```
 
+Conan is also supported. You can install async_simple to conan local cache.
+```
+mkdir build && cd build
+conan create ..
+```
+
 # Get Started
 
 After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with API, here is a [demo](./docs/docs.en/GetStarted.md) use Lazy to count char in a file.

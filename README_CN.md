@@ -104,6 +104,12 @@ make test
 make install
 ```
 
+我们也支持了conan，你可以将async\_simple安装到conan到本地缓存中。
+```
+mkdir build && cd build
+conan create ..
+```
+
 # 更多示例
 
 接下来可以阅读更多API文档，例如C++20协程（[Lazy](./docs/docs.cn/Lazy.md)）。熟悉async\_simple组件，可以先跟着[Demo](./docs/docs.cn/GetStarted.md)用C++20协程来实现异步统计文件字符数功能。
