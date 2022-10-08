@@ -1,8 +1,11 @@
 set(BENCHMARK_SRCS
-  benchmark_main.cpp
-  Lazy.bench.cpp
-  Future.bench.cpp
-  ThreadPool.bench.cpp)
+        benchmark_main.cpp
+        PureSwitch.bench.cpp
+        ReadFile.bench.cpp
+        CallDepth.bench.cpp
+        Lazy.bench.cpp
+        Future.bench.cpp
+        ThreadPool.bench.cpp)
 
 if (UTHREAD)
   list(APPEND BENCHMARK_SRCS Uthread.bench.cpp)
