@@ -17,10 +17,10 @@
 
 ## 测试环境
 
-async_simple版本：2db1337d32931914d80aa874a140dc1a21272b94
-测试套件：Google Benchmark
-测试机器：Workstation/32C
-CPU: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz
+- async_simple版本：2db1337d32931914d80aa874a140dc1a21272b94
+- 测试套件：Google Benchmark
+- 测试机器：Workstation/32C
+- CPU: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz
 
 ## 测试结果与分析
 
@@ -33,6 +33,7 @@ CPU: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz
 ![image.png](pure_switch.png)
 
 从图中可以看到，不管是有栈还是无栈，耗时都是随着切换次数线性增长，说明切换为主要开销，其他影响因素为次要开销，可以忽略。在数值上，相同切换次数下，有栈的耗时大约是无栈的100倍。百万量级的切换，无栈耗时为0.4ms，而有栈高达40ms，说明无栈的切换速度是远高于有栈的。对于这样的差距，主要是因为在实现层面，有栈的切换需要修改大量的寄存器，而无栈的切换仅需要修改少数的寄存器。
+
 ⚠️：
 
 - 协程中的内存分配，有栈需要提前分配一大块内存给调用栈，无栈需要给协程帧分配内存。
@@ -58,7 +59,7 @@ CPU: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz
 第一个case只是单纯的读一次文件，没有其他的函数调用或者深层的函数调用。
 整个过程中无栈的耗时均小于有栈的。
 
-第二个case是相同的IO任务，均使用libaio库同时读多个相同文件（文件大小为4KB），但任务的数目不同。从图中可以明显看出，在大量IO并发进行时，无栈的性能好于有栈。在具体数值上，1千个读取任务，有栈耗时300+s，无栈耗时70+s，有栈的耗时约为无栈的4倍。
+第二个case是相同的IO任务，均使用libaio库同时读多个相同文件（文件大小为4KB），但任务的数目不同。从图中可以明显看出，在大量IO并发进行时，无栈的性能好于有栈。在具体数值上，1千个读取任务，有栈耗时300+ms，无栈耗时70+ms，有栈的耗时约为无栈的4倍。
 这说明在IO场景下，无栈相较于有栈更具有优势。
 
 ⚠️：
@@ -71,9 +72,10 @@ CPU: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz
 
 ![image.png](call_depth.png)
 
-在只有一次IO的场景中，随着函数调用深度的增加，无栈协程的性能慢慢下降，而有栈协程的表现则比较稳定。
+随着函数调用深度的增加，无栈协程的性能慢慢下降，而有栈协程的表现则比较稳定。
 为了排除异常的影响，给全链路加了noexcept，测试结果如图。加了noexcept，耗时轻微降低，不影响整体趋势，说明还会有其他的因素影响到无栈的性能。
 ![image.png](call_depth_noexcept.png)
+
 为了排除内存分配的影响，也做了通过静态分配进行提前分配内存的测试，测试结果如图。去掉内存分配的开销，可以显著降低无栈的耗时。但是，从图中可以明显看出，除开内存分配的开销（蓝色线到绿色线），无栈的耗时仍然高于有栈，说明还有其他的因素增加了调用无栈协程函数的开销。
 ![image.png](call_depth_mem.png)
 
@@ -84,6 +86,7 @@ CPU: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz
 $$
 \text{overheadOfSwitch} + \sum_i^N (\text{overheadOfSmall}_i + \text{overheadOfOthers}_i) > \text{overheadOfLarge}
 $$
+
 其中，$\text{overheadOfSwitch}$是切换开销，$\text{overheadOfSmall}_i$是第$i$次分配小内存的开销，$\text{overheadOfOthers}_
 i$是第$i$次其他的开销，$\text{overheadOfLarge}$是分配一次大内存的开销。
 
