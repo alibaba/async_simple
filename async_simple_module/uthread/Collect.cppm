@@ -48,11 +48,11 @@ import :uthread.Await;
 
 import std;
 
-export namespace async_simple {
+namespace async_simple {
 
 class Executor;
 
-namespace uthread {
+export namespace uthread {
 
 // TODO: Due to it is possible that the user of async_simple doesn't support
 // c++17, we didn't merge this two implementation by if constexpr. Merge them
