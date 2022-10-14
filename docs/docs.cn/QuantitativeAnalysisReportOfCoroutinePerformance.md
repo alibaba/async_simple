@@ -87,8 +87,7 @@ $$
 \text{overheadOfSwitch} + \sum_i^N (\text{overheadOfSmall}_i + \text{overheadOfOthers}_i) > \text{overheadOfLarge}
 $$
 
-其中，$\text{overheadOfSwitch}$是切换开销，$\text{overheadOfSmall}_i$是第$i$次分配小内存的开销，$\text{overheadOfOthers}_
-i$是第$i$次其他的开销，$\text{overheadOfLarge}$是分配一次大内存的开销。
+其中， $\text{overheadOfSwitch}$ 是切换开销， $\text{overheadOfSmall}_i$ 是第 $i$ 次分配小内存的开销， $\text{overheadOfOthers}_i$ 是第$i$次其他的开销， $\text{overheadOfLarge}$ 是分配一次大内存的开销。
 
 ![image.png](images/vs.png)
 
