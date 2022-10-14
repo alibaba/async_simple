@@ -1,11 +1,12 @@
 ## Introduction
 
 Under the trend of asynchronization, more and more developers have begun to pay attention to Coroutine.
-Coroutine can be divided into stackful coroutine (e.g. Golang) and stackless coroutine (e.g. C#).
-The C++20 standard brings coroutine mechanism to developers.
+Coroutine can be divided into stackful coroutine (e.g. Golang's goroutine) and stackless coroutine (e.g. C#'s coroutine).
+The C++20 standard also brings coroutine mechanism to developers.
 
 In this artice, we conduct experiments base on Alibaba open source library
-[async_simple](https://github.com/alibaba/async_simple).
+[async_simple](https://github.com/alibaba/async_simple),
+and give quantitative analysis of coroutine performance.
 
 The conclusions are as follows
 
@@ -28,7 +29,7 @@ The conclusions are as follows
 
 ## Result && Analysis
 
-test cases in [benchamrk](../../benchmarks)
+All test cases are in [benchamrk](../../benchmarks)
 
 ### Language-Level Switch
 
@@ -44,8 +45,8 @@ We attribute this to the fact that switching of stackful coroutine requires modi
 ⚠️：
 
 - About memory allocation.
-The stackful coroutine need to allocate a large amount of memory in advance,
-while the stackless coroutine need to allocate memory for coroutine frame.
+The stackful coroutine need to allocate a large chunk of memory in advance,
+while the stackless coroutine need to allocate a small chunk of memory for each coroutine frame.
 
 - Excluding the effect of memory allocation, there is no significant difference in test results.
 
@@ -53,7 +54,7 @@ while the stackless coroutine need to allocate memory for coroutine frame.
 
 - async_smple has no Generator. The Generator is written from scratch.
 
-- The switch perceived by the user is also related to the scheduler and so on.
+- The switch perceived by the user is also related to the executor and so on.
 
 
 ### IO Intensive Tasks
@@ -62,7 +63,7 @@ use libaio to read file.
 
 case 1: The number of tasks is the same in each test, and the file size read is different.
 
-![](read_diff_size.png)
+![](images/read_diff_size.png)
 
 case 2: In each test, the file size read is the same, and the number of tasks is different.
 
