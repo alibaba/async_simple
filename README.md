@@ -101,7 +101,7 @@ conan create ..
 
 After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with API, here is a [demo](./docs/docs.en/GetStarted.md) use Lazy to count char in a file.
 
-# Performance Section
+# Performance
 
 We also give a [Quantitative Analysis Report](docs/docs.en/QuantitativeAnalysisReportOfCoroutinePerformance.md) Of the
 Lazy (based on C++20 stackless coroutine) and the Uthread (based on stackful coroutine).
