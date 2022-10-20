@@ -116,6 +116,10 @@ conan create ..
 
 更多文档介绍见目录[docs](./docs/docs.cn)。
 
+# 性能相关
+
+关于基于C++20无栈协程（Lazy）和有栈协程（Uthread）的性能定量分析，详见[定量分析报告](./docs/docs.cn/基于async_simple的协程性能定量分析.md)。
+
 # 存在问题？
 
 如果在使用时遇到任何问题，我们建议先阅读 [文档](./docs/docs.cn), [issues](https://github.com/alibaba/async_simple/issues)
