@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <algorithm>
+import std;
 #include <fcntl.h>
 #include <gtest/gtest.h>
 #include <malloc.h>
@@ -23,8 +25,6 @@
 
 #include <libaio.h> 
 
-#include <algorithm>
-import std;
 #include "../unittest.h"
 
 import async_simple;
