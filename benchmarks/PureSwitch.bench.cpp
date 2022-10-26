@@ -54,7 +54,8 @@ private:
 Generator<int> f() {
     [[maybe_unused]] int i = 0;
     while (true) {
-        co_yield i++;
+        co_yield i;
+        i++;
     }
 }
 void Generator_pure_switch_bench(benchmark::State &state) {
