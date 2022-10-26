@@ -14,11 +14,10 @@ TEST_DEPENDENCY = $(TEST_DEPENDENCY_DIR) $(TEST_DEPENDENCY_LIB) -Wl,-rpath=$(ROO
 test: build
 	./async_simple_test.out
 	./util/async_simple_test.out
-	./executors/async_simple_test.out
 	./coro/async_simple_test.out
 	./uthread/async_simple_test.out
 
-build: async_simple_test.out util/async_simple_test.out executors/async_simple_test.out coro/async_simple_test.out uthread/async_simple_test.out
+build: async_simple_test.out util/async_simple_test.out coro/async_simple_test.out uthread/async_simple_test.out
 
 clean:
 	find . -name "*.o" -o -name "*.out" -o -name "*.pcm" | xargs rm -f
@@ -42,12 +41,6 @@ util/async_simple_test.out: dotest.o util/ThreadPoolTest.o ../async_simple.pcm
 			$(TEST_DEPENDENCY) -fprebuilt-module-path=../ -o util/async_simple_test.out
 util/ThreadPoolTest.o: util/ThreadPoolTest.cpp ../async_simple.pcm
 	clang++ $(OBJECT_CFLAGS) util/ThreadPoolTest.cpp  -fprebuilt-module-path=../ -fprebuilt-module-path=. -c -o util/ThreadPoolTest.o
-# executors
-executors/async_simple_test.out: dotest.o executors/SimpleIOExecutorTest.o ../async_simple.pcm
-	clang++ $(EXECUTABLE_CFLAGS) dotest.o executors/SimpleIOExecutorTest.o \
-			$(TEST_DEPENDENCY) -fprebuilt-module-path=../ -o executors/async_simple_test.out
-executors/SimpleIOExecutorTest.o: executors/SimpleIOExecutorTest.cpp ../async_simple.pcm
-	clang++ $(OBJECT_CFLAGS) executors/SimpleIOExecutorTest.cpp  -fprebuilt-module-path=../ -fprebuilt-module-path=. -c -o executors/SimpleIOExecutorTest.o
 # coro
 coro/async_simple_test.out: dotest.o coro/LazyTest.o coro/SleepTest.o coro/ViaCoroutineTest.o ../async_simple.pcm
 	clang++ $(EXECUTABLE_CFLAGS) dotest.o coro/LazyTest.o coro/SleepTest.o coro/ViaCoroutineTest.o \
