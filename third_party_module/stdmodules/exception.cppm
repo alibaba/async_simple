@@ -6,7 +6,7 @@ export namespace std {
     using std::exception;
 }
 
-#if defined(__GLIBCXX__) &&  __GLIBCXX__ < 20220728
+#if defined(__GLIBCXX__) &&  __GLIBCXX__ < 20220506
 export namespace std::__exception_ptr {
     using std::__exception_ptr::operator==;
 }

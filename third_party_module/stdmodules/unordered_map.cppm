@@ -9,7 +9,7 @@ export namespace std {
 export namespace std {
     namespace __detail {
        using std::__detail::_Node_const_iterator;
-#if __GLIBCXX__ < 20220728
+#if __GLIBCXX__ < 20220506
        using std::__detail::operator==;
 #endif
     }
