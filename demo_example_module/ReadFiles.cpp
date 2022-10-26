@@ -87,7 +87,7 @@ Future<std::uint64_t> CountCharInFileAsyncImpl(const FileName &File, char c) {
 Future<std::uint64_t> CountCharInFilesAsync(const std::vector<FileName> &Files, char c) {
     // std::shared_ptr is necessary here. Since ReadSize may be used after
     // CountCharInFilesAsync function ends.
-    auto ReadSize = std::make_shared<std::uint64_t>(0);
+    auto ReadSize = std::shared_ptr<std::uint64_t>(new std::uint64_t(0));
     // We need to introduce another API `do_for_each` here.
     return do_for_each(std::move(Files), [ReadSize, c](auto &&File){
         return CountCharInFileAsyncImpl(File, c).thenValue([ReadSize](auto &&Size) {

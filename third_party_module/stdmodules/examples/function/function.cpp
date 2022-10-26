@@ -69,8 +69,4 @@ int main()
     auto ptr_to_data = std::mem_fn(&Foo::data);
     auto f6 = std::bind(ptr_to_data, _1_placeholder);
     std::cout << f6(foo) << '\n';
- 
-    std::cout << "9) use smart pointers to call members of the referenced objects: ";
-    std::cout << f6(std::make_shared<Foo>(foo)) << ' '
-              << f6(std::make_unique<Foo>(foo)) << '\n';
 }

@@ -1,5 +1,16 @@
 module;
+#if __has_include(<version>)
+#include <version>
+#endif
+#if defined(__GLIBCXX__)
+#if __GLIBCXX__ >= 20220728
 #include <coroutine>
+#else
+#include "my_coroutine"
+#endif
+#elif __has_include(<coroutine>)
+#include <coroutine>
+#endif
 export module std:coroutine;
 
 /**

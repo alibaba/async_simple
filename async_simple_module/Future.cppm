@@ -452,7 +452,8 @@ collectAll(Iter begin, Iter end) {
         Promise<std::vector<Try<T>>> p;
     };
 
-    auto ctx = std::make_shared<Context>(n, std::move(promise));
+    // We can't use std::make_shared in libstdc++12 due to some reasons.
+    auto ctx = std::shared_ptr<Context>(new Context(n, std::move(promise)));
     for (std::size_t i = 0; i < n; ++i) {
         auto cur = begin + i;
         if (cur->hasResult()) {

@@ -32,7 +32,8 @@ public:
 };
 
 TEST_F(ThreadPoolTest, testScheduleWithId) {
-    _tp = make_shared<async_simple::util::ThreadPool>(2);
+    // We can't use std::make_shared in libstdc++12 due to some reasons.
+    _tp = shared_ptr<async_simple::util::ThreadPool>(new async_simple::util::ThreadPool(2));
     std::thread::id id1, id2, id3;
     std::atomic<bool> done1(false), done2(false), done3(false), done4(false);
     std::function<void()> f1 = [this, &done1, &id1]() {

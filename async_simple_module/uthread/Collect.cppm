@@ -83,7 +83,7 @@ collectAll(Iterator first, Iterator last, Executor* ex) {
     return await<std::vector<ResultType>>(
         ex, [first, last, ex](Promise<std::vector<ResultType>>&& pr) mutable {
             auto n = static_cast<std::size_t>(std::distance(first, last));
-            auto context = std::make_shared<Context>(n, std::move(pr));
+            std::shared_ptr<Context> context(new Context(n, std::move(pr)));
             for (auto i = 0; first != last; ++i, ++first) {
                 async<Policy>(
                     [context, i, f = std::move(*first)]() mutable {
@@ -119,7 +119,8 @@ collectAll(Iterator first, Iterator last, Executor* ex) {
 
     await<bool>(ex, [first, last, ex](Promise<bool>&& pr) mutable {
         auto n = static_cast<std::size_t>(std::distance(first, last));
-        auto context = std::make_shared<Context>(n, std::move(pr));
+        // We can't use std::make_shared in libstdc++12 due to some reasons.
+        std::shared_ptr<Context> context(new Context(n, std::move(pr)));
         for (; first != last; ++first) {
             async<Policy>(
                 [context, f = std::move(*first)]() mutable {

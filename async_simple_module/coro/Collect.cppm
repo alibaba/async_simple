@@ -92,8 +92,9 @@ struct CollectAnyAwaiter {
         // Make local copies to shared_ptr to avoid deleting objects too early
         // if any coroutine finishes before this function.
         std::vector<LazyType, InAlloc> input(std::move(_input));
-        auto result = std::make_shared<ResultType>();
-        auto event = std::make_shared<detail::CountEvent>(input.size());
+        // We can't use std::make_shared in libstdc++12 due to some reasons.
+        auto result = std::shared_ptr<ResultType>(new ResultType());
+        auto event = std::shared_ptr<detail::CountEvent>(new detail::CountEvent(input.size()));
         std::size_t i = 0;
 
         _result = result;

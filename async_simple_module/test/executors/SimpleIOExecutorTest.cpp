@@ -38,7 +38,8 @@ public:
 
 public:
     void caseSetUp() override {
-        _ioExecutor = std::make_shared<SimpleIOExecutor>();
+        // We can't use std::make_shared in libstdc++12 due to some reasons.
+        _ioExecutor = std::shared_ptr<SimpleIOExecutor>(new SimpleIOExecutor());
         ASSERT_TRUE(_ioExecutor->init());
         _executor = _ioExecutor.get();
     }

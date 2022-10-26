@@ -5,7 +5,8 @@ export namespace std {
     using std::unique_ptr;
     using std::make_unique;
     using std::shared_ptr;
-    using std::make_shared;
+    // We can't using it in libstdc++12.
+    // using std::make_shared;
     using std::addressof;
     using std::allocator;
     using std::allocator_traits;
