@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <exception>
-#include <functional>
-
+#include <algorithm>
+import std;
 #include "unittest.h"
 
 import async_simple;
-import std;
+
 
 using namespace std;
 using namespace async_simple::executors;

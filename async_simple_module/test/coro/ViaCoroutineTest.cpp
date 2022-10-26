@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include <algorithm>
+import std;
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 import async_simple;
-
-import std;
-
 #include "../unittest.h"
 
 using namespace std;

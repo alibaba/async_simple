@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 #include "Time.h"
+#include <algorithm>
+import std;
 #include "../unittest.h"
 
 import async_simple;
-import std;
+
 
 using namespace std;
 
