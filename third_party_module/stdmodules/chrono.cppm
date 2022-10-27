@@ -20,8 +20,10 @@ export namespace std {
         using std::chrono::operator+;
         using std::chrono::operator-;
 
+#if defined(__GLIBCXX_) && __GLIBCXX_ < 20200723
         using std::chrono::weeks;
         using std::chrono::years;
+#endif
         using std::chrono::minutes;
 
         using std::chrono::time_point;

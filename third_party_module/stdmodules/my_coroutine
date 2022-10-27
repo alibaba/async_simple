@@ -42,7 +42,7 @@
  * Components for supporting coroutine implementations.
  */
 
-#if __cplusplus > 201703L && __cpp_impl_three_way_comparison >= 201907L
+#if __cplusplus > 201703L && __cpp_impl_three_way_comparison >= 201907L && __has_include(<compare>)
 #  include <compare>
 #  define _COROUTINES_USE_SPACESHIP 1
 #else

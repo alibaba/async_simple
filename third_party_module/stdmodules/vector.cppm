@@ -4,8 +4,10 @@ export module std:vector;
 export namespace std {
     using std::vector;
     
+#if defined(__GLIBCXX_) && __GLIBCXX_ < 20200723
     using std::erase;
     using std::erase_if;
+#endif
     using std::operator!=;
     using std::operator==;
     using std::operator-;

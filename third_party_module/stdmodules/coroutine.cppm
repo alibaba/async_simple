@@ -1,6 +1,8 @@
 module;
 #if __has_include(<version>)
 #include <version>
+#elif
+#include <cassert>
 #endif
 #if defined(__GLIBCXX__)
 #if __GLIBCXX__ >= 20220728

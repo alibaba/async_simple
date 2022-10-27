@@ -13,7 +13,9 @@ export namespace std {
     using std::operator==;
     using std::operator<;
     using std::operator>;
+#if defined(__GLIBCXX_) && __GLIBCXX_ < 20200723
     using std::operator<=>;
+#endif
 
     using std::to_string;
 
