@@ -1,7 +1,7 @@
 module;
 #if __has_include(<version>)
 #include <version>
-#elif
+#else
 #include <cassert>
 #endif
 #if defined(__GLIBCXX__)
