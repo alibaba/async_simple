@@ -19,8 +19,9 @@ find_package(Aio)
 find_package(Benchmark)
 
 option(ASYNC_SIMPLE_ENABLE_TESTS "Build the tests" ON)
+option(ASYNC_SIMPLE_DISABLE_AIO "Don't build with AIO" OFF)
 
-if(LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
+if(NOT ${ASYNC_SIMPLE_DISABLE_AIO} AND LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
     message(STATUS "aio found")
     message(STATUS "aio: ${LIBAIO_INCLUDE_DIR}, ${LIBAIO_LIBRARIES}.")
     target_link_libraries(libasync_simple INTERFACE ${LIBAIO_LIBRARIES})
