@@ -1,0 +1,46 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+config_setting(
+    name = "linux_x86_64",
+    constraint_values = [
+        "@bazel_tools//platforms:linux",
+        "@bazel_tools//platforms:x86_64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "linux_aarch64",
+    constraint_values = [
+        "@bazel_tools//platforms:linux",
+        "@bazel_tools//platforms:aarch64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "linux_pcc64le",
+    constraint_values = [
+        "@bazel_tools//platforms:linux",
+        "@bazel_tools//platforms:ppc64le",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+selects.config_setting_group(
+    name = "async_simple_with_uthread",
+    match_any = [
+        ":linux_x86_64",
+        ":linux_aarch64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+#TODO has_not_aio
+config_setting(
+    name = "has_not_aio",
+    constraint_values = [
+        "@bazel_tools//platforms:windows",
+    ],
+    visibility = ["//visibility:public"],
+)

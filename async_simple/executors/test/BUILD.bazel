@@ -1,0 +1,8 @@
+cc_test(
+    name = "async_simple_executor_test",
+    srcs = glob(["*.cpp"]),
+    deps = [
+        "//:async_simple",
+        "//async_simple/test:gtest_main",
+    ],  
+)

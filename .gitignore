@@ -25,3 +25,5 @@ error_log_collector.log
 coro_trace.log
 *.log
 test.h
+bazel-*
+!.bazelrc

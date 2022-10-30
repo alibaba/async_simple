@@ -1,0 +1,49 @@
+uthread_srcs = [
+    "async_simple/uthread/internal/thread_impl.h",
+    # "async_simple/uthread/internal/thead.h",
+    "async_simple/uthread/internal/thread.cc",
+]
+
+uthread_hdrs = glob([
+    "async_simple/uthread/internal/thread.h",
+    "async_simple/uthread/*.h",
+])
+
+cc_library(
+    name = "async_simple",
+    srcs = [
+        "async_simple/experimental/coroutine.h",
+        "async_simple/executors/SimpleExecutor.cpp",
+    ] + select({
+        "//bazel/config:linux_x86_64": glob([
+            "async_simple/uthread/internal/*x86_64_sysv_elf*.S"
+        ] + uthread_srcs),
+        "//bazel/config:linux_aarch64": glob([
+            "async_simple/uthread/internal/*arm64_aapcs_elf/*.S"
+        ] + uthread_srcs),
+        "//conditions:default" : [],
+    }),
+    hdrs = glob([
+        "async_simple/*.h",
+        "async_simple/executors/*.h",
+        "async_simple/coro/*.h",
+        "async_simple/util/*.h"
+    ]) + select({
+        "//bazel/config:async_simple_with_uthread" : uthread_hdrs,
+        "//conditions:default" : [],
+    }),
+    copts = [
+        "-Wall",
+        "-Werror",
+        "-g",
+    ],
+    visibility = ["//visibility:public"],
+    linkopts = select({
+        "//bazel/config:has_not_aio" : [],
+        "//conditions:default" : ["-laio"],
+    }),
+    defines = select({
+        "//bazel/config:has_not_aio" : ["ASYNC_SIMPLE_HAS_NOT_AIO"],
+        "//conditions:default" : [],
+    }),
+)
