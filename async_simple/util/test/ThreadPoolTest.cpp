@@ -78,7 +78,7 @@ void TestBasic(ThreadPool& pool) {
               pool.scheduleById(nullptr));
     EXPECT_EQ(pool.getCurrentId(), -1);
 
-    pool.scheduleById([&pool] { EXPECT_EQ(pool.getCurrentId(), 1); }, 1);
+    pool.scheduleById([&pool] { EXPECT_EQ(pool.getCurrentId(), 0); }, 0);
 }
 
 TEST(ThreadTest, BasicTest) {
