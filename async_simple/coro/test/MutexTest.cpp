@@ -66,11 +66,14 @@ TEST_F(MutexTest, testAsyncLock) {
     count = 2;
 
     auto writer2 = [&]() -> Lazy<void> {
-        auto scopedLock = co_await m.coScopedLock();
-        value++;
-        co_await async_simple::coro::sleep(1s);
-        EXPECT_EQ(1, value);
-        value--;
+        {
+            auto scopedLock = co_await m.coScopedLock();
+            value++;
+            co_await async_simple::coro::sleep(1s);
+            EXPECT_EQ(1, value);
+            value--;
+        }
+        // decrease count after the lock unlocked actually.
         count--;
     };
 
