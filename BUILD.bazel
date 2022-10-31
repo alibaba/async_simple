@@ -39,11 +39,11 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     linkopts = select({
-        "//bazel/config:has_not_aio" : [],
+        "//bazel/config:async_simple_has_not_aio" : [],
         "//conditions:default" : ["-laio"],
     }),
     defines = select({
-        "//bazel/config:has_not_aio" : ["ASYNC_SIMPLE_HAS_NOT_AIO"],
+        "//bazel/config:async_simple_has_not_aio" : ["ASYNC_SIMPLE_HAS_NOT_AIO"],
         "//conditions:default" : [],
     }),
 )
