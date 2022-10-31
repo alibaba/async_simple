@@ -1,0 +1,29 @@
+cc_library(
+    name = "benchmark_main",
+    srcs = ["benchmark_main.cpp"],
+    hdrs = glob(["*.h", "*.hpp"]),
+    deps = [
+        "//:async_simple",
+        "@com_google_benchmark//:benchmark",
+    ],
+    defines = select({
+        "//bazel/config:async_simple_with_uthread" : ["ASYNC_SIMPLE_BENCHMARK_UTHREAD"],
+        "//conditions:default" : [],
+    }),
+)
+
+cc_binary(
+    name = "benchmarking",
+    srcs = [
+        "PureSwitch.bench.cpp",
+        "ReadFile.bench.cpp",
+        "CallDepth.bench.cpp",
+        "Lazy.bench.cpp",
+        "Future.bench.cpp",
+        "ThreadPool.bench.cpp",
+    ] + select({
+        "//bazel/config:async_simple_with_uthread": ["Uthread.bench.cpp"],
+        "//conditions:default": [],
+    }),
+    deps = [":benchmark_main"],
+)

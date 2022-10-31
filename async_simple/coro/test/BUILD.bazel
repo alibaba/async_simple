@@ -1,0 +1,14 @@
+cc_library(
+    name = "hdrs_dep",
+    hdrs = glob(["*.h"]),
+)
+
+cc_test(
+    name = "async_simple_coro_test",
+    srcs = glob(["*.cpp"]),
+    deps = [
+        "//:async_simple",
+        "//async_simple/test:gtest_main",
+        ":hdrs_dep",
+    ],  
+)
