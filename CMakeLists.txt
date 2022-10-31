@@ -115,7 +115,7 @@ if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux") # uname -s
-  if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64|aarch64") # uname -p
+  if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64|aarch64|ppc64le") # uname -m
     set(UTHREAD ON)
     message("-- Uthread on")
   endif()
