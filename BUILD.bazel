@@ -1,8 +1,17 @@
 uthread_srcs = [
-    "async_simple/uthread/internal/thread_impl.h",
-    # "async_simple/uthread/internal/thead.h",
-    "async_simple/uthread/internal/thread.cc",
-]
+
+] + select({
+    "//bazel/config:async_simple_with_uthread": [
+        "async_simple/uthread/internal/thread_impl.h",
+        # "async_simple/uthread/internal/thead.h",
+        "async_simple/uthread/internal/thread.cc",
+    ],
+    "//conditions:default" : [],
+}) + select({
+    "//bazel/config:linux_x86_64": glob(["async_simple/uthread/internal/x86_64/*.S"]),
+    "//bazel/config:linux_aarch64": glob(["async_simple/uthread/internal/aarch64/*.S"]),
+    "//bazel/config:linux_pcc64le": glob(["async_simple/uthread/internal/ppc64le/*.S"]),
+})
 
 uthread_hdrs = glob([
     "async_simple/uthread/internal/thread.h",
@@ -14,15 +23,7 @@ cc_library(
     srcs = [
         "async_simple/experimental/coroutine.h",
         "async_simple/executors/SimpleExecutor.cpp",
-    ] + select({
-        "//bazel/config:linux_x86_64": glob([
-            "async_simple/uthread/internal/*x86_64_sysv_elf*.S"
-        ] + uthread_srcs),
-        "//bazel/config:linux_aarch64": glob([
-            "async_simple/uthread/internal/*arm64_aapcs_elf/*.S"
-        ] + uthread_srcs),
-        "//conditions:default" : [],
-    }),
+    ] + uthread_srcs,
     hdrs = glob([
         "async_simple/*.h",
         "async_simple/executors/*.h",
