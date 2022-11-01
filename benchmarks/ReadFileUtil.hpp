@@ -21,7 +21,9 @@
 #include <async_simple/executors/SimpleExecutor.h>
 #include <async_simple/uthread/Async.h>
 #include <async_simple/uthread/Collect.h>
+#ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 #include <async_simple/uthread/Uthread.h>
+#endif
 #include <fcntl.h>
 #include <unistd.h>
 #include <filesystem>
@@ -29,7 +31,11 @@
 using namespace async_simple;
 using namespace async_simple::coro;
 using namespace async_simple::executors;
+
+#ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 using namespace async_simple::uthread;
+#endif
+
 namespace fs = std::filesystem;
 template <typename FileDescriptor, typename Buffer, typename Executor>
 std::size_t Uthread_read_some(FileDescriptor fd, Buffer buffer,
@@ -52,6 +58,7 @@ inline std::size_t Uthread_read_file(const char *filename, SimpleExecutor *e) {
     return sz;
 }
 
+#ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 void Uthread_read_file_for(int num, const std::string &s, auto e) {
     std::vector<std::function<void()>> task_list;
     task_list.reserve(num);
@@ -61,6 +68,7 @@ void Uthread_read_file_for(int num, const std::string &s, auto e) {
     }
     collectAll<Launch::Schedule>(task_list.begin(), task_list.end(), e);
 }
+#endif
 
 template <typename FileDescriptor, typename Buffer, typename Executor>
 Lazy<std::size_t> async_read_some(FileDescriptor fd, Buffer buffer,

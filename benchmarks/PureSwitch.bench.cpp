@@ -24,7 +24,11 @@
 #endif
 using namespace async_simple;
 using namespace async_simple::executors;
+
+#ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 using namespace async_simple::uthread;
+#endif
+
 template <typename T>
 struct Generator {
     struct promise_type;
