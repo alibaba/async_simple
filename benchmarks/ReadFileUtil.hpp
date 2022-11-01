@@ -25,7 +25,9 @@
 #include <async_simple/uthread/Uthread.h>
 #endif
 #include <fcntl.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <filesystem>
 #include <fstream>
 using namespace async_simple;
@@ -81,10 +83,16 @@ Lazy<std::size_t> async_read_some(FileDescriptor fd, Buffer buffer,
 inline Lazy<std::size_t> async_read_file(const char *filename, IOExecutor *e) {
     auto buffer_size = fs::file_size(filename);
     char *buffer = new char[buffer_size];
+#ifdef _WIN32
+    int fs = -1;
+#else
     auto fd = open(filename, O_RDONLY);
+#endif
     auto size = co_await async_read_some(fd, buffer, buffer_size, 0, e);
     delete[] buffer;
+#ifndef _WIN32
     close(fd);
+#endif
     co_return size;
 }
 
