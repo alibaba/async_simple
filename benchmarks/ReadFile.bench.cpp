@@ -69,7 +69,7 @@ void Uthread_same_read_bench(benchmark::State &state) {
         state.PauseTiming();
         std::vector<std::function<void()>> task_list;
         task_list.reserve(core_num);
-        for (int i = 0; i < core_num; ++i) {
+        for (size_t i = 0; i < core_num; ++i) {
             task_list.emplace_back([num, &s, e = &e]() mutable {
                 Uthread_read_file_for(num, s, e);
             });
@@ -122,7 +122,7 @@ void Lazy_same_read_bench(benchmark::State &state) {
         auto f = [&s, &e, num, core_num]() -> Lazy<void> {
             std::vector<Lazy<void>> lazy_list;
             lazy_list.reserve(core_num);
-            for (int i = 0; i < core_num; ++i) {
+            for (size_t i = 0; i < core_num; ++i) {
                 lazy_list.push_back(
                     async_read_file_for(num, s, e.getIOExecutor()));
             }
