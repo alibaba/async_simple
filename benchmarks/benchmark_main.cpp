@@ -61,10 +61,12 @@ BENCHMARK(Lazy_same_read_bench)
     ->RangeMultiplier(2)
     ->Range(2 << 4, 2 << 10)
     ->Iterations(3);
+#ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 BENCHMARK(Uthread_call_depth_bench)
     ->RangeMultiplier(2)
     ->Range(1, 2 << 10)
     ->Iterations(3);
+#endif
 BENCHMARK(Lazy_call_depth_bench)
     ->RangeMultiplier(2)
     ->Range(1, 2 << 10)

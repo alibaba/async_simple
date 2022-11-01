@@ -18,14 +18,20 @@
 #include <async_simple/coro/Lazy.h>
 #include <async_simple/coro/SyncAwait.h>
 #include <async_simple/executors/SimpleExecutor.h>
+#ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 #include <async_simple/uthread/Async.h>
 #include <async_simple/uthread/Collect.h>
 #include <async_simple/uthread/Uthread.h>
+#endif
 #include "ReadFileUtil.hpp"
 using namespace async_simple;
 using namespace async_simple::coro;
 using namespace async_simple::executors;
+
+#ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 using namespace async_simple::uthread;
+#endif
+
 namespace fs = std::filesystem;
 static int core_num = 1;
 
@@ -43,6 +49,7 @@ Lazy<int> lazy_sum(int n) {
     co_return n + co_await lazy_sum(n - 1);
 }
 
+#ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 void Uthread_call_depth_bench(benchmark::State &state) {
     using namespace async_simple::uthread;
     int n = state.range(0);
@@ -59,6 +66,7 @@ void Uthread_call_depth_bench(benchmark::State &state) {
         }
     }
 }
+#endif
 
 void Lazy_call_depth_bench(benchmark::State &state) {
     using namespace async_simple::coro;
