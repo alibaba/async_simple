@@ -1,0 +1,33 @@
+name: Bazel
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: deps
+      # Install Bazel See: https://bazel.build/install/ubuntu
+      run: |
+           sudo apt install -y libaio-dev
+           sudo apt install apt-transport-https curl gnupg
+           curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor >bazel-archive-keyring.gpg
+           sudo mv bazel-archive-keyring.gpg /usr/share/keyrings
+           echo "deb [arch=amd64 signed-by=/usr/share/keyrings/bazel-archive-keyring.gpg] https://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+           sudo apt update && sudo apt install -y bazel
+    - name: Build
+      # Build your program with clang
+      working-directory: ${{github.workspace}}
+      run: bazel build --action_env=CXX=clang++ --action_env=CC=clang ...
+
+    - name: Test
+      # Build and Execute tests
+      working-directory: ${{github.workspace}}
+      run: bazel test --action_env=CXX=clang++ --action_env=CC=clang ...
