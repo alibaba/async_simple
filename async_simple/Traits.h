@@ -16,9 +16,9 @@
 #ifndef ASYNC_SIMPLE_TRAITS_H
 #define ASYNC_SIMPLE_TRAITS_H
 
-#include <async_simple/Common.h>
-#include <async_simple/Try.h>
-#include <async_simple/Unit.h>
+#include "async_simple/Common.h"
+#include "async_simple/Try.h"
+#include "async_simple/Unit.h"
 #include <exception>
 
 namespace async_simple {

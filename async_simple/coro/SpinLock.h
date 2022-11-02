@@ -16,7 +16,7 @@
 #ifndef ASYNC_SIMPLE_CORO_SPIN_LOCK_H
 #define ASYNC_SIMPLE_CORO_SPIN_LOCK_H
 
-#include <async_simple/coro/Lazy.h>
+#include "async_simple/coro/Lazy.h"
 #include <thread>
 
 namespace async_simple {

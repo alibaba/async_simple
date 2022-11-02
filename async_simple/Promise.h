@@ -16,8 +16,8 @@
 #ifndef ASYNC_SIMPLE_PROMISE_H
 #define ASYNC_SIMPLE_PROMISE_H
 
-#include <async_simple/Common.h>
-#include <async_simple/Future.h>
+#include "async_simple/Common.h"
+#include "async_simple/Future.h"
 #include <exception>
 
 namespace async_simple {

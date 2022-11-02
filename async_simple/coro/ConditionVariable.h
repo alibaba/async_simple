@@ -16,7 +16,7 @@
 #ifndef ASYNC_SIMPLE_CORO_CONDITION_VARIABLE_H
 #define ASYNC_SIMPLE_CORO_CONDITION_VARIABLE_H
 
-#include <async_simple/coro/Lazy.h>
+#include "async_simple/coro/Lazy.h"
 
 namespace async_simple {
 namespace coro {
