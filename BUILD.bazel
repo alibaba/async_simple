@@ -1,4 +1,4 @@
-load("@bazel_skylib//lib:selects.bzl", "selects")
+load("//bazel/config:copt.bzl", "ASYNC_SIMPLE_COPTS")
 
 uthread_srcs = [
 
@@ -35,17 +35,7 @@ cc_library(
         "async_simple/coro/*.h",
         "async_simple/util/*.h"
     ]) + uthread_hdrs,
-    copts = select({
-        "@bazel_tools//platforms:windows": [
-            "/await:strict",
-            "/EHa"
-        ],
-        "//conditions:default": [
-            "-Wall",
-            "-Werror",
-            "-g",
-        ],
-    }),
+    copts = ASYNC_SIMPLE_COPTS,
     visibility = ["//visibility:public"],
     linkopts = select({
         "//bazel/config:async_simple_has_not_aio" : [],
