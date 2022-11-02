@@ -13,6 +13,5 @@ ASYNC_SIMPLE_COPTS = select({
         "-Werror",
         "-D__STDC_LIMIT_MACROS",
         "-g",
-        "-I.",
     ],
 })

@@ -24,8 +24,8 @@
 #include <algorithm>
 #include <string>
 
-#include <async_simple/Common.h>
-#include <async_simple/uthread/internal/thread.h>
+#include "async_simple/Common.h"
+#include "async_simple/uthread/internal/thread.h"
 
 namespace async_simple {
 namespace uthread {
