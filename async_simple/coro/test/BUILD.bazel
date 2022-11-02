@@ -1,6 +1,9 @@
+load("//bazel/config:copt.bzl", "ASYNC_SIMPLE_COPTS")
+
 cc_library(
     name = "hdrs_dep",
     hdrs = glob(["*.h"]),
+    copts = ASYNC_SIMPLE_COPTS,
 )
 
 cc_test(
@@ -11,4 +14,5 @@ cc_test(
         "//async_simple/test:gtest_main",
         ":hdrs_dep",
     ],  
+    copts = ASYNC_SIMPLE_COPTS,
 )
