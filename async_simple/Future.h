@@ -224,22 +224,27 @@ private:
 
     // continuation returns a future
     template <typename F, typename R>
-    std::enable_if_t<R::ReturnsFuture::value,
-                     Future<typename R::ReturnsFuture::Inner>>
-    thenImpl(F&& func) {
+    Future<typename R::ReturnsFuture::Inner> thenImpl(F&& func) {
         logicAssert(valid(), "Future is broken");
         using T2 = typename R::ReturnsFuture::Inner;
 
         if (!_sharedState) {
-            try {
-                auto newFuture =
-                    std::forward<F>(func)(std::move(_localState.getTry()));
-                if (!newFuture.getExecutor()) {
-                    newFuture.setExecutor(_localState.getExecutor());
+            if constexpr (R::ReturnsFuture::value) {
+                try {
+                    auto newFuture =
+                        std::forward<F>(func)(std::move(_localState.getTry()));
+                    if (!newFuture.getExecutor()) {
+                        newFuture.setExecutor(_localState.getExecutor());
+                    }
+                    return newFuture;
+                } catch (...) {
+                    return Future<T2>(Try<T2>(std::current_exception()));
                 }
+            } else {
+                Future<T2> newFuture(makeTryCall(
+                    std::forward<F>(func), std::move(_localState.getTry())));
+                newFuture.setExecutor(_localState.getExecutor());
                 return newFuture;
-            } catch (...) {
-                return Future<T2>(Try<T2>(std::current_exception()));
             }
         }
 
@@ -252,44 +257,20 @@ private:
                 if (!R::isTry && t.hasError()) {
                     p.setException(t.getException());
                 } else {
-                    try {
-                        auto f2 = f(std::move(t));
-                        f2.setContinuation(
-                            [pm = std::move(p)](Try<T2>&& t2) mutable {
-                                pm.setValue(std::move(t2));
-                            });
-                    } catch (...) {
-                        p.setException(std::current_exception());
+                    if constexpr (R::ReturnsFuture::value) {
+                        try {
+                            auto f2 = f(std::move(t));
+                            f2.setContinuation(
+                                [pm = std::move(p)](Try<T2>&& t2) mutable {
+                                    pm.setValue(std::move(t2));
+                                });
+                        } catch (...) {
+                            p.setException(std::current_exception());
+                        }
+                    } else {
+                        p.setValue(makeTryCall(std::forward<F>(f),
+                                               std::move(t)));  // Try<Unit>
                     }
-                }
-            });
-        return newFuture;
-    }
-
-    // continuation returns a value
-    template <typename F, typename R>
-    std::enable_if_t<!(R::ReturnsFuture::value),
-                     Future<typename R::ReturnsFuture::Inner>>
-    thenImpl(F&& func) {
-        logicAssert(valid(), "Future is broken");
-        using T2 = typename R::ReturnsFuture::Inner;
-        if (!_sharedState) {
-            Future<T2> newFuture(makeTryCall(std::forward<F>(func),
-                                             std::move(_localState.getTry())));
-            newFuture.setExecutor(_localState.getExecutor());
-            return newFuture;
-        }
-        Promise<T2> promise;
-        auto newFuture = promise.getFuture();
-        newFuture.setExecutor(_sharedState->getExecutor());
-        _sharedState->setContinuation(
-            [p = std::move(promise),
-             f = std::forward<F>(func)](Try<T>&& t) mutable {
-                if (!R::isTry && t.hasError()) {
-                    p.setException(t.getException());
-                } else {
-                    p.setValue(makeTryCall(std::forward<F>(f),
-                                           std::move(t)));  // Try<Unit>
                 }
             });
         return newFuture;

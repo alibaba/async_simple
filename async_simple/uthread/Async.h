@@ -81,6 +81,7 @@ requires(policy == Launch::Current) inline void async(F&& f, Executor* ex) {
 }
 
 }  // namespace uthread
+
 }  // namespace async_simple
 
 #endif  // ASYNC_SIMPLE_UTHREAD_ASYNC_H
