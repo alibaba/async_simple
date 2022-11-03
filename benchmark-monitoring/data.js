@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1667471787817,
+  "lastUpdate": 1667490845908,
   "repoUrl": "https://github.com/alibaba/async_simple",
   "entries": {
     "C++ Benchmark": [
@@ -15444,6 +15444,462 @@ window.BENCHMARK_DATA = {
             "value": 125136.66666791325,
             "unit": "ns/iter",
             "extra": "iterations: 3\ncpu: 125000.00000059686 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1158035520@qq.com",
+            "name": "kang jinci",
+            "username": "4kangjc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3f82beb2e71472ac4c08d58c61afd86815a51fbf",
+          "message": "Adjust bazel CI for windows (#192)",
+          "timestamp": "2022-11-03T23:24:59+08:00",
+          "tree_id": "c4203c15a9ebd5623fb3bfa4abc773d3a03c91c7",
+          "url": "https://github.com/alibaba/async_simple/commit/3f82beb2e71472ac4c08d58c61afd86815a51fbf"
+        },
+        "date": 1667490845115,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Future_chain",
+            "value": 18363.94637000012,
+            "unit": "ns/iter",
+            "extra": "iterations: 100000\ncpu: 11129.288 ns\nthreads: 1"
+          },
+          {
+            "name": "Future_collectAll",
+            "value": 14193458.56363634,
+            "unit": "ns/iter",
+            "extra": "iterations: 55\ncpu: 11655823.636363637 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_chain",
+            "value": 59194.84898788759,
+            "unit": "ns/iter",
+            "extra": "iterations: 11807\ncpu: 59148.20022020835 ns\nthreads: 1"
+          },
+          {
+            "name": "async_simple_Lazy_collectAll",
+            "value": 12868480.277778307,
+            "unit": "ns/iter",
+            "extra": "iterations: 54\ncpu: 12854266.666666662 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_chain",
+            "value": 100169.6161411633,
+            "unit": "ns/iter",
+            "extra": "iterations: 34570\ncpu: 19852.785652299688 ns\nthreads: 1"
+          },
+          {
+            "name": "RescheduleLazy_collectAll",
+            "value": 29032417.44000013,
+            "unit": "ns/iter",
+            "extra": "iterations: 100\ncpu: 42236.00000000438 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_switch",
+            "value": 105579149.42856835,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 105249085.71428566 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_async",
+            "value": 103938442.42857346,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103569571.42857137 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_await",
+            "value": 103393578.28571239,
+            "unit": "ns/iter",
+            "extra": "iterations: 7\ncpu: 103037442.85714294 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_collectAll",
+            "value": 11296744.441176375,
+            "unit": "ns/iter",
+            "extra": "iterations: 68\ncpu: 10581022.05882353 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_pure_switch_bench/100000/iterations:3",
+            "value": 5723773.666678275,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 5690799.999999996 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_pure_switch_bench/1000000/iterations:3",
+            "value": 42696151.33332157,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 42480699.99999989 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_pure_switch_bench/10000000/iterations:3",
+            "value": 419732188.3333416,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 419677600 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_pure_switch_bench/100000000/iterations:3",
+            "value": 4173708832.3333373,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 4173128966.6666665 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_read_diff_size_bench/32/iterations:3",
+            "value": 17234939.666650463,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 17209699.999998663 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_read_diff_size_bench/64/iterations:3",
+            "value": 25802392.333332594,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 25758333.333332215 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_read_diff_size_bench/128/iterations:3",
+            "value": 42800061.666677415,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 42425900.000000164 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_read_diff_size_bench/256/iterations:3",
+            "value": 38581003.33333899,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 31668399.999999747 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_read_diff_size_bench/512/iterations:3",
+            "value": 53252373.9999912,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 49566933.33333462 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_read_diff_size_bench/1024/iterations:3",
+            "value": 113832749.99999078,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 104944366.6666671 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_read_diff_size_bench/2048/iterations:3",
+            "value": 300030273.33335316,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 266756999.99999836 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_same_read_bench/32/iterations:3",
+            "value": 3263412.000004943,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 3130933.3333346955 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_same_read_bench/64/iterations:3",
+            "value": 2481134.6666524513,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 2167200.0000011832 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_same_read_bench/128/iterations:3",
+            "value": 4603864.000008192,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 4572199.999999545 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_same_read_bench/256/iterations:3",
+            "value": 9260695.66668275,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 9200966.66666718 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_same_read_bench/512/iterations:3",
+            "value": 21455264.666656148,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 15016733.333334051 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_same_read_bench/1024/iterations:3",
+            "value": 39303180.00000928,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 36277166.66666814 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_same_read_bench/2048/iterations:3",
+            "value": 56146280.66666683,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 55641866.66666752 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_noWorkSteal",
+            "value": 519494125.99998367,
+            "unit": "ns/iter",
+            "extra": "iterations: 2\ncpu: 253538600.00000063 ns\nthreads: 1"
+          },
+          {
+            "name": "ThreadPool_withWorkSteal",
+            "value": 88644969.36363573,
+            "unit": "ns/iter",
+            "extra": "iterations: 11\ncpu: 65526209.09090898 ns\nthreads: 1"
+          },
+          {
+            "name": "Generator_pure_switch_bench/100000/iterations:3",
+            "value": 40567.00000395116,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 40499.99999959179 ns\nthreads: 1"
+          },
+          {
+            "name": "Generator_pure_switch_bench/1000000/iterations:3",
+            "value": 716976.666675843,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 716733.3333342186 ns\nthreads: 1"
+          },
+          {
+            "name": "Generator_pure_switch_bench/10000000/iterations:3",
+            "value": 5188905.333341154,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 5179466.666666836 ns\nthreads: 1"
+          },
+          {
+            "name": "Generator_pure_switch_bench/100000000/iterations:3",
+            "value": 41226940.00000138,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 41201633.33333338 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_read_diff_size_bench/32/iterations:3",
+            "value": 10719182.333332356,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 23633.333333587343 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_read_diff_size_bench/64/iterations:3",
+            "value": 24732110.666680757,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 30266.66666627875 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_read_diff_size_bench/128/iterations:3",
+            "value": 47677729.66666447,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 29066.66666646629 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_read_diff_size_bench/256/iterations:3",
+            "value": 89371443.00000454,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 32833.33333333379 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_read_diff_size_bench/512/iterations:3",
+            "value": 169304195.66667372,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 36433.333333955416 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_read_diff_size_bench/1024/iterations:3",
+            "value": 325153280.66665465,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 33666.66666574739 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_read_diff_size_bench/2048/iterations:3",
+            "value": 618007636.6666564,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 48233.33333329553 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_same_read_bench/32/iterations:3",
+            "value": 721476.0000048652,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 30733.33333366198 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_same_read_bench/64/iterations:3",
+            "value": 1606521.000004098,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 25566.666667013273 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_same_read_bench/128/iterations:3",
+            "value": 2213596.0000089956,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 31099.999999876596 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_same_read_bench/256/iterations:3",
+            "value": 3240575.9999960535,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 21266.666666501045 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_same_read_bench/512/iterations:3",
+            "value": 8187274.333333031,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 22533.333332575014 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_same_read_bench/1024/iterations:3",
+            "value": 14296354.999999039,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 21500.000000192664 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_same_read_bench/2048/iterations:3",
+            "value": 34557188.333318815,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 40600.000000760396 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_call_depth_bench/1/iterations:3",
+            "value": 2300.000005561742,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 1899.9999997030652 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_call_depth_bench/2/iterations:3",
+            "value": 2266.6666647334446,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 1933.333333425935 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_call_depth_bench/4/iterations:3",
+            "value": 2233.3333239051476,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 1933.333333425935 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_call_depth_bench/8/iterations:3",
+            "value": 2199.99998307685,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 1866.6666671644332 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_call_depth_bench/16/iterations:3",
+            "value": 3266.6666622086873,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 2833.3333332852817 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_call_depth_bench/32/iterations:3",
+            "value": 3099.9999959628135,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 2666.666667039408 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_call_depth_bench/64/iterations:3",
+            "value": 3000.0000113735346,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 2599.9999995936682 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_call_depth_bench/128/iterations:3",
+            "value": 2800.0000042993634,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 2466.666667070664 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_call_depth_bench/256/iterations:3",
+            "value": 2800.0000042993634,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 2433.3333333477945 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_call_depth_bench/512/iterations:3",
+            "value": 3266.6666811564937,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 2766.6666670237796 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_call_depth_bench/1024/iterations:3",
+            "value": 3300.0000030369847,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 2799.9999995624116 ns\nthreads: 1"
+          },
+          {
+            "name": "Uthread_call_depth_bench/2048/iterations:3",
+            "value": 3199.9999994998993,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 2699.99999957804 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_call_depth_bench/1/iterations:3",
+            "value": 2266.6666647334446,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 1866.6666671644332 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_call_depth_bench/2/iterations:3",
+            "value": 2300.000005561742,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 1933.333333425935 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_call_depth_bench/4/iterations:3",
+            "value": 2766.666663471066,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 2299.9999996405527 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_call_depth_bench/8/iterations:3",
+            "value": 2200.0000020246566,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 1966.666665964567 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_call_depth_bench/16/iterations:3",
+            "value": 3133.333336791111,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 2899.999999546784 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_call_depth_bench/32/iterations:3",
+            "value": 6433.666669636295,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 6066.666666508051 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_call_depth_bench/64/iterations:3",
+            "value": 7733.333328966789,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 7466.666667473495 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_call_depth_bench/128/iterations:3",
+            "value": 11533.333330741394,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 11333.333334325363 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_call_depth_bench/256/iterations:3",
+            "value": 20867.000008214138,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 20733.33333285632 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_call_depth_bench/512/iterations:3",
+            "value": 38100.33333214354,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 37933.33333253675 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_call_depth_bench/1024/iterations:3",
+            "value": 76100.9999905582,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 75933.33333370349 ns\nthreads: 1"
+          },
+          {
+            "name": "Lazy_call_depth_bench/2048/iterations:3",
+            "value": 138168.33334582648,
+            "unit": "ns/iter",
+            "extra": "iterations: 3\ncpu: 137933.33333348794 ns\nthreads: 1"
           }
         ]
       }
