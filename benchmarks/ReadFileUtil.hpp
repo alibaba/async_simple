@@ -84,7 +84,7 @@ inline Lazy<std::size_t> async_read_file(const char *filename, IOExecutor *e) {
     auto buffer_size = fs::file_size(filename);
     char *buffer = new char[buffer_size];
 #ifdef _WIN32
-    int fs = -1;
+    int fd = -1;
 #else
     auto fd = open(filename, O_RDONLY);
 #endif

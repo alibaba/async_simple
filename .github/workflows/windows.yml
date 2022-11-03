@@ -11,7 +11,7 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build:
+  build_with_cmake:
     runs-on: windows-2019
 
     strategy:
@@ -31,3 +31,23 @@ jobs:
 
       - name: Build async_simple
         run: cmake --build Build/${{ matrix.mode }} --config ${{ matrix.mode }} --verbose
+  build_with_bazel:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        mode: [ Release ]
+        arch: [ x86 ]
+    env:
+      CXX: cl.exe
+      CC: cl.exe
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build 
+        working-directory: ${{github.workspace}}
+        run: bazel build --cxxopt=/std:c++20 ...
+
+      - name: Test
+        working-directory: ${{github.workspace}}
+        run: bazel test --cxxopt=/std:c++20 ...
