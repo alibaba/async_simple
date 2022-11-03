@@ -1,0 +1,48 @@
+name: macosx
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+jobs:
+  build_with_bazel:
+    runs-on: macOS-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build
+      # Build  all program
+      working-directory: ${{github.workspace}}
+      run: bazel build --define=ASYNC_SIMPLE_DISABLE_AIO=true ...
+
+    - name: Test
+      # Execute tests
+      working-directory: ${{github.workspace}}
+      run: bazel test --define=ASYNC_SIMPLE_DISABLE_AIO=true ...
+  build_with_cmake:
+    runs-on: macOS-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: deps
+      run: brew install googletest
+    - name: Configure CMake
+      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      run: CXX=clang++ CC=clang cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    - name: Build
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Test
+      # Execute tests defined by the CMake configuration. 
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C ${{env.BUILD_TYPE}}
