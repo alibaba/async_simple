@@ -51,12 +51,11 @@ namespace uthread {
 // c++17, we didn't merge this two implementation by if constexpr. Merge them
 // once the codebases are ready to use c++17.
 template <Launch Policy, class Iterator>
-std::vector<typename std::enable_if<
-    !std::is_void<std::invoke_result_t<
-        typename std::iterator_traits<Iterator>::value_type>>::value,
-    std::invoke_result_t<typename std::iterator_traits<Iterator>::value_type>>::
-                type>
-collectAll(Iterator first, Iterator last, Executor* ex) {
+std::vector<
+    std::invoke_result_t<typename std::iterator_traits<Iterator>::value_type>>
+collectAll(Iterator first, Iterator last, Executor* ex) requires(
+    not std::is_void_v<std::invoke_result_t<
+        typename std::iterator_traits<Iterator>::value_type>>) {
     assert(std::distance(first, last) >= 0);
     static_assert(Policy != Launch::Prompt,
                   "collectAll not support Prompt launch policy");
@@ -94,14 +93,12 @@ collectAll(Iterator first, Iterator last, Executor* ex) {
 }
 
 template <Launch Policy, class Iterator>
-typename std::enable_if<
-    std::is_void<std::invoke_result_t<
-        typename std::iterator_traits<Iterator>::value_type>>::value,
-    void>::type
-collectAll(Iterator first, Iterator last, Executor* ex) {
+void collectAll(Iterator first, Iterator last, Executor* ex) requires(
+    std::is_void_v<std::invoke_result_t<
+        typename std::iterator_traits<Iterator>::value_type>>) {
     assert(std::distance(first, last) >= 0);
     static_assert(Launch::Prompt != Policy,
-                  "collectN not support Prompt launch policy");
+                  "collectAll not support Prompt launch policy");
 
     struct Context {
         std::atomic<std::size_t> tasks;

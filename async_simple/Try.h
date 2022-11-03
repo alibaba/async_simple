@@ -209,27 +209,17 @@ private:
 
 // T is Non void
 template <typename F, typename... Args>
-std::enable_if_t<!(std::is_same<std::invoke_result_t<F, Args...>, void>::value),
-                 Try<std::invoke_result_t<F, Args...>>>
-makeTryCall(F&& f, Args&&... args) {
+auto makeTryCall(F&& f, Args&&... args) {
     using T = std::invoke_result_t<F, Args...>;
     try {
-        return Try<T>(std::forward<F>(f)(std::forward<Args>(args)...));
+        if constexpr (std::is_void_v<T>) {
+            std::forward<F>(f)(std::forward<Args>(args)...);
+            return Try<void>();
+        } else {
+            return Try<T>(std::forward<F>(f)(std::forward<Args>(args)...));
+        }
     } catch (...) {
         return Try<T>(std::current_exception());
-    }
-}
-
-// T is void
-template <typename F, typename... Args>
-std::enable_if_t<std::is_same<std::invoke_result_t<F, Args...>, void>::value,
-                 Try<void>>
-makeTryCall(F&& f, Args&&... args) {
-    try {
-        std::forward<F>(f)(std::forward<Args>(args)...);
-        return Try<void>();
-    } catch (...) {
-        return Try<void>(std::current_exception());
     }
 }
 

@@ -45,6 +45,7 @@ template <typename T>
 auto operator co_await(T&& future) requires IsFuture<std::decay_t<T>>::value {
     return coro::FutureAwaiter(std::move(future));
 }
+
 }  // namespace async_simple
 
 #endif
