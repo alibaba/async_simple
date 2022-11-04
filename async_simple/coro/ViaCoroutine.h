@@ -175,20 +175,16 @@ struct [[nodiscard]] ViaAsyncAwaiter {
 // FIXME: In case awaitable is not a real awaitable, consider return
 // ReadyAwaiter instead. It would be much cheaper in case we `co_await
 // normal_function()`;
-template <
-    typename Awaitable,
-    std::enable_if_t<!detail::HasCoAwaitMethod<Awaitable>::value, int> = 0>
+template <typename Awaitable>
 inline auto coAwait(Executor* ex, Awaitable&& awaitable) {
-    using AwaiterType =
-        decltype(detail::getAwaiter(std::forward<Awaitable>(awaitable)));
-    return ViaAsyncAwaiter<std::decay_t<AwaiterType>>(
-        ex, std::forward<Awaitable>(awaitable));
-}
-
-template <typename Awaitable,
-          std::enable_if_t<detail::HasCoAwaitMethod<Awaitable>::value, int> = 0>
-inline auto coAwait(Executor* ex, Awaitable&& awaitable) {
-    return std::forward<Awaitable>(awaitable).coAwait(ex);
+    if constexpr (detail::HasCoAwaitMethod<Awaitable>::value) {
+        return std::forward<Awaitable>(awaitable).coAwait(ex);
+    } else {
+        using AwaiterType =
+            decltype(detail::getAwaiter(std::forward<Awaitable>(awaitable)));
+        return ViaAsyncAwaiter<std::decay_t<AwaiterType>>(
+            ex, std::forward<Awaitable>(awaitable));
+    }
 }
 
 }  // namespace detail

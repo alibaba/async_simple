@@ -41,23 +41,19 @@
 namespace async_simple {
 namespace uthread {
 
-struct Launch {
-    struct Prompt {};
-    struct Schedule {};
-    struct Current {};
+enum class Launch {
+    Prompt,
+    Schedule,
+    Current,
 };
 
-template <class T, class F,
-          typename std::enable_if<std::is_same<T, Launch::Prompt>::value,
-                                  T>::type* = nullptr>
-inline Uthread async(F&& f, Executor* ex) {
+template <Launch policy, class F>
+requires(policy == Launch::Prompt) inline Uthread async(F&& f, Executor* ex) {
     return Uthread(Attribute{ex}, std::forward<F>(f));
 }
 
-template <class T, class F,
-          typename std::enable_if<std::is_same<T, Launch::Schedule>::value,
-                                  T>::type* = nullptr>
-inline void async(F&& f, Executor* ex) {
+template <Launch policy, class F>
+requires(policy == Launch::Schedule) inline void async(F&& f, Executor* ex) {
     if (!ex)
         AS_UNLIKELY { return; }
     ex->schedule([f = std::move(f), ex]() {
@@ -67,10 +63,9 @@ inline void async(F&& f, Executor* ex) {
 }
 
 // schedule async task, set a callback
-template <class T, class F, class C,
-          typename std::enable_if<std::is_same<T, Launch::Schedule>::value,
-                                  T>::type* = nullptr>
-inline void async(F&& f, C&& c, Executor* ex) {
+template <Launch policy, class F, class C>
+requires(policy == Launch::Schedule) inline void async(F&& f, C&& c,
+                                                       Executor* ex) {
     if (!ex)
         AS_UNLIKELY { return; }
     ex->schedule([f = std::move(f), c = std::move(c), ex]() {
@@ -79,15 +74,14 @@ inline void async(F&& f, C&& c, Executor* ex) {
     });
 }
 
-template <class T, class F,
-          typename std::enable_if<std::is_same<T, Launch::Current>::value,
-                                  T>::type* = nullptr>
-inline void async(F&& f, Executor* ex) {
+template <Launch policy, class F>
+requires(policy == Launch::Current) inline void async(F&& f, Executor* ex) {
     Uthread uth(Attribute{ex}, std::forward<F>(f));
     uth.detach();
 }
 
 }  // namespace uthread
+
 }  // namespace async_simple
 
 #endif  // ASYNC_SIMPLE_UTHREAD_ASYNC_H

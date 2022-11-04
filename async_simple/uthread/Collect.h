@@ -34,7 +34,9 @@
  *  auto res2 = collectAll<Launch::Current>(v.begin(), v.end(), ex);
  * ```
  *
- * the type of res is std::vector<T>, the T is user task's return type.
+ * `F` is a C++ lambda function, the type of returned value `value `is
+ * `std::vector<T>`, `T` is the return type of `F`. If `T` is `void`,
+ * `collectAll` would return `async_simple::Unit`.
  */
 #ifndef ASYNC_SIMPLE_UTHREAD_COLLECT_H
 #define ASYNC_SIMPLE_UTHREAD_COLLECT_H
@@ -47,81 +49,48 @@
 namespace async_simple {
 namespace uthread {
 
-// TODO: Due to it is possible that the user of async_simple doesn't support
-// c++17, we didn't merge this two implementation by if constexpr. Merge them
-// once the codebases are ready to use c++17.
-template <class Policy, class Iterator>
-std::vector<typename std::enable_if<
-    !std::is_void<std::invoke_result_t<
-        typename std::iterator_traits<Iterator>::value_type>>::value,
-    std::invoke_result_t<typename std::iterator_traits<Iterator>::value_type>>::
-                type>
-collectAll(Iterator first, Iterator last, Executor* ex) {
+// TODO: Add constraints for Iterator class.
+// TODO: Add Range version.
+template <Launch Policy, class Iterator>
+auto collectAll(Iterator first, Iterator last, Executor* ex) {
     assert(std::distance(first, last) >= 0);
-    static_assert(!std::is_same<Launch::Prompt, Policy>::value,
+    static_assert(Policy != Launch::Prompt,
                   "collectAll not support Prompt launch policy");
 
-    using ResultType = std::invoke_result_t<
+    using ValueType = std::invoke_result_t<
         typename std::iterator_traits<Iterator>::value_type>;
+    constexpr bool IfReturnVoid = std::is_void_v<ValueType>;
+    using ResultType =
+        std::conditional_t<IfReturnVoid, Unit, std::vector<ValueType>>;
 
     struct Context {
         std::atomic<std::size_t> tasks;
-        std::vector<ResultType> result;
-        Promise<std::vector<ResultType>> promise;
+        ResultType result;
+        Promise<ResultType> promise;
 
-        Context(std::size_t n, Promise<std::vector<ResultType>>&& pr)
-            : tasks(n), result(n), promise(pr) {}
+        Context(std::size_t n, Promise<ResultType>&& pr)
+            : tasks(n), promise(pr) {
+            if constexpr (!IfReturnVoid)
+                result.resize(n);
+        }
     };
 
-    return await<std::vector<ResultType>>(
-        ex, [first, last, ex](Promise<std::vector<ResultType>>&& pr) mutable {
-            auto n = static_cast<std::size_t>(std::distance(first, last));
-            auto context = std::make_shared<Context>(n, std::move(pr));
-            for (auto i = 0; first != last; ++i, ++first) {
-                async<Policy>(
-                    [context, i, f = std::move(*first)]() mutable {
-                        context->result[i] = std::move(f());
-                        auto lastTasks = context->tasks.fetch_sub(
-                            1u, std::memory_order_acq_rel);
-                        if (lastTasks == 1u) {
-                            context->promise.setValue(
-                                std::move(context->result));
-                        }
-                    },
-                    ex);
-            }
-        });
-}
-
-template <class Policy, class Iterator>
-typename std::enable_if<
-    std::is_void<std::invoke_result_t<
-        typename std::iterator_traits<Iterator>::value_type>>::value,
-    void>::type
-collectAll(Iterator first, Iterator last, Executor* ex) {
-    assert(std::distance(first, last) >= 0);
-    static_assert(!std::is_same<Launch::Prompt, Policy>::value,
-                  "collectN not support Prompt launch policy");
-
-    struct Context {
-        std::atomic<std::size_t> tasks;
-        Promise<bool> promise;
-
-        Context(std::size_t n, Promise<bool>&& pr) : tasks(n), promise(pr) {}
-    };
-
-    await<bool>(ex, [first, last, ex](Promise<bool>&& pr) mutable {
+    return await<ResultType>(ex, [first, last,
+                                  ex](Promise<ResultType>&& pr) mutable {
         auto n = static_cast<std::size_t>(std::distance(first, last));
         auto context = std::make_shared<Context>(n, std::move(pr));
-        for (; first != last; ++first) {
+        for (auto i = 0; first != last; ++i, ++first) {
             async<Policy>(
-                [context, f = std::move(*first)]() mutable {
-                    f();
+                [context, i, f = std::move(*first)]() mutable {
+                    if constexpr (IfReturnVoid) {
+                        f();
+                        (void)i;
+                    } else
+                        context->result[i] = std::move(f());
                     auto lastTasks =
                         context->tasks.fetch_sub(1u, std::memory_order_acq_rel);
-                    if (lastTasks == 1u) {
-                        context->promise.setValue(true);
-                    }
+                    if (lastTasks == 1u)
+                        context->promise.setValue(std::move(context->result));
                 },
                 ex);
         }

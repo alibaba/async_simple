@@ -124,10 +124,10 @@ public:
 
     Lazy<T> get_return_object() noexcept;
 
-    template <typename V,
-              typename = std::enable_if_t<std::is_convertible_v<V&&, T>>>
+    template <typename V>
     void return_value(V&& value) noexcept(
-        std::is_nothrow_constructible_v<T, V&&>) {
+        std::is_nothrow_constructible_v<
+            T, V&&>) requires std::is_convertible_v<V&&, T> {
         _value.template emplace<T>(std::forward<V>(value));
     }
     void unhandled_exception() noexcept {
@@ -216,21 +216,21 @@ struct LazyAwaiterBase {
 
     bool await_ready() const noexcept { return false; }
 
-    template <typename T2 = T, std::enable_if_t<std::is_void_v<T2>, int> = 0>
-    void awaitResume() {
-        _handle.promise().result();
-        // We need to destroy the handle expclictly since the awaited coroutine
-        // after symmetric transfer couldn't release it self any more.
-        _handle.destroy();
-        _handle = nullptr;
-    }
-
-    template <typename T2 = T, std::enable_if_t<!std::is_void_v<T2>, int> = 0>
-    T awaitResume() {
-        auto r = std::move(_handle.promise()).result();
-        _handle.destroy();
-        _handle = nullptr;
-        return r;
+    template <typename T2 = T>
+    auto awaitResume() {
+        if constexpr (std::is_void_v<T2>) {
+            _handle.promise().result();
+            // We need to destroy the handle expclictly since the awaited
+            // coroutine after symmetric transfer couldn't release it self any
+            // more.
+            _handle.destroy();
+            _handle = nullptr;
+        } else {
+            auto r = std::move(_handle.promise()).result();
+            _handle.destroy();
+            _handle = nullptr;
+            return r;
+        }
     }
 
     Try<T> awaitResumeTry() noexcept {

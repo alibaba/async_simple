@@ -123,6 +123,12 @@ Specifically, for defect report or feature enhancement, it'd be better to file a
 4. Choose one or more reviewers from contributors: (e.g., ChuanqiXu9, RainMark, foreverhy, qicosmos).
 5. Get approved and merged.
 
+# Contact us
+Please scan the following QR code of DingTalk to contact us.  
+<center>
+<img src="./docs/docs.cn/images/ding_talk_group.png" alt="dingtalk" width="200" height="200" align="bottom" />
+</center>
+
 # Performance Monitoring
 
 We could monitor the performance change history in: https://alibaba.github.io/async_simple/benchmark-monitoring/index.html.

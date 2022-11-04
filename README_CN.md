@@ -15,45 +15,42 @@ async\_simple是阿里巴巴开源的轻量级C++异步框架。提供了基于C
 
 # 准备环境
 
-async\_simple 涉及 C++20 协程，对编译器版本有较高要求。需要 clang11 或 gcc10 及其以上版本。编译运行测试需要 gtest。需要 libaio 的功能的需要依赖 libaio。
+async\_simple 涉及 C++20 协程，对编译器版本有较高要求。需要 clang11 或 gcc10 及其以上版本。编译运行测试需要 gtest，使用`bazel`可自动拉取gtest。需要 libaio 的功能的需要依赖 libaio。
 
 ## Debian/Ubuntu系列
 
 - 安装clang11及其以上版本。安装方法见：[APT Packages](https://apt.llvm.org/)
-- 安装cmake。
+- 安装cmake或bazel
 - 如需使用 libaio 功能，需安装 libaio。
 
 ```bash
-sudo apt install cmake libaio-dev -y
+sudo apt install libaio-dev -y
+# Install cmake
+sudo apt install cmake -y
+# Install bazel See: https://bazel.build/install/ubuntu
 ```
-
-- 安装gtest、gmock。用apt命令安装源代码后再编译安装。
-
+- 使用`apt`安装gtest、gmock
 ```bash
-sudo apt install libgtest-dev -y
-# gtest
-cd /usr/src/googletest/gtest
-sudo mkdir build && cd build
-sudo cmake .. && sudo make install
-cd .. && sudo rm -rf build
-# gmock
-cd /usr/src/googletest/gmock
-sudo mkdir build && cd build
-sudo cmake .. && sudo make install
-cd .. && sudo rm -rf build
+sudo apt install -y libgtest-dev libgmock-dev
 ```
+- [源码编译安装gtest、gmock](#源码依赖)
+
 
 ## CentOS/Fedora系列
 
 - 同样是先安装clang11及其以上版本。安装方法见：[Fedora Snapshot Packages](https://copr.fedorainfracloud.org/coprs/g/fedora-llvm-team/llvm-snapshots/)
-- 安装cmake、libaio(可选)。
+- 安装cmake或bazel、libaio(可选)。
 
 ```bash
 # Optional.
 sudo yum install cmake libaio-devel -y
+# Install bazel See: https://bazel.build/install/redhat
 ```
-
-- 编译安装gtest、gmock。
+- 使用`yum`安装gtest、gmock
+```bash
+sudo yum install gtest-devel gmock-devel
+```
+- [源码编译安装gtest、gmock](#源码依赖)
 
 ```
 git clone git@github.com:google/googletest.git -b v1.8.x
@@ -62,14 +59,36 @@ mkdir build && cd build
 cmake .. && sudo make install
 ```
 
+## Arch系列
+```bash
+# Optional
+sudo pacman -S libaio
+# Use cmake
+sudo pacman -S cmake gtest
+# Use bazel
+sudo pacman -S bazel
+```
+
 ## macOS
 
 - 建议升级macOS 12.1，默认已安装clang13。
-- 安装cmake，googletest。
+- 安装cmake或者bazel，googletest。
 
-```
+```bash
+# Use cmake
 brew install cmake
 brew install googletest
+# Use bazel
+brew install bazel
+```
+
+## Windows
+```powershell
+# Install cmake
+winget install cmake
+# Install google-test
+# TODO
+# Install bazel See: https://bazel.build/install/windows
 ```
 
 ## 源码依赖
@@ -94,6 +113,7 @@ cmake .. && sudo make install
 - 首先克隆async\_simple代码并进入代码目录，然后执行如下命令编译。
 - 编译成功结束后，运行单元测试以确保能够正常运行。
 
+## cmake
 ```bash
 mkdir build && cd build
 # Specify [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] to skip tests.
@@ -110,6 +130,27 @@ make install
 mkdir build && cd build
 conan create ..
 ```
+
+## bazel
+```bash
+# Specify [--define=ASYNC_SIMPLE_DISABLE_AIO=true] to skip the build libaio
+# Example bazel build --define=ASYNC_SIMPLE_DISABLE_AIO=true ...
+bazel build ...                     # compile all
+bazel test ...                      # compile and execute tests
+# Specify compile a target
+# Format: bazel [build|test] [directory name]:[binary name]
+# Example
+bazel build :async_simple           # only compile libasync_simple
+bazel build benchmarks:benchmarking # compile benchmark
+bazel test async_simple/coro/test:async_simple_coro_test
+# Use clang toolchain
+bazel build --action_env=CXX=clang++ --action_env=CC=clang ...
+# Add compile option 
+bazel build --copt='-O0' --copt='-ggdb' ...
+# Sepecify for Windows, add --config=windows
+bazel build --config=windows ...
+```
+- `...`表示递归扫描所有目标，在`oh-my-zsh`中有歧义，请勿直接在`oh-my-zsh`中使用，可更换其他`shell`或`bash -c 'commond'`运行，如`bash -c bazel build ....`
 
 # 更多示例
 
@@ -137,6 +178,13 @@ conan create ..
 - 确保修改后单元测试通过，代码格式化通过。（`git-clang-format HEAD^`）
 - 创建并提交Pull Request，选择开发者Review代码。（候选人：ChuanqiXu9, RainMark, foreverhy, qicosmos）
 - 最终意见一致后，代码将会被合并。
+
+# 联系我们
+
+欢迎大家一起共建async_simple, 有问题请扫钉钉二维码加群讨论。  
+<center>
+<img src="./docs/docs.cn/images/ding_talk_group.png" alt="dingtalk" width="200" height="200" align="bottom" />
+</center>
 
 # 性能监控
 

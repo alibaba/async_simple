@@ -4,6 +4,7 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(libasync_simple INTERFACE)
+target_compile_features(libasync_simple INTERFACE cxx_std_20)
 target_include_directories(libasync_simple INTERFACE
         $<BUILD_INTERFACE:${async_simple_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
@@ -14,7 +15,7 @@ message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
 find_package(Threads REQUIRED)
 target_link_libraries(libasync_simple INTERFACE Threads::Threads)
-find_package(Aio)
+find_package(Aio QUIET)
 
 find_package(Benchmark)
 
@@ -61,6 +62,7 @@ endif()
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(CXX_FLAGS
         /std:c++20
+        /Zc:__cplusplus
         /await:strict
         /EHa
         )

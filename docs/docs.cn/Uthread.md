@@ -31,7 +31,8 @@ uthread::async<uthread::Launch::Current>(<lambda>, ex);
 
 类似于在async_simple中无栈协程中多个Lazy并发执行，uthread同样提供了collectAll接口实现多个有栈协程并发执行。
 
-下面例子中F为C++ lambda函数，返回值res类型为`std::vector<T>`, T为F函数返回值类型。当T等于void类型时，collectAll同样返回void类型。
+下面例子中F为C++ lambda函数，返回值res类型为`std::vector<T>`, T为F函数返回值类型。当T等于void类型时，collectAll 返回
+`async_simple::Unit` 类型。
 
 - 指定多个协程在多个线程中并行化执行，这种用法一般要求用户多个lambda函数之间不存在数据竞争。
 

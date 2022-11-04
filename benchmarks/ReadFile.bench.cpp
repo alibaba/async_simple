@@ -27,9 +27,14 @@
 using namespace async_simple;
 using namespace async_simple::coro;
 using namespace async_simple::executors;
+
+#ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 using namespace async_simple::uthread;
-namespace fs = std::filesystem;
+#endif
+
 static int task_num = 1000;
+
+#ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 void Uthread_read_diff_size_bench(benchmark::State &state) {
     using namespace async_simple::uthread;
     int id = state.range(0);
@@ -90,6 +95,7 @@ void Uthread_same_read_bench(benchmark::State &state) {
         }
     }
 }
+#endif
 
 void Lazy_read_diff_size_bench(benchmark::State &state) {
     using namespace async_simple::coro;
@@ -99,7 +105,7 @@ void Lazy_read_diff_size_bench(benchmark::State &state) {
     SimpleExecutor e(std::thread::hardware_concurrency());
     for (auto _ : state) {
         auto f = [&s, &e]() -> Lazy<void> {
-            std::vector<Lazy<uint64_t>> lazy_list;
+            std::vector<Lazy<size_t>> lazy_list;
             lazy_list.reserve(task_num);
             for (int i = 0; i < task_num; ++i) {
                 lazy_list.push_back(

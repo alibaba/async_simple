@@ -25,18 +25,19 @@
 #include "async_simple/uthread/Uthread.h"
 #endif
 #include <fcntl.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <filesystem>
 #include <fstream>
 using namespace async_simple;
 using namespace async_simple::coro;
 using namespace async_simple::executors;
+namespace fs = std::filesystem;
 
 #ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 using namespace async_simple::uthread;
-#endif
 
-namespace fs = std::filesystem;
 template <typename FileDescriptor, typename Buffer, typename Executor>
 std::size_t Uthread_read_some(FileDescriptor fd, Buffer buffer,
                               std::size_t buffer_size, std::size_t offset,
@@ -48,6 +49,7 @@ std::size_t Uthread_read_some(FileDescriptor fd, Buffer buffer,
         [&p](io_event_t event) mutable { p.setValue(event.res); });
     return uthread::await(p.getFuture().via(e));
 }
+
 inline std::size_t Uthread_read_file(const char *filename, SimpleExecutor *e) {
     auto buffer_size = fs::file_size(filename);
     char *buffer = new char[buffer_size];
@@ -58,7 +60,6 @@ inline std::size_t Uthread_read_file(const char *filename, SimpleExecutor *e) {
     return sz;
 }
 
-#ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 void Uthread_read_file_for(int num, const std::string &s, auto e) {
     std::vector<std::function<void()>> task_list;
     task_list.reserve(num);
@@ -82,10 +83,16 @@ Lazy<std::size_t> async_read_some(FileDescriptor fd, Buffer buffer,
 inline Lazy<std::size_t> async_read_file(const char *filename, IOExecutor *e) {
     auto buffer_size = fs::file_size(filename);
     char *buffer = new char[buffer_size];
+#ifdef _WIN32
+    int fd = -1;
+#else
     auto fd = open(filename, O_RDONLY);
+#endif
     auto size = co_await async_read_some(fd, buffer, buffer_size, 0, e);
     delete[] buffer;
+#ifndef _WIN32
     close(fd);
+#endif
     co_return size;
 }
 
