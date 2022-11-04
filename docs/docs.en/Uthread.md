@@ -31,7 +31,7 @@ uthread::async<uthread::Launch::Current>(<lambda>, ex);
 
 async_simple offers `collectAll` interface for Uthread just as stackless coroutine Lazy and Future/Promise to execture Uthread concurrently.
 
-In the following example, `F` is a C++ lambda function, the type of returned value `value `is `std::vector<T>`, `T` is the return type of `F`. If `T` is `void`, `collectAll` would return void too.
+In the following example, `F` is a C++ lambda function, the type of returned value `value `is `std::vector<T>`, `T` is the return type of `F`. If `T` is `void`, `collectAll` would return `async_simple::Unit`.
 
 - Specify multiple Uthread to executre concurrently. This requires that there is no data race in the multiple Uthread.
 
