@@ -179,6 +179,13 @@ bazel build --config=windows ...
 - 创建并提交Pull Request，选择开发者Review代码。（候选人：ChuanqiXu9, RainMark, foreverhy, qicosmos）
 - 最终意见一致后，代码将会被合并。
 
+# 联系我们
+
+欢迎大家一起共建async_simple, 有问题请扫钉钉二维码加群讨论。  
+<center>
+<img src="./docs/docs.cn/images/ding_talk_group.png" alt="dingtalk" width="200" height="200" align="bottom" />
+</center>
+
 # 性能监控
 
 我们可在 https://alibaba.github.io/async_simple/benchmark-monitoring/index.html 中检查每个 commit 前后的性能。
