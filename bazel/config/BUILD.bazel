@@ -6,7 +6,6 @@ config_setting(
         "@bazel_tools//platforms:linux",
         "@bazel_tools//platforms:x86_64",
     ],
-    visibility = ["//visibility:public"],
 )
 
 config_setting(
@@ -15,7 +14,6 @@ config_setting(
         "@bazel_tools//platforms:linux",
         "@bazel_tools//platforms:aarch64",
     ],
-    visibility = ["//visibility:public"],
 )
 
 config_setting(
@@ -24,7 +22,22 @@ config_setting(
         "@bazel_tools//platforms:linux",
         "@bazel_tools//platforms:ppc",
     ],
-    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "darwin_x86_64",
+    constraint_values = [
+        "@bazel_tools//platforms:osx",
+        "@bazel_tools//platforms:x86_64",
+    ],
+)
+
+config_setting(
+    name = "darwin_aarch64",
+    constraint_values = [
+        "@bazel_tools//platforms:osx",
+        "@bazel_tools//platforms:aarch64",
+    ],
 )
 
 selects.config_setting_group(
@@ -33,6 +46,8 @@ selects.config_setting_group(
         ":linux_x86_64",
         ":linux_aarch64",
         ":linux_ppc64le",
+        ":darwin_x86_64",
+        ":darwin_aarch64",
     ],
     visibility = ["//visibility:public"],
 )

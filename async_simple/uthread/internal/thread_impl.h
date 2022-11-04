@@ -23,9 +23,6 @@
 #ifndef ASYNC_SIMPLE_UTHREAD_INTERNAL_UTHREAD_IMPL_H
 #define ASYNC_SIMPLE_UTHREAD_INTERNAL_UTHREAD_IMPL_H
 
-#include <setjmp.h>
-#include <ucontext.h>
-
 namespace async_simple {
 namespace uthread {
 namespace internal {
