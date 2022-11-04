@@ -1,3 +1,5 @@
+load("//bazel/config:copt.bzl", "ASYNC_SIMPLE_COPTS")
+
 cc_library(
     name = "benchmark_main",
     srcs = ["benchmark_main.cpp"],
@@ -10,6 +12,7 @@ cc_library(
         "//bazel/config:async_simple_with_uthread" : ["ASYNC_SIMPLE_BENCHMARK_UTHREAD"],
         "//conditions:default" : [],
     }),
+    copts = ASYNC_SIMPLE_COPTS,
 )
 
 cc_binary(
@@ -26,4 +29,5 @@ cc_binary(
         "//conditions:default": [],
     }),
     deps = [":benchmark_main"],
+    copts = ASYNC_SIMPLE_COPTS,
 )

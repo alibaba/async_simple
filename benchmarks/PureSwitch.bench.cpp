@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 #include "PureSwitch.bench.h"
-#include <async_simple/executors/SimpleExecutor.h>
-#include <async_simple/experimental/coroutine.h>
+#include "async_simple/executors/SimpleExecutor.h"
+#include "async_simple/experimental/coroutine.h"
 #ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 #define private public
-#include <async_simple/uthread/Uthread.h>
+#include "async_simple/uthread/Uthread.h"
 #undef private
-#include <async_simple/uthread/Async.h>
+#include "async_simple/uthread/Async.h"
 #endif
 using namespace async_simple;
 using namespace async_simple::executors;

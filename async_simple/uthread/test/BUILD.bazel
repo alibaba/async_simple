@@ -1,3 +1,5 @@
+load("//bazel/config:copt.bzl", "ASYNC_SIMPLE_COPTS")
+
 cc_test(
     name = "async_simple_uthread_test",
     srcs = select({
@@ -8,4 +10,5 @@ cc_test(
         "//:async_simple",
         "//async_simple/test:gtest_main",
     ],
+    copts = ASYNC_SIMPLE_COPTS,
 )

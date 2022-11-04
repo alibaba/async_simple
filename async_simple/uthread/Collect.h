@@ -41,10 +41,10 @@
 #ifndef ASYNC_SIMPLE_UTHREAD_COLLECT_H
 #define ASYNC_SIMPLE_UTHREAD_COLLECT_H
 
-#include <async_simple/Future.h>
-#include <async_simple/uthread/Async.h>
-#include <async_simple/uthread/Await.h>
 #include <type_traits>
+#include "async_simple/Future.h"
+#include "async_simple/uthread/Async.h"
+#include "async_simple/uthread/Await.h"
 
 namespace async_simple {
 namespace uthread {
