@@ -99,8 +99,10 @@ public:
     }
 
 public:
-    void submitIO(int fd, iocb_cmd cmd, void* buffer, size_t length,
-                  off_t offset, AIOCallback cbfn) override {
+    void submitIO([[maybe_unused]] int fd, [[maybe_unused]] iocb_cmd cmd,
+                  [[maybe_unused]] void* buffer, [[maybe_unused]] size_t length,
+                  [[maybe_unused]] off_t offset,
+                  [[maybe_unused]] AIOCallback cbfn) override {
 #ifndef ASYNC_SIMPLE_HAS_NOT_AIO
         iocb io;
         memset(&io, 0, sizeof(iocb));
@@ -122,8 +124,10 @@ public:
         }
 #endif
     }
-    void submitIOV(int fd, iocb_cmd cmd, const iovec_t* iov, size_t count,
-                   off_t offset, AIOCallback cbfn) override {
+    void submitIOV([[maybe_unused]] int fd, [[maybe_unused]] iocb_cmd cmd,
+                   [[maybe_unused]] const iovec_t* iov,
+                   [[maybe_unused]] size_t count, [[maybe_unused]] off_t offset,
+                   [[maybe_unused]] AIOCallback cbfn) override {
 #ifndef ASYNC_SIMPLE_HAS_NOT_AIO
         iocb io;
         memset(&io, 0, sizeof(iocb));
