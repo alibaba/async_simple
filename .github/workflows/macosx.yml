@@ -25,7 +25,7 @@ jobs:
     - name: Test
       # Execute tests
       working-directory: ${{github.workspace}}
-      run: bazel test --define=ASYNC_SIMPLE_DISABLE_AIO=true ...
+      run: bazel test --define=ASYNC_SIMPLE_DISABLE_AIO=true --test_output=errors ...
   build_with_cmake:
     runs-on: macOS-latest
 
