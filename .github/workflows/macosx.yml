@@ -25,7 +25,7 @@ jobs:
     - name: Test
       # Execute tests
       working-directory: ${{github.workspace}}
-      run: bazel test --define=ASYNC_SIMPLE_DISABLE_AIO=true ...
+      run: bazel test --define=ASYNC_SIMPLE_DISABLE_AIO=true --test_output=errors ...
   build_with_cmake:
     runs-on: macOS-latest
 
@@ -45,4 +45,4 @@ jobs:
     - name: Test
       # Execute tests defined by the CMake configuration. 
       working-directory: ${{github.workspace}}/build
-      run: ctest -C ${{env.BUILD_TYPE}}
+      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
