@@ -31,21 +31,53 @@ else()
 endif()
 
 if (${ASYNC_SIMPLE_ENABLE_TESTS})
-    find_package(GMock REQUIRED)
-    find_package(GTest REQUIRED)
-
-    if(GTEST_INCLUDE_DIR AND GTEST_LIBRARIES)
-        message(STATUS "GTest found.")
-        message(STATUS "GTest: ${GTEST_INCLUDE_DIR}, ${GTEST_LIBRARIES}")
-    else()
-        message(FATAL_ERROR "GTest NOT found. Set ASYNC_SIMPLE_ENABLE_TESTS OFF to skip tests.")
+    if("${FIND_GOOGMOCK_ROOT}" STREQUAL "")
+        set(FIND_GOOGMOCK_ROOT "/usr/local")
     endif()
-
-    if(GMOCK_INCLUDE_DIR AND GMOCK_LIBRARIES)
-        message(STATUS "GMock found.")
-        message(STATUS "GMock: ${GMOCK_INCLUDE_DIR}, ${GMOCK_LIBRARIES}")
+    if("${FIND_GOOGLETEST_ROOT}" STREQUAL "")
+        set(FIND_GOOGLETEST_ROOT "/usr/local")
+    endif()
+    find_library(FIND_GMOCK_LIBRARIES
+        NAME gmock
+        PATHS ${FIND_GOOGMOCK_ROOT}/lib)
+    find_library(FIND_GTEST_LIBRARIES
+        NAME gtest
+        PATHS ${FIND_GOOGLETEST_ROOT}/lib)
+    if (NOT FIND_GTEST_LIBRARIES OR NOT FIND_GMOCK_LIBRARIES)
+        message(STATUS "fetch GTest from https://github.com/google/googletest.git")
+        include(FetchContent)
+        FetchContent_Declare(
+            googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG release-1.11.0
+        )
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+        set(BUILD_GMOCK ON CACHE BOOL "" FORCE)
+        set(BUILD_GTEST ON CACHE BOOL "" FORCE)
+        FetchContent_MakeAvailable(googletest)
+        set(GMOCK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/_deps/googletest-src/googlemock/include/)
+        set(GTEST_INCLUDE_DIR ${CMAKE_BINARY_DIR}/_deps/googletest-src/googletest/include/)
+        set(GTEST_LIBRARIES gtest_main)
+        set(GMOCK_LIBRARIES gmock_main)
+        message(STATUS "GTest: ${GTEST_INCLUDE_DIR}, ${GTEST_LIBRARIES}")
+        message(STATUS "Gmock: ${GMOCK_INCLUDE_DIR}, ${GMOCK_LIBRARIES}")
     else()
-        message(FATAL_ERROR "GMock NOT found. Set ASYNC_SIMPLE_ENABLE_TESTS OFF to skip tests.")
+        message(STATUS "use system GTest")
+        find_package(GMock REQUIRED)
+        find_package(GTest REQUIRED)
+        if(GTEST_INCLUDE_DIR AND GTEST_LIBRARIES)
+            message(STATUS "GTest found.")
+            message(STATUS "GTest: ${GTEST_INCLUDE_DIR}, ${GTEST_LIBRARIES}")
+        else()
+            message(FATAL_ERROR "GTest NOT found. Set ASYNC_SIMPLE_ENABLE_TESTS OFF to skip tests.")
+        endif()
+
+        if(GMOCK_INCLUDE_DIR AND GMOCK_LIBRARIES)
+            message(STATUS "GMock found.")
+            message(STATUS "GMock: ${GMOCK_INCLUDE_DIR}, ${GMOCK_LIBRARIES}")
+        else()
+            message(FATAL_ERROR "GMock NOT found. Set ASYNC_SIMPLE_ENABLE_TESTS OFF to skip tests.")
+        endif()
     endif()
 endif()
 
