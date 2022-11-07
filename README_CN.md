@@ -135,22 +135,24 @@ conan create ..
 ```bash
 # Specify [--define=ASYNC_SIMPLE_DISABLE_AIO=true] to skip the build libaio
 # Example bazel build --define=ASYNC_SIMPLE_DISABLE_AIO=true ...
-bazel build ...                     # compile all
+bazel build ...                     # compile all target
+bazel build ...:all                 # compile all target
+bazel build ...:*                   # compile all target
+bazel build -- ... -benchmarks/...  # compile all target except those beneath `benchmarks`
 bazel test ...                      # compile and execute tests
 # Specify compile a target
-# Format: bazel [build|test] [directory name]:[binary name]
+# Format: bazel [build|test|run] [directory name]:[binary name]
 # Example
 bazel build :async_simple           # only compile libasync_simple
-bazel build benchmarks:benchmarking # compile benchmark
+bazel run benchmarks:benchmarking   # compile and run benchmark
 bazel test async_simple/coro/test:async_simple_coro_test
 # Use clang toolchain
 bazel build --action_env=CXX=clang++ --action_env=CC=clang ...
 # Add compile option 
 bazel build --copt='-O0' --copt='-ggdb' ...
-# Sepecify for Windows, add --config=windows
-bazel build --config=windows ...
 ```
-- `...`表示递归扫描所有目标，在`oh-my-zsh`中有歧义，请勿直接在`oh-my-zsh`中使用，可更换其他`shell`或`bash -c 'commond'`运行，如`bash -c bazel build ....`
+- 看[这里](https://bazel.build/run/build)获得`bazel build`的更多信息
+- `...`表示递归扫描所有目标，在`oh-my-zsh`中被识别为`../..`，可更换其他`shell`或使用`bash -c 'command.'`运行，例如`bash -c 'bazel build ...'`， 或者使用`bazel build ...:all`
 
 # 更多示例
 
