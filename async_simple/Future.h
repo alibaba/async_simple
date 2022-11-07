@@ -25,6 +25,9 @@
 
 namespace async_simple {
 
+template <typename T>
+class Promise;
+
 // The well-known Future/Promise pairs mimic a producer/consumer pair.
 // The Future stands for the consumer-side.
 //
