@@ -26,35 +26,41 @@ namespace coro {
 
 namespace detail {
 
-template <class, class = void>
-struct HasCoAwaitMethod : std::false_type {};
+template <class T>
+concept HasCoAwaitMethod = requires(T&& awaitable) {
+    std::forward<T>(awaitable).coAwait(nullptr);
+};
 
 template <class T>
-struct HasCoAwaitMethod<
-    T, std::void_t<decltype(std::declval<T>().coAwait(nullptr))>>
-    : std::true_type {};
+concept HasMemberCoAwaitOperator = requires(T&& awaitable) {
+    std::forward<T>(awaitable).operator co_await();
+};
 
+#ifdef _MSC_VER
+// FIXME: MSVC compiler bug, See
+// https://developercommunity.visualstudio.com/t/10160851
 template <class, class = void>
-struct HasMemberCoAwaitOperator : std::false_type {};
+struct HasGlobalCoAwaitOperatorHelp : std::false_type {};
 
 template <class T>
-struct HasMemberCoAwaitOperator<
-    T, std::void_t<decltype(std::declval<T>().operator co_await())>>
-    : std::true_type {};
-
-template <class, class = void>
-struct HasGlobalCoAwaitOperator : std::false_type {};
-
-template <class T>
-struct HasGlobalCoAwaitOperator<
+struct HasGlobalCoAwaitOperatorHelp<
     T, std::void_t<decltype(operator co_await(std::declval<T>()))>>
     : std::true_type {};
 
+template <class T>
+concept HasGlobalCoAwaitOperator = HasGlobalCoAwaitOperatorHelp<T>::value;
+#else
+template <class T>
+concept HasGlobalCoAwaitOperator = requires(T&& awaitable) {
+    operator co_await(std::forward<T>(awaitable));
+};
+#endif
+
 template <typename Awaitable>
 auto getAwaiter(Awaitable&& awaitable) {
-    if constexpr (HasMemberCoAwaitOperator<Awaitable>::value)
+    if constexpr (HasMemberCoAwaitOperator<Awaitable>)
         return std::forward<Awaitable>(awaitable).operator co_await();
-    else if constexpr (HasGlobalCoAwaitOperator<Awaitable>::value)
+    else if constexpr (HasGlobalCoAwaitOperator<Awaitable>)
         return operator co_await(std::forward<Awaitable>(awaitable));
     else
         return std::forward<Awaitable>(awaitable);

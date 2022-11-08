@@ -60,5 +60,12 @@ TEST_F(FutureAwaiterTest, testWithFuture) {
     syncAwait(lazy2());
 }
 
+namespace detail {
+
+static_assert(HasGlobalCoAwaitOperator<Future<int>>);
+static_assert(HasGlobalCoAwaitOperator<Future<int>&&>);
+
+}  // namespace detail
+
 }  // namespace coro
 }  // namespace async_simple
