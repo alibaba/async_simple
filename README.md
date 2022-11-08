@@ -23,10 +23,20 @@ are optional. (Testing before using is highly suggested.)
 
 ## Using apt (ubuntu and debian's)
 
-```
+```bash
 # Install libaio
 sudo apt install libaio-dev -y
+# Install cmake
+sudo apt install cmake -y
+# Install bazel See: https://bazel.build/install/ubuntu
+```
+- using `apt` to install gtest, gmock
+```bash
+sudo apt install -y libgtest-dev libgmock-dev
+```
 
+- [Try to build gtest and gmock from source](#Build-Dependencies-From-Source)
+```bash
 # Install gtest
 sudo apt install libgtest-dev -y
 sudo apt install cmake -y
@@ -38,22 +48,50 @@ cd /usr/src/googletest/gmock
 sudo mkdir build && cd build
 sudo cmake .. && sudo make install
 cd .. && sudo rm -rf build
+
+# Install bazel See: https://bazel.build/install/ubuntu
 ```
 
-## Using yum (CentOS and fedora)
-```
+## Using yum (CentOS and Fedora)
+```bash
 # Install libaio
 sudo yum install libaio-devel -y
-
-sudo yum install cmake -y
-# Try to build gtest and gmock from source
 ```
+- Using `yum` to install gtest, gmock
+```
+sudo yum install gtest-devel gmock-devel
+```
+- [Try to build gtest and gmock from source](#Build-Dependencies-From-Source)
+
+## Using Pacman (Arch)
+```bash
+# Optional
+sudo pacman -S libaio
+# Use cmake to build project
+sudo pacman -S cmake gtest
+# Use bazel to build project
+sudo pacman -S bazel
+```
+
 
 ## Using Homebrew (macOS)
 
-```
+```bash
+# Use cmake to build project
 brew install cmake
 brew install googletest
+# Use bazel to build project
+sudo pacman -S bazel
+```
+
+
+## Windows
+```powershell
+# Install cmake
+winget install cmake
+# Install google-test
+# TODO
+# Install bazel See: https://bazel.build/install/windows
 ```
 
 ## Build Dependencies From Source
@@ -80,7 +118,9 @@ Required Compiler: clang (>= 13.0.0) or gcc (>= 10.3)
 Demo example depends on standalone asio(https://github.com/chriskohlhoff/asio/tree/master/asio), the commit id:f70f65ae54351c209c3a24704624144bfe8e70a3
 
 # Build
-```
+
+## cmake
+```bash
 $ mkdir build && cd build
 # Specify [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] to skip tests.
 # Specify [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] to skip build demo example.
@@ -97,6 +137,29 @@ Conan is also supported. You can install async_simple to conan local cache.
 mkdir build && cd build
 conan create ..
 ```
+
+## bazel
+```bash
+# Specify [--define=ASYNC_SIMPLE_DISABLE_AIO=true] to skip the build libaio
+# Example bazel build --define=ASYNC_SIMPLE_DISABLE_AIO=true ...
+bazel build ...                      # compile all target
+bazel build ...:all                  # compile all target
+bazel build ...:*                    # compile all target
+bazel build -- ... -benchmarks/...   # compile all target except those beneath `benchmarks`
+bazel test ...                       # compile and execute tests
+# Specify compile a target
+# Format: bazel [build|test|run] [directory name]:[binary name]
+# Example
+bazel build :async_simple           # only compile libasync_simple
+bazel run benchmarks:benchmarking   # compile and run benchmark
+bazel test async_simple/coro/test:async_simple_coro_test
+# Use clang toolchain
+bazel build --action_env=CXX=clang++ --action_env=CC=clang ...
+# Add compile option 
+bazel build --copt='-O0' --copt='-ggdb' ...
+```
+- See [this](https://bazel.build/run/build) get more infomation
+- ` ...` Indicates recursively scan all targets, recognized as ../.. in `oh-my-zsh`, can be replaced by other `shell` or `bash -c 'commond'` to run, such as `bash -c 'bazel build' ...` or use `bazel build ...:all`
 
 # Get Started
 
