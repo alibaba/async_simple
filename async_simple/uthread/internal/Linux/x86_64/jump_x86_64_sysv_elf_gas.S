@@ -25,17 +25,16 @@
  ****************************************************************************************/
 
 .text
-.globl _fl_ontop_fcontext
-.type _fl_ontop_fcontext,@function
+.globl _fl_jump_fcontext
+.type _fl_jump_fcontext,@function
 .align 16
-_fl_ontop_fcontext:
-    /* preserve ontop-function in R8 */
-    movq  %rdx, %r8
-
+_fl_jump_fcontext:
     leaq  -0x38(%rsp), %rsp /* prepare stack */
 
+#if !defined(ASYNC_SIMPLE_USE_TSX)
     stmxcsr  (%rsp)     /* save MMX control- and status-word */
     fnstcw   0x4(%rsp)  /* save x87 control-word */
+#endif
 
     movq  %r12, 0x8(%rsp)  /* save R12 */
     movq  %r13, 0x10(%rsp)  /* save R13 */
@@ -50,8 +49,12 @@ _fl_ontop_fcontext:
     /* restore RSP (pointing to context-data) from RDI */
     movq  %rdi, %rsp
 
+    movq  0x38(%rsp), %r8  /* restore return-address */
+
+#if !defined(ASYNC_SIMPLE_USE_TSX)
     ldmxcsr  (%rsp)     /* restore MMX control- and status-word */
     fldcw    0x4(%rsp)  /* restore x87 control-word */
+#endif
 
     movq  0x8(%rsp), %r12  /* restore R12 */
     movq  0x10(%rsp), %r13  /* restore R13 */
@@ -60,7 +63,7 @@ _fl_ontop_fcontext:
     movq  0x28(%rsp), %rbx  /* restore RBX */
     movq  0x30(%rsp), %rbp  /* restore RBP */
 
-    leaq  0x38(%rsp), %rsp /* prepare stack */
+    leaq  0x40(%rsp), %rsp /* prepare stack */
 
     /* return transfer_t from jump */
     /* RAX == fctx, RDX == data */
@@ -69,11 +72,9 @@ _fl_ontop_fcontext:
     /* RDI == fctx, RSI == data */
     movq  %rax, %rdi
 
-    /* keep return-address on stack */
-
     /* indirect jump to context */
     jmp  *%r8
-.size _fl_ontop_fcontext,.-_fl_ontop_fcontext
+.size _fl_jump_fcontext,.-_fl_jump_fcontext
 
 /* Mark that we don't need executable stack.  */
 .section .note.GNU-stack,"",%progbits

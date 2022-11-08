@@ -23,7 +23,6 @@
 #ifndef ASYNC_SIMPLE_UTHREAD_INTERNAL_THREAD_H
 #define ASYNC_SIMPLE_UTHREAD_INTERNAL_THREAD_H
 
-#include <ucontext.h>
 #include <memory>
 #include <type_traits>
 

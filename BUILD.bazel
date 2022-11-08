@@ -1,5 +1,7 @@
 load("//bazel/config:copt.bzl", "ASYNC_SIMPLE_COPTS")
 
+uthread_prefix = "async_simple/uthread/internal/"
+
 uthread_srcs = [
 
 ] + select({
@@ -9,9 +11,11 @@ uthread_srcs = [
     ],
     "//conditions:default" : [],
 }) + select({
-    "//bazel/config:linux_x86_64": glob(["async_simple/uthread/internal/x86_64/*.S"]),
-    "//bazel/config:linux_aarch64": glob(["async_simple/uthread/internal/aarch64/*.S"]),
-    "//bazel/config:linux_ppc64le": glob(["async_simple/uthread/internal/ppc64le/*.S"]),
+    "//bazel/config:linux_x86_64": glob([uthread_prefix + "Linux/" + "x86_64/*.S"]),
+    "//bazel/config:linux_aarch64": glob([uthread_prefix + "Linux/" + "aarch64/*.S"]),
+    "//bazel/config:linux_ppc64le": glob([uthread_prefix + "Linux/" + "ppc64le/*.S"]),
+    "//bazel/config:darwin_x86_64": glob([uthread_prefix + "Darwin/" + "x86_64/*.S"]),
+    "//bazel/config:darwin_aarch64": glob([uthread_prefix + "Darwin/" + "arm64/*.S"]),
     "//conditions:default" : [],
 })
 
