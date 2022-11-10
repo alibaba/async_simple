@@ -135,7 +135,7 @@ public:
         co_return ret;
     }
 
-    template <typename T, bool thread_id = false>
+    template <typename T>
     Lazy<T> getValueWithSleep(T x, std::chrono::microseconds msec =
                                        std::chrono::microseconds::max()) {
         struct ValueAwaiter {
@@ -163,7 +163,7 @@ public:
         co_return ret;
     }
 
-    template <typename T, bool thread_id = false>
+    template <typename T>
     Lazy<T> getValueWithCV(T x, std::condition_variable& cv, bool& ready,
                            int& cnt, std::mutex& mutex) {
         struct ValueAwaiter {
