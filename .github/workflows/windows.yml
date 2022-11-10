@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Generate Project
-        run: cmake -B Build/${{ matrix.mode }} -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DASYNC_SIMPLE_ENABLE_TESTS=OFF -DRFK_DEV=1 -G "Visual Studio 16 2019" -A x64
+        run: cmake -B Build/${{ matrix.mode }} -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DRFK_DEV=1 -G "Visual Studio 16 2019" -A x64
 
       - name: Build async_simple
         run: cmake --build Build/${{ matrix.mode }} --config ${{ matrix.mode }} --verbose
