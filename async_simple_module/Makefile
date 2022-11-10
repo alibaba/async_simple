@@ -2,7 +2,7 @@
 
 STD_MODULE_PATH=../third_party_module/stdmodules
 export OPT_FLAGS = -O2 -g -DNDEBUG -fprebuilt-module-path=$(STD_MODULE_PATH)
-export OBJECT_CFLAGS = -std=c++20 $(OPT_FLAGS) -Werror
+export OBJECT_CFLAGS = -std=c++20 $(OPT_FLAGS) -Werror -Wno-unused-command-line-argument
 export SHARED_OBJECT_CFLAGS = $(OBJECT_CFLAGS) -fPIC
 export INTERFACE_CFLAGS = $(OBJECT_CFLAGS) --precompile
 
@@ -295,13 +295,13 @@ async_simple-Executor.pcm: Executor.cppm ./util/async_simple-util.Condition.pcm 
 	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=./util/ -c ./util/ThreadPool.cppm -o ./util/async_simple-util.ThreadPool.pcm
 # uthread
 ./uthread/internal/jump_x86_64_sysv_elf_gas.o: ./uthread/internal/jump_x86_64_sysv_elf_gas.S
-	clang++ $(OBJECT_CFLAGS)  -c ./uthread/internal/jump_x86_64_sysv_elf_gas.S -o ./uthread/internal/jump_x86_64_sysv_elf_gas.o
+	clang++ $(OBJECT_CFLAGS)  -c ./uthread/internal/jump_x86_64_sysv_elf_gas.S  -Wno-unused-command-line-argument -o ./uthread/internal/jump_x86_64_sysv_elf_gas.o
 ./uthread/internal/make_x86_64_sysv_elf_gas.o: ./uthread/internal/make_x86_64_sysv_elf_gas.S
-	clang++ $(OBJECT_CFLAGS)  -c ./uthread/internal/make_x86_64_sysv_elf_gas.S -o ./uthread/internal/make_x86_64_sysv_elf_gas.o
+	clang++ $(OBJECT_CFLAGS)  -c ./uthread/internal/make_x86_64_sysv_elf_gas.S  -Wno-unused-command-line-argument -o ./uthread/internal/make_x86_64_sysv_elf_gas.o
 ./uthread/internal/jump_x86_64_sysv_elf_gas-PIC.o: ./uthread/internal/jump_x86_64_sysv_elf_gas.S
-	clang++ $(SHARED_OBJECT_CFLAGS)  -c ./uthread/internal/jump_x86_64_sysv_elf_gas.S -o ./uthread/internal/jump_x86_64_sysv_elf_gas-PIC.o
+	clang++ $(SHARED_OBJECT_CFLAGS)  -c ./uthread/internal/jump_x86_64_sysv_elf_gas.S  -Wno-unused-command-line-argument -o ./uthread/internal/jump_x86_64_sysv_elf_gas-PIC.o
 ./uthread/internal/make_x86_64_sysv_elf_gas-PIC.o: ./uthread/internal/make_x86_64_sysv_elf_gas.S
-	clang++ $(SHARED_OBJECT_CFLAGS)  -c ./uthread/internal/make_x86_64_sysv_elf_gas.S -o ./uthread/internal/make_x86_64_sysv_elf_gas-PIC.o
+	clang++ $(SHARED_OBJECT_CFLAGS)  -c ./uthread/internal/make_x86_64_sysv_elf_gas.S  -Wno-unused-command-line-argument -o ./uthread/internal/make_x86_64_sysv_elf_gas-PIC.o
 ./uthread/internal/async_simple-uthread.thread.pcm: ./uthread/internal/thread.cppm async_simple-Future.pcm
 	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=./uthread/internal/ -fprebuilt-module-path=.  -c ./uthread/internal/thread.cppm -o ./uthread/internal/async_simple-uthread.thread.pcm
 ./uthread/async_simple-uthread.Uthread.pcm: ./uthread/Uthread.cppm ./uthread/internal/async_simple-uthread.thread.pcm

@@ -2,6 +2,7 @@ module;
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+# 5 __FILE__ 1 3 // Enter "faked" system files since std is reserved module name
 export module std:iostream;
 export namespace std {
     using std::cout;
