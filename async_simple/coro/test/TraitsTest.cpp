@@ -54,29 +54,29 @@ public:
 auto operator co_await(class A) { return SimpleAwaiter("A Global"); }
 
 TEST_F(TraitsTest, testHasCoAwaitMethod) {
-    EXPECT_TRUE(detail::HasCoAwaitMethod<A>::value);
-    EXPECT_FALSE(detail::HasCoAwaitMethod<B>::value);
+    EXPECT_TRUE(detail::HasCoAwaitMethod<A>);
+    EXPECT_FALSE(detail::HasCoAwaitMethod<B>);
 }
 
 TEST_F(TraitsTest, testHasCoAwaitOperator) {
-    EXPECT_TRUE(detail::HasCoAwaitMethod<A>::value);
-    EXPECT_FALSE(detail::HasMemberCoAwaitOperator<A>::value);
-    EXPECT_TRUE(detail::HasGlobalCoAwaitOperator<A>::value);
+    EXPECT_TRUE(detail::HasCoAwaitMethod<A>);
+    EXPECT_FALSE(detail::HasMemberCoAwaitOperator<A>);
+    EXPECT_TRUE(detail::HasGlobalCoAwaitOperator<A>);
     A a;
     auto awaiterA = detail::getAwaiter(a);
     EXPECT_EQ(string("A Global"), awaiterA.name);
 
-    EXPECT_FALSE(detail::HasCoAwaitMethod<B>::value);
-    EXPECT_FALSE(detail::HasMemberCoAwaitOperator<B>::value);
-    EXPECT_FALSE(detail::HasGlobalCoAwaitOperator<B>::value);
+    EXPECT_FALSE(detail::HasCoAwaitMethod<B>);
+    EXPECT_FALSE(detail::HasMemberCoAwaitOperator<B>);
+    EXPECT_FALSE(detail::HasGlobalCoAwaitOperator<B>);
     B b;
     b.value = 3;
     B awaiterB = detail::getAwaiter(b);
     EXPECT_EQ(3, awaiterB.value);
 
-    EXPECT_FALSE(detail::HasCoAwaitMethod<C>::value);
-    EXPECT_TRUE(detail::HasMemberCoAwaitOperator<C>::value);
-    EXPECT_FALSE(detail::HasGlobalCoAwaitOperator<C>::value);
+    EXPECT_FALSE(detail::HasCoAwaitMethod<C>);
+    EXPECT_TRUE(detail::HasMemberCoAwaitOperator<C>);
+    EXPECT_FALSE(detail::HasGlobalCoAwaitOperator<C>);
     C c;
     auto awaiterC = detail::getAwaiter(c);
     EXPECT_EQ(string("C Member"), awaiterC.name);

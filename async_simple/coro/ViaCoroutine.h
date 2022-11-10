@@ -177,7 +177,7 @@ struct [[nodiscard]] ViaAsyncAwaiter {
 // normal_function()`;
 template <typename Awaitable>
 inline auto coAwait(Executor* ex, Awaitable&& awaitable) {
-    if constexpr (detail::HasCoAwaitMethod<Awaitable>::value) {
+    if constexpr (detail::HasCoAwaitMethod<Awaitable>) {
         return std::forward<Awaitable>(awaitable).coAwait(ex);
     } else {
         using AwaiterType =
