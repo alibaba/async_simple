@@ -181,7 +181,7 @@ public:
                 std::thread([this, c = continuation]() mutable {
                     {
                         std::unique_lock lk(mutex);
-                        cv.wait(lk, [this]() mutable { return ready; });
+                        cv.wait(lk, [this]() -> bool { return this->ready; });
                         --cnt;
                     }
                     if (cnt == 0)
