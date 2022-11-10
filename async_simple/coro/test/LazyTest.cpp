@@ -179,12 +179,13 @@ public:
             bool await_ready() { return false; }
             void await_suspend(std::coroutine_handle<> continuation) noexcept {
                 std::thread([this, c = continuation]() mutable {
+                    int condition;
                     {
                         std::unique_lock lk(mutex);
                         cv.wait(lk, [this]() -> bool { return this->ready; });
-                        --cnt;
+                        condition = --cnt;
                     }
-                    if (cnt == 0)
+                    if (condition == 0)
                         cv.notify_one();
                     c.resume();
                 }).detach();
