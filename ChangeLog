@@ -1,4 +1,8 @@
-2020-10-31 Release Notes
+2022-11-11
+    * SimpleExecutor will execute all the scheduled task before destructing
+    * `co_awit` a lvalue Future is deprected now. We should move the future explicitly before `co_awit`. 
+
+2022-10-31 Release Notes
     * 1.0 Released
     * Add conan support
     * Add bazel support
