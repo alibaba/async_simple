@@ -66,8 +66,9 @@ inline void jmp_buf_link::switch_out() {
 
 inline void jmp_buf_link::initial_switch_in_completed() {}
 
-thread_context::thread_context(std::function<void()> func)
-    : stack_size_(get_base_stack_size()), func_(std::move(func)) {
+thread_context::thread_context(std::function<void()> func, size_t stack_size)
+    : stack_size_(stack_size ? stack_size : get_base_stack_size()),
+      func_(std::move(func)) {
     setup();
 }
 

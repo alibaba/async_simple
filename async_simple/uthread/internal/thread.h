@@ -58,7 +58,7 @@ private:
     stack_holder make_stack();
 
 public:
-    explicit thread_context(std::function<void()> func);
+    explicit thread_context(std::function<void()> func, size_t stack_size = 0);
     ~thread_context();
     void switch_in();
     void switch_out();
