@@ -22,22 +22,25 @@
 namespace async_simple {
 
 template <typename T>
-auto operator co_await(T&& future) requires IsFuture<std::decay_t<T>>::value {
+auto operator co_await(Future<T>&& future) {
     struct FutureAwaiter {
-        T future_;
+        Future<T> future_;
 
         bool await_ready() { return future_.hasResult(); }
         void await_suspend(coro::CoroHandle<> continuation) {
             future_.setContinuation(
-                [continuation](
-                    Try<typename std::decay_t<T>::value_type>&& t) mutable {
-                    continuation.resume();
-                });
+                [continuation](Try<T>&& t) mutable { continuation.resume(); });
         }
         auto await_resume() { return std::move(future_.value()); }
     };
 
-    return FutureAwaiter{std::forward<T>(future)};
+    return FutureAwaiter{std::move(future)};
+}
+
+template <typename T>
+[[deprecated("Require an rvalue future.")]]
+auto operator co_await(T&& future) requires IsFuture<std::decay_t<T>>::value {
+    return std::move(operator co_await(std::move(future)));
 }
 
 }  // namespace async_simple

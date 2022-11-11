@@ -136,7 +136,7 @@ Promise<int> pr;
 auto fut = pr.getFuture();
 sum(1, 1, [pr = std::move(pr)](int val) mutable { pr.setValue(val); });
 std::this_thread::sleep_for(std::chrono::milliseconds(500));
-auto val = co_await fut;
+auto val = co_await std::move(fut);
 ```
 
 如果 Future 已经设置过 Executor，那么此时当前协程的 Resumption 由该调度器控制。
@@ -148,7 +148,7 @@ Promise<int> pr;
 auto fut = pr.getFuture().via(co_await CurrentExecutor{};);
 sum(1, 1, [pr = std::move(pr)](int val) mutable { pr.setValue(val); });
 std::this_thread::sleep_for(std::chrono::milliseconds(500));
-auto val = co_await fut;
+auto val = co_await std::move(fut);
 ```
 
 ## 与有栈协程交互

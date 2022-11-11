@@ -43,7 +43,7 @@ TEST_F(FutureAwaiterTest, testWithFuture) {
         auto fut = pr.getFuture();
         sum(1, 1, [pr = std::move(pr)](int val) mutable { pr.setValue(val); });
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        auto val = co_await fut;
+        auto val = co_await std::move(fut);
         EXPECT_EQ(2, val);
     };
     syncAwait(lazy1());
