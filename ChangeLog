@@ -1,0 +1,11 @@
+2020-10-31 Release Notes
+    * 1.0 Released
+    * Add conan support
+    * Add bazel support
+    * make uthread portable to linux/PPC, Darwin/X86 and Darwin/Aarch64
+    * Verified Windows Support
+    * Add FutureAwaiter
+    * Add option to disable unstable libaio
+    * Support dbg scripts for coroutines and document for debugging
+    * Enable to use coroutine components under std directly
+    * Add multiple core demo examples
