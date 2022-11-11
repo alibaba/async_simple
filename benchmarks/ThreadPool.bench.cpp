@@ -24,19 +24,22 @@ const int REPS = 10;
 
 void autoScheduleTasks(bool enableWorkSteal) {
     std::atomic<int> count = 0;
-    ThreadPool tp(std::thread::hardware_concurrency(), enableWorkSteal);
+    {
+        ThreadPool tp(std::thread::hardware_concurrency(), enableWorkSteal);
 
-    for (int i = 0; i < COUNT; ++i) {
-        [[maybe_unused]] auto ret = tp.scheduleById([i, &count] {
-            count++;
-            int x;
-            auto reps = REPS + (REPS * (rand() % 5));
-            for (int n = 0; n < reps; ++n)
-                x = i + rand();
-            (void)x;
-        });
-        assert(ret == ThreadPool::ERROR_TYPE::ERROR_NONE);
+        for (int i = 0; i < COUNT; ++i) {
+            [[maybe_unused]] auto ret = tp.scheduleById([i, &count] {
+                count++;
+                int x;
+                auto reps = REPS + (REPS * (rand() % 5));
+                for (int n = 0; n < reps; ++n)
+                    x = i + rand();
+                (void)x;
+            });
+            assert(ret == ThreadPool::ERROR_TYPE::ERROR_NONE);
+        }
     }
+    assert(count == COUNT);
 }
 
 void ThreadPool_noWorkSteal(benchmark::State& state) {
