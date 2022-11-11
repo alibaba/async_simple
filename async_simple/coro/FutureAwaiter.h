@@ -20,30 +20,27 @@
 #include "async_simple/experimental/coroutine.h"
 
 namespace async_simple {
-namespace coro {
 
 template <typename T>
-class FutureAwaiter {
-public:
-    explicit FutureAwaiter(Future<T>&& future) : _future(std::move(future)) {}
-    FutureAwaiter(FutureAwaiter&& rhs) : _future(std::move(rhs._future)) {}
-    FutureAwaiter(FutureAwaiter&) = delete;
+auto operator co_await(Future<T>&& future) {
+    struct FutureAwaiter {
+        Future<T> future_;
 
-    bool await_ready() { return _future.hasResult(); }
-    void await_suspend(CoroHandle<> continuation) {
-        _future.setContinuation(
-            [continuation](Try<T>&& t) mutable { continuation.resume(); });
-    }
-    T await_resume() { return std::move(_future.value()); }
+        bool await_ready() { return future_.hasResult(); }
+        void await_suspend(coro::CoroHandle<> continuation) {
+            future_.setContinuation(
+                [continuation](Try<T>&& t) mutable { continuation.resume(); });
+        }
+        auto await_resume() { return std::move(future_.value()); }
+    };
 
-private:
-    Future<T> _future;
-};
-}  // namespace coro
+    return FutureAwaiter{std::move(future)};
+}
 
 template <typename T>
+[[deprecated("Require an rvalue future.")]]
 auto operator co_await(T&& future) requires IsFuture<std::decay_t<T>>::value {
-    return coro::FutureAwaiter(std::move(future));
+    return std::move(operator co_await(std::move(future)));
 }
 
 }  // namespace async_simple

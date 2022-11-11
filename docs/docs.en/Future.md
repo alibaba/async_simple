@@ -136,7 +136,7 @@ Promise<int> pr;
 auto fut = pr.getFuture();
 sum(1, 1, [pr = std::move(pr)](int val) mutable { pr.setValue(val); });
 std::this_thread::sleep_for(std::chrono::milliseconds(500));
-auto val = co_await fut;
+auto val = co_await std::move(fut);
 ```
 
 If the Future has set Executor already, the Executor would decide when will the Lazy to be resumed.
@@ -148,7 +148,7 @@ Promise<int> pr;
 auto fut = pr.getFuture().via(co_await CurrentExecutor{};);
 sum(1, 1, [pr = std::move(pr)](int val) mutable { pr.setValue(val); });
 std::this_thread::sleep_for(std::chrono::milliseconds(500));
-auto val = co_await fut;
+auto val = co_await std::move(fut);
 ```
 
 ## Get value from Uthread
