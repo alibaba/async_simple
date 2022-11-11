@@ -161,6 +161,17 @@ bazel build --copt='-O0' --copt='-ggdb' ...
 - See [this](https://bazel.build/run/build) get more infomation
 - ` ...` Indicates recursively scan all targets, recognized as ../.. in `oh-my-zsh`, can be replaced by other `shell` or `bash -c 'commond'` to run, such as `bash -c 'bazel build' ...` or use `bazel build ...:all`
 
+# Docker Compile Environment
+```
+git clone https://github.com/alibaba/async_simple.git
+cd async_simple/docker/centos7
+docker build . --no-cache -t async_simple:1.0 --network host
+docker run -it --name test-async-simple async_simple:1.0 /bin/bash
+// Has entered centos bash shell
+mkdir build && cd build
+cmake3 .. -DCMAKE_BUILD_TYPE=Release
+```
+
 # Get Started
 
 After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with API, here is a [demo](./docs/docs.en/GetStarted.md) use Lazy to count char in a file.

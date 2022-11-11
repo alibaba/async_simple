@@ -154,6 +154,17 @@ bazel build --copt='-O0' --copt='-ggdb' ...
 - 看[这里](https://bazel.build/run/build)获得`bazel build`的更多信息
 - `...`表示递归扫描所有目标，在`oh-my-zsh`中被识别为`../..`，可更换其他`shell`或使用`bash -c 'command.'`运行，例如`bash -c 'bazel build ...'`， 或者使用`bazel build ...:all`
 
+# Docker 编译环境
+```
+git clone https://github.com/alibaba/async_simple.git
+cd async_simple/docker/centos7
+docker build . --no-cache -t async_simple:1.0 --network host
+docker run -it --name test-async-simple async_simple:1.0 /bin/bash
+// 已经进入 centos bash shell
+mkdir build && cd build
+cmake3 .. -DCMAKE_BUILD_TYPE=Release
+```
+
 # 更多示例
 
 接下来可以阅读更多API文档，例如C++20协程（[Lazy](./docs/docs.cn/Lazy.md)）。熟悉async\_simple组件，可以先跟着[Demo](./docs/docs.cn/GetStarted.md)用C++20协程来实现异步统计文件字符数功能。
