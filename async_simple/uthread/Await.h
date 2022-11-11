@@ -116,6 +116,7 @@ T await(Executor* ex, Fn&& fn) {
                   "Callable of await is not support, eg: Callable(Promise<T>)");
     Promise<T> p;
     auto f = p.getFuture().via(ex);
+    p.forceSched().checkout();
     fn(std::move(p));
     return await(std::move(f));
 }
