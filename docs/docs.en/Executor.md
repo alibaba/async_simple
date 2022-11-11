@@ -38,7 +38,7 @@ public:
     virtual IOExecutor* getIOExecutor() = 0;
 ```
 
-- `Virtual bool schedule(Func func) = 0;`. It would schedule a lambda function to execute. The implementation is required to schedule the lambda to any threads to execute.
+- `Virtual bool schedule(Func func) = 0;`. It would schedule a lambda function to execute. When `scheudle(Func)` returns true, the implementation is required to schedule the lambda to any threads to execute.
 - `virtual bool currentThreadInExecutor() const = 0;`. It would check if the current thread are in the executor.
 - `virtual ExecutorStat stat() const = 0;`. It would return the state information of the executor.
 - `virtual Context checkout();` It would be called in case the user (Lazy, Uthread and Future/Promise) want to leave the current thread. The return value of `checkout` is the identity of the current thread. User who want to schedule back to the original thread should use the identity returned from `checkout`.

@@ -97,7 +97,7 @@ inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal,
         auto current = getCurrent();
         current->first = id;
         current->second = this;
-        while (!_stop) {
+        while (true) {
             WorkItem workerItem = {};
             if (_enableWorkSteal) {
                 // Try to do work steal firstly.
@@ -109,10 +109,15 @@ inline ThreadPool::ThreadPool(size_t threadNum, bool enableWorkSteal,
                 }
             }
 
-            // If _enableWorkSteal false or work steal failed, wait for a pop
-            // task.
-            if (!workerItem.fn && !_queues[id].pop(workerItem))
-                continue;
+            if (!workerItem.fn && !_queues[id].pop(workerItem)) {
+                // If thread is going to stop, don't wait for any new task any
+                // more. Otherwise wait for a pop task if _enableWorkSteal false
+                // or work steal failed,
+                if (_stop)
+                    break;
+                else
+                    continue;
+            }
 
             if (workerItem.fn)
                 workerItem.fn();
