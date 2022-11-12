@@ -44,7 +44,10 @@ private:
 
 public:
     LocalState() : _executor(nullptr) {}
-    LocalState(T&& v) : _try_value(std::forward<T>(v)), _executor(nullptr) {}
+    template <typename U>
+    LocalState(U&& v) requires(!std::is_void_v<T> &&
+                               std::is_convertible_v<U, T>)
+        : _try_value(std::forward<T>(v)), _executor(nullptr) {}
     LocalState(Try<T>&& t) : _try_value(std::move(t)), _executor(nullptr) {}
 
     ~LocalState() {}

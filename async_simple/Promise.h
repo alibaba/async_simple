@@ -34,6 +34,8 @@ class Future;
 template <typename T>
 class Promise {
 public:
+    using lvalue_reference = std::add_lvalue_reference_t<T>;
+    using rvalue_reference = std::add_rvalue_reference_t<T>;
     Promise() : _sharedState(new FutureState<T>()), _hasFuture(false) {
         _sharedState->attachPromise();
     }
@@ -97,13 +99,26 @@ public:
         logicAssert(valid(), "Promise is broken");
         _sharedState->setResult(Try<T>(error));
     }
-    void setValue(T&& v) {
+
+    template <class U>
+    void setValue(U&& v) requires(!std::is_void_v<T> &&
+                                  std::is_convertible_v<U, T>) {
         logicAssert(valid(), "Promise is broken");
         _sharedState->setResult(Try<T>(std::forward<T>(v)));
     }
-    void setValue(Try<T>&& t) {
+    void setValue(Try<T>&& t) requires(!std::is_void_v<T>) {
         logicAssert(valid(), "Promise is broken");
         _sharedState->setResult(std::move(t));
+    }
+
+    void setValue() requires(std::is_void_v<T>) {
+        logicAssert(valid(), "Promise is broken");
+        _sharedState->setResult(Try<void>());
+    }
+
+    void setValue(Try<void>&& t) requires(std::is_void_v<T>) {
+        logicAssert(valid(), "Promise is broken");
+        _sharedState->setResult(Try<void>());
     }
 
 private:
