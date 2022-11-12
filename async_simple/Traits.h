@@ -19,7 +19,6 @@
 #include <exception>
 #include "async_simple/Common.h"
 #include "async_simple/Try.h"
-#include "async_simple/Unit.h"
 
 namespace async_simple {
 
@@ -31,10 +30,10 @@ struct IsFuture : std::false_type {
     using Inner = T;
 };
 
-template <>
-struct IsFuture<void> : std::false_type {
-    using Inner = Unit;
-};
+// template <>
+// struct IsFuture<void> : std::false_type {
+//     using Inner = Unit;
+// };
 
 template <typename T>
 struct IsFuture<Future<T>> : std::true_type {

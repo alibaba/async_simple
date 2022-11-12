@@ -61,7 +61,7 @@ auto collectAll(Iterator first, Iterator last, Executor* ex) {
         typename std::iterator_traits<Iterator>::value_type>;
     constexpr bool IfReturnVoid = std::is_void_v<ValueType>;
     using ResultType =
-        std::conditional_t<IfReturnVoid, Unit, std::vector<ValueType>>;
+        std::conditional_t<IfReturnVoid, int, std::vector<ValueType>>;
 
     struct Context {
         std::atomic<std::size_t> tasks;
