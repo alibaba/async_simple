@@ -63,7 +63,7 @@ concept Range = requires(T &t) {
 
 // It is not travial to implement an asynchronous do_for_each.
 template <typename InputIt, typename Callable>
-Future<Unit> do_for_each(InputIt Begin, InputIt End, Callable func) {
+Future<void> do_for_each(InputIt Begin, InputIt End, Callable func) {
     for (auto It = Begin; It != End; ++It) {
         auto F = std::invoke(func, *It);
         // If we met an error, return early.
@@ -76,11 +76,11 @@ Future<Unit> do_for_each(InputIt Begin, InputIt End, Callable func) {
                 return do_for_each(SubBegin, SubEnd, func);
             });
     }
-    return makeReadyFuture(Unit());
+    return makeReadyFuture();
 }
 
 template <Range RangeTy, typename Callable>
-Future<Unit> do_for_each(const RangeTy &Rng, Callable func) {
+Future<void> do_for_each(const RangeTy &Rng, Callable func) {
     return do_for_each(Rng.begin(), Rng.end(), func);
 }
 
@@ -106,7 +106,7 @@ Future<uint64_t> CountCharInFilesAsync(const std::vector<FileName> &Files,
                            return CountCharInFileAsyncImpl(File, c).thenValue(
                                [ReadSize](auto &&Size) {
                                    *ReadSize += Size;
-                                   return makeReadyFuture(Unit());
+                                   return makeReadyFuture();
                                });
                        })
         .thenTry([ReadSize](auto &&) {
@@ -152,7 +152,7 @@ int main() {
     std::cout << "Files contain " << ResSync << " 'x' chars.\n";
 
     executors::SimpleExecutor executor(4);
-    Promise<Unit> p;
+    Promise<void> p;
     auto future = p.getFuture();
 
     std::cout << "Calculating char counts asynchronously by future.\n";
@@ -162,7 +162,7 @@ int main() {
         });
     });
 
-    p.setValue(Unit());
+    p.setValue();
     f.wait();
 
     std::cout << "Calculating char counts asynchronously by coroutine.\n";

@@ -314,6 +314,7 @@ template <typename T>
 Future<T> makeReadyFuture(std::exception_ptr ex) {
     return Future<T>(Try<T>(ex));
 }
+inline Future<void> makeReadyFuture() { return Future<void>(Try<void>()); }
 
 }  // namespace async_simple
 
