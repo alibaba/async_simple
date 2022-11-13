@@ -62,9 +62,8 @@ T await(Future<T>&& fut) {
     return f.value();
 }
 
-// This await interface focus on await non-static member function of an object.
+// This await interface focus on await function of an object.
 // Here is an example:
-//
 // ```C++
 //  class Foo {
 //  public:
@@ -73,44 +72,31 @@ T await(Future<T>&& fut) {
 //  Foo f;
 //  await(ex, &Foo::bar, &f, Ts&&...);
 // ```
-template <class B, class Fn, class C, class... Ts>
-decltype(auto) await(Executor* ex, Fn B::*fn, C* cls, Ts&&... ts) {
-    using ValueType =
-        typename std::invoke_result_t<decltype(fn), C, Ts...>::ValueType;
-    Promise<ValueType> p;
-    auto f = p.getFuture().via(ex);
-    auto lazy = [p = std::move(p), fn,
-                 cls](Ts&&... ts) mutable -> coro::Lazy<> {
-        auto val = co_await (*cls.*fn)(ts...);
-        p.setValue(std::move(val));
-        co_return;
-    };
-    lazy(std::forward<Ts&&>(ts)...).setEx(ex).start([](auto&&) {});
-    return await(std::move(f));
-}
-
-// This await interface focus on await non-member functions. Here is the
-// example:
-//
 // ```C++
 //  lazy<T> foo(Ts&&...);
 //  await(ex, foo, Ts&&...);
 //  auto lambda = [](Ts&&...) -> lazy<T> {};
 //  await(ex, lambda, Ts&&...);
 // ```
-template <class Fn, class... Ts>
-decltype(auto) await(Executor* ex, Fn&& fn, Ts&&... ts) {
-    using ValueType =
-        typename std::invoke_result_t<decltype(fn), Ts...>::ValueType;
+template <class Fn, class... Args>
+decltype(auto) await(Executor* ex, Fn&& fn, Args&&... args) requires
+    std::is_invocable_v<Fn&&, Args&&...> {
+    using ValueType = typename std::invoke_result_t<Fn&&, Args&&...>::ValueType;
     Promise<ValueType> p;
     auto f = p.getFuture().via(ex);
-    auto lazy = [p = std::move(p),
-                 fn = std::move(fn)](Ts&&... ts) mutable -> coro::Lazy<> {
-        auto val = co_await fn(ts...);
-        p.setValue(std::move(val));
+    auto lazy =
+        [p = std::move(p)]<typename... Ts>(Ts&&... ts) mutable -> coro::Lazy<> {
+        if constexpr (std::is_void_v<ValueType>) {
+            co_await std::invoke(std::forward<Ts>(ts)...);
+            p.setValue();
+        } else {
+            p.setValue(co_await std::invoke(std::forward<Ts>(ts)...));
+        }
         co_return;
     };
-    lazy(std::forward<Ts&&>(ts)...).setEx(ex).start([](auto&&) {});
+    lazy(std::forward<Fn>(fn), std::forward<Args>(args)...)
+        .setEx(ex)
+        .start([](auto&&) {});
     return await(std::move(f));
 }
 
