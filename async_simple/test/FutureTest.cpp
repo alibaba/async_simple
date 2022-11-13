@@ -489,4 +489,15 @@ TEST_F(FutureTest, testPromiseCopy) {
     EXPECT_EQ(0, promise3.getFuture().value());
 }
 
+TEST_F(FutureTest, testVoidFuture) {
+    Promise<void> p;
+    auto f = p.getFuture();
+    int i = 0;
+    EXPECT_EQ(f.hasResult(), false);
+    f.setContinuation([&i](Try<void>) { EXPECT_EQ(i, 5); });
+    i = 5;
+    p.setValue();
+    EXPECT_EQ(f.hasResult(), true);
+}
+
 }  // namespace async_simple

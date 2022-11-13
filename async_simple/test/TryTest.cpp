@@ -132,6 +132,14 @@ TEST_F(TryTest, testVoid) {
 
     Try<void> ve = error;
     ASSERT_TRUE(ve.hasError());
+    
+    Try<void> v2;
+    ASSERT_FALSE(v2.available());
+    v2.emplace();
+    ASSERT_TRUE(v2.available());
+
+    Try<void> v3(true);
+    ASSERT_TRUE(v3.available());
 }
 
 }  // namespace async_simple

@@ -86,6 +86,11 @@ public:
         return std::move(std::get<1>(_value));
     }
 
+    template <class U>
+    constexpr T& emplace(U&& value) requires std::is_convertible_v<U, T> {
+        return _value.template emplace<T>(std::forward<U>(value));
+    }
+
     void setException(std::exception_ptr error) {
         _value.template emplace<std::exception_ptr>(error);
     }
@@ -116,7 +121,7 @@ private:
 template <>
 class Try<void> {
 public:
-    Try() : _hasValue(true) {}
+    Try(bool hasValue = false) : _hasValue(hasValue) {}
     Try(std::exception_ptr error) : _error(error), _hasValue(false) {}
 
     Try& operator=(std::exception_ptr error) {
@@ -130,6 +135,7 @@ public:
     Try& operator=(Try&& other) {
         if (this != &other) {
             std::swap(_error, other._error);
+            std::swap(_hasValue, other._hasValue);
         }
         return *this;
     }
@@ -140,6 +146,7 @@ public:
             std::rethrow_exception(_error);
         }
     }
+    constexpr void emplace() { _hasValue = true; }
     constexpr bool available() const noexcept {
         return _hasValue || hasError();
     }
@@ -160,7 +167,7 @@ auto makeTryCall(F&& f, Args&&... args) {
     try {
         if constexpr (std::is_void_v<T>) {
             std::forward<F>(f)(std::forward<Args>(args)...);
-            return Try<void>();
+            return Try<void>(true);
         } else {
             return Try<T>(std::forward<F>(f)(std::forward<Args>(args)...));
         }

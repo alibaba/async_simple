@@ -61,11 +61,11 @@ auto collectAll(Iterator first, Iterator last, Executor* ex) {
         typename std::iterator_traits<Iterator>::value_type>;
     constexpr bool IfReturnVoid = std::is_void_v<ValueType>;
     using ResultType =
-        std::conditional_t<IfReturnVoid, int, std::vector<ValueType>>;
+        std::conditional_t<IfReturnVoid, void, std::vector<ValueType>>;
 
     struct Context {
         std::atomic<std::size_t> tasks;
-        ResultType result;
+        std::conditional_t<IfReturnVoid, bool, ResultType> result;
         Promise<ResultType> promise;
 
         Context(std::size_t n, Promise<ResultType>&& pr)
@@ -85,12 +85,19 @@ auto collectAll(Iterator first, Iterator last, Executor* ex) {
                     if constexpr (IfReturnVoid) {
                         f();
                         (void)i;
-                    } else
+                    } else {
                         context->result[i] = std::move(f());
+                    }
                     auto lastTasks =
                         context->tasks.fetch_sub(1u, std::memory_order_acq_rel);
-                    if (lastTasks == 1u)
-                        context->promise.setValue(std::move(context->result));
+                    if (lastTasks == 1u) {
+                        if constexpr (IfReturnVoid) {
+                            context->promise.setValue();
+                        } else {
+                            context->promise.setValue(
+                                std::move(context->result));
+                        }
+                    }
                 },
                 ex);
         }

@@ -113,12 +113,12 @@ public:
 
     void setValue() requires(std::is_void_v<T>) {
         logicAssert(valid(), "Promise is broken");
-        _sharedState->setResult(Try<void>());
+        _sharedState->setResult(Try<void>(true));
     }
 
     void setValue(Try<void>&& t) requires(std::is_void_v<T>) {
         logicAssert(valid(), "Promise is broken");
-        _sharedState->setResult(Try<void>());
+        _sharedState->setResult(Try<void>(true));
     }
 
 private:
