@@ -54,6 +54,13 @@ struct ValueCallableResult {
     static constexpr bool isTry = false;
 };
 
+template <typename F>
+struct ValueCallableResult<void, F> {
+    using Result = std::invoke_result_t<F>;
+    using ReturnsFuture = IsFuture<Result>;
+    static constexpr bool isTry = false;
+};
+
 namespace detail {
 template <typename T>
 struct remove_cvref {

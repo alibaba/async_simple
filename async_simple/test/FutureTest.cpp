@@ -20,6 +20,7 @@
 #include <vector>
 #include "async_simple/Collect.h"
 #include "async_simple/Future.h"
+#include "async_simple/Traits.h"
 #include "async_simple/executors/SimpleExecutor.h"
 #include "async_simple/test/unittest.h"
 
@@ -493,11 +494,22 @@ TEST_F(FutureTest, testVoidFuture) {
     Promise<void> p;
     auto f = p.getFuture();
     int i = 0;
-    EXPECT_EQ(f.hasResult(), false);
+    EXPECT_FALSE(f.hasResult());
     f.setContinuation([&i](Try<void>) { EXPECT_EQ(i, 5); });
     i = 5;
     p.setValue();
-    EXPECT_EQ(f.hasResult(), true);
+    EXPECT_TRUE(f.hasResult());
+
+    Promise<void> p2;
+    auto f2 = p2.getFuture()
+                  .thenTry([](Try<void>) {
+
+                  })
+                  .thenTry([](Try<void> t) { return t.value(); })
+                  .thenValue([]() { return 10; })
+                  .thenValue([](int i) { EXPECT_EQ(i, 10); });
+    p2.setValue();
+    f2.wait();
 }
 
 }  // namespace async_simple

@@ -173,7 +173,11 @@ public:
     template <typename F, typename R = ValueCallableResult<T, F>>
     Future<typename R::ReturnsFuture::Inner> thenValue(F&& f) && {
         auto lambda = [func = std::forward<F>(f)](Try<T>&& t) mutable {
-            return std::forward<F>(func)(std::move(t).value());
+            if constexpr (std::is_void_v<T>) {
+                return std::forward<F>(func)();
+            } else {
+                return std::forward<F>(func)(std::move(t).value());
+            }
         };
         using Func = decltype(lambda);
         return thenImpl<Func, TryCallableResult<T, Func>>(std::move(lambda));
