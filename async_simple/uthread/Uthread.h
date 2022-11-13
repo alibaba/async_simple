@@ -25,6 +25,7 @@ namespace uthread {
 class Attribute {
 public:
     Executor* ex;
+    size_t stack_size = 0;
 };
 
 // A Uthread is a stackful coroutine which would checkin/checkout based on
@@ -42,7 +43,8 @@ public:
     Uthread() = default;
     template <class Func>
     Uthread(Attribute attr, Func&& func) : _attr(std::move(attr)) {
-        _ctx = std::make_unique<internal::thread_context>(std::move(func));
+        _ctx = std::make_unique<internal::thread_context>(std::move(func),
+                                                          _attr.stack_size);
     }
     ~Uthread() = default;
     Uthread(Uthread&& x) noexcept = default;
