@@ -108,7 +108,7 @@ public:
         }
         _value.template emplace<std::exception_ptr>(error);
     }
-    std::exception_ptr getException() {
+    std::exception_ptr getException() const {
         logicAssert(std::holds_alternative<std::exception_ptr>(_value),
                     "Try object do not has on error");
         return std::get<std::exception_ptr>(_value);
@@ -145,11 +145,13 @@ public:
         return *this;
     }
 
-    Try& operator=(const Try<Unit>& other) { return *this; }
-
 public:
     Try(Try&& other) : _error(std::move(other._error)) {}
-    Try(Try<Unit>&& other) {}
+    Try(const Try<Unit>& other) {
+        if (other.hasError()) {
+            _error = other.getException();
+        }
+    }
     Try& operator=(Try&& other) {
         if (this != &other) {
             std::swap(_error, other._error);

@@ -100,9 +100,9 @@ public:
         return result().value();
     }
 
-    void value() && requires(std::is_void_v<T>) {}
-    void value() & requires(std::is_void_v<T>) {}
-    void value() const& requires(std::is_void_v<T>) {}
+    void value() && requires(std::is_void_v<T>) { return result().value(); }
+    void value() & requires(std::is_void_v<T>) { return result().value(); }
+    void value() const& requires(std::is_void_v<T>) { return result().value(); }
 
     Try<T>&& result() && requires(!std::is_void_v<T>) {
         return std::move(getTry(*this));
@@ -112,10 +112,10 @@ public:
         return getTry(*this);
     }
 
-    Try<void> result() && requires(std::is_void_v<T>) { return Try<void>(); }
-    Try<void> result() & requires(std::is_void_v<T>) { return Try<void>(); }
-    const Try<void> result() const& requires(std::is_void_v<T>) {
-        return Try<void>();
+    Try<void> result() && requires(std::is_void_v<T>) { return getTry(*this); }
+    Try<void> result() & requires(std::is_void_v<T>) { return getTry(*this); }
+    Try<void> result() const& requires(std::is_void_v<T>) {
+        return getTry(*this);
     }
 
     // get is only allowed on rvalue, aka, Future is not valid after get
@@ -186,6 +186,7 @@ public:
     Future<typename R::ReturnsFuture::Inner> thenValue(F&& f) && {
         auto lambda = [func = std::forward<F>(f)](Try<T>&& t) mutable {
             if constexpr (std::is_void_v<T>) {
+                t.value();
                 return std::forward<F>(func)();
             } else {
                 return std::forward<F>(func)(std::move(t).value());
