@@ -145,8 +145,11 @@ public:
         return *this;
     }
 
+    Try& operator=(const Try<Unit>& other) { return *this; }
+
 public:
     Try(Try&& other) : _error(std::move(other._error)) {}
+    Try(Try<Unit>&& other) {}
     Try& operator=(Try&& other) {
         if (this != &other) {
             std::swap(_error, other._error);
