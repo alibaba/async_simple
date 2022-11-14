@@ -49,13 +49,14 @@ class Promise;
 template <typename T>
 class Future {
 public:
-    using value_type = T;
-    Future(FutureState<T>* fs) : _sharedState(fs) {
+    using value_type = std::conditional_t<std::is_void_v<T>, Unit, T>;
+    Future(FutureState<value_type>* fs) : _sharedState(fs) {
         if (_sharedState) {
             _sharedState->attachOne();
         }
     }
-    Future(Try<T>&& t) : _sharedState(nullptr), _localState(std::move(t)) {}
+    Future(Try<value_type>&& t)
+        : _sharedState(nullptr), _localState(std::move(t)) {}
 
     ~Future() {
         if (_sharedState) {
@@ -89,13 +90,33 @@ public:
         return _localState.hasResult() || _sharedState->hasResult();
     }
 
-    T&& value() && { return std::move(result().value()); }
-    T& value() & { return result().value(); }
-    const T& value() const& { return result().value(); }
+    value_type&& value() && requires(!std::is_void_v<T>) {
+        return std::move(result().value());
+    }
+    value_type& value() & requires(!std::is_void_v<T>) {
+        return result().value();
+    }
+    const value_type& value() const& requires(!std::is_void_v<T>) {
+        return result().value();
+    }
 
-    Try<T>&& result() && { return std::move(getTry(*this)); }
-    Try<T>& result() & { return getTry(*this); }
-    const Try<T>& result() const& { return getTry(*this); }
+    void value() && requires(std::is_void_v<T>) { return result().value(); }
+    void value() & requires(std::is_void_v<T>) { return result().value(); }
+    void value() const& requires(std::is_void_v<T>) { return result().value(); }
+
+    Try<T>&& result() && requires(!std::is_void_v<T>) {
+        return std::move(getTry(*this));
+    }
+    Try<T>& result() & requires(!std::is_void_v<T>) { return getTry(*this); }
+    const Try<T>& result() const& requires(!std::is_void_v<T>) {
+        return getTry(*this);
+    }
+
+    Try<void> result() && requires(std::is_void_v<T>) { return getTry(*this); }
+    Try<void> result() & requires(std::is_void_v<T>) { return getTry(*this); }
+    Try<void> result() const& requires(std::is_void_v<T>) {
+        return getTry(*this);
+    }
 
     // get is only allowed on rvalue, aka, Future is not valid after get
     // invoked.
@@ -164,7 +185,12 @@ public:
     template <typename F, typename R = ValueCallableResult<T, F>>
     Future<typename R::ReturnsFuture::Inner> thenValue(F&& f) && {
         auto lambda = [func = std::forward<F>(f)](Try<T>&& t) mutable {
-            return std::forward<F>(func)(std::move(t).value());
+            if constexpr (std::is_void_v<T>) {
+                t.value();
+                return std::forward<F>(func)();
+            } else {
+                return std::forward<F>(func)(std::move(t).value());
+            };
         };
         using Func = decltype(lambda);
         return thenImpl<Func, TryCallableResult<T, Func>>(std::move(lambda));
@@ -280,10 +306,10 @@ private:
     }
 
 private:
-    FutureState<T>* _sharedState;
+    FutureState<value_type>* _sharedState;
 
     // Ready-Future does not have a Promise, an inline state is faster.
-    LocalState<T> _localState;
+    LocalState<value_type> _localState;
 
 private:
     template <typename Iter>
@@ -305,6 +331,7 @@ template <typename T>
 Future<T> makeReadyFuture(std::exception_ptr ex) {
     return Future<T>(Try<T>(ex));
 }
+inline Future<void> makeReadyFuture() { return Future<void>(Try<Unit>()); }
 
 }  // namespace async_simple
 

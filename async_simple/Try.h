@@ -26,6 +26,12 @@
 
 namespace async_simple {
 
+// Forward declaration
+template <typename T>
+class Try;
+
+template <>
+class Try<void>;
 // Try<T> contains either an instance of T, an exception, or nothing.
 // Try<T>::value() will return the instance.
 // If exception or nothing inside, Try<T>::value() would throw an exception.
@@ -108,11 +114,13 @@ public:
         }
         _value.template emplace<std::exception_ptr>(error);
     }
-    std::exception_ptr getException() {
+    std::exception_ptr getException() const {
         logicAssert(std::holds_alternative<std::exception_ptr>(_value),
                     "Try object do not has on error");
         return std::get<std::exception_ptr>(_value);
     }
+
+    operator Try<void>() const;
 
 private:
     AS_INLINE void checkHasTry() const {
@@ -172,6 +180,14 @@ private:
 private:
     friend Try<Unit>;
 };
+
+template <class T>
+Try<T>::operator Try<void>() const {
+    if (hasError()) {
+        return Try<void>(getException());
+    }
+    return Try<void>();
+}
 
 // T is Non void
 template <typename F, typename... Args>

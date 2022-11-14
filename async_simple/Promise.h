@@ -34,7 +34,8 @@ class Future;
 template <typename T>
 class Promise {
 public:
-    Promise() : _sharedState(new FutureState<T>()), _hasFuture(false) {
+    using value_type = std::conditional_t<std::is_void_v<T>, Unit, T>;
+    Promise() : _sharedState(new FutureState<value_type>()), _hasFuture(false) {
         _sharedState->attachPromise();
     }
     ~Promise() {
@@ -95,19 +96,24 @@ public:
 public:
     void setException(std::exception_ptr error) {
         logicAssert(valid(), "Promise is broken");
-        _sharedState->setResult(Try<T>(error));
+        _sharedState->setResult(Try<value_type>(error));
     }
-    void setValue(T&& v) {
+    void setValue(value_type&& v) requires(!std::is_void_v<T>) {
         logicAssert(valid(), "Promise is broken");
-        _sharedState->setResult(Try<T>(std::forward<T>(v)));
+        _sharedState->setResult(Try<value_type>(std::forward<T>(v)));
     }
-    void setValue(Try<T>&& t) {
+    void setValue(Try<value_type>&& t) {
         logicAssert(valid(), "Promise is broken");
         _sharedState->setResult(std::move(t));
     }
 
+    void setValue() requires(std::is_void_v<T>) {
+        logicAssert(valid(), "Promise is broken");
+        _sharedState->setResult(Try<value_type>(Unit()));
+    }
+
 private:
-    FutureState<T>* _sharedState = nullptr;
+    FutureState<value_type>* _sharedState = nullptr;
     bool _hasFuture = false;
 };
 

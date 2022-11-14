@@ -489,4 +489,52 @@ TEST_F(FutureTest, testPromiseCopy) {
     EXPECT_EQ(0, promise3.getFuture().value());
 }
 
+TEST_F(FutureTest, testVoidFuture) {
+    Promise<void> p;
+    auto f = p.getFuture();
+    int i = 0;
+    EXPECT_FALSE(f.hasResult());
+    f.setContinuation([&i](Try<void>) { EXPECT_EQ(i, 5); });
+    i = 5;
+    p.setValue();
+    EXPECT_TRUE(f.hasResult());
+
+    Promise<void> p2;
+    auto f2 = p2.getFuture()
+                  .thenTry([](Try<void>) {
+
+                  })
+                  .thenTry([](Try<void> t) { return t.value(); })
+                  .thenValue([]() { return 10; })
+                  .thenValue([](int i) { EXPECT_EQ(i, 10); });
+    p2.setValue();
+    f2.wait();
+
+    Promise<void> p3;
+    auto f3 = p3.getFuture();
+    ASSERT_THROW(f3.value(), std::logic_error);
+    auto f4 = std::move(f3)
+                  .thenTry([](Try<void> t) { return t.value(); })
+                  .thenTry([](Try<void> t) {
+                      try {
+                          t.value();
+                          return 0;
+                      } catch (...) {
+                          return 1;
+                      }
+                  });
+
+    try {
+        throw std::runtime_error("test exception");
+    } catch (...) {
+        p3.setException(std::current_exception());
+    }
+
+    f4.wait();
+    const Try<int>& t = f4.result();
+    EXPECT_TRUE(t.available());
+    EXPECT_FALSE(t.hasError());
+    EXPECT_EQ(1, std::move(f4).get());
+}
+
 }  // namespace async_simple
