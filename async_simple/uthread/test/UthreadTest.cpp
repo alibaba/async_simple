@@ -303,6 +303,48 @@ TEST_F(UthreadTest, testAwaitCoroutine) {
     }
 }
 
+coro::Lazy<> testSimpleFunction(const std::string& message) { co_return; }
+
+TEST_F(UthreadTest, testAwaitCoroutineRetrunVoid) {
+    Executor* ex = &_executor;
+    auto show = [&](const std::string& message) mutable {
+        std::cout << message << "\n";
+    };
+
+    std::atomic<int> running = 2;
+    async<Launch::Schedule>(
+        [&show, ex]() mutable {
+            show("task1 start");
+            auto lazy = [](const std::string& message) -> coro::Lazy<> {
+                co_return;
+            };
+            await(ex, lazy, "test lambda");
+            await(ex, testSimpleFunction, "test function name");
+            await(ex, &testSimpleFunction, "test function address");
+            await(ex, std::bind(testSimpleFunction, "test Bind"));
+            show("task1 done");
+        },
+        [&running]() { running--; }, ex);
+    async<Launch::Schedule>(
+        [&show, ex]() {
+            show("task2 start");
+            struct Test {
+                coro::Lazy<> operator()(const std::string& message) {
+                    co_return;
+                }
+            };
+            Test t;
+            await(ex, t, "test functor");
+            await(ex, &Test::operator(), &t, "test member method");
+            async<Launch::Prompt>([&show]() { show("task3"); }, ex).detach();
+            show("task2 done");
+        },
+        [&running]() { running--; }, ex);
+
+    while (running) {
+    }
+}
+
 namespace globalfn {
 
 template <class T>
