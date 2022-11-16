@@ -49,6 +49,11 @@ class Promise;
 template <typename T>
 class Future {
 private:
+    // If T is void, the inner_value_type is Unit. It will be used by
+    // `FutureState` and `LocalState`. Because `Try<void>` cannot distinguish
+    // between `Nothing` state and `Value` state.
+    // It maybe remove Unit after next version, and then will change the
+    // `Try<void>` to distinguish between `Nothing` state and `Value` state
     using inner_value_type = std::conditional_t<std::is_void_v<T>, Unit, T>;
 
 public:
