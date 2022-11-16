@@ -417,6 +417,34 @@ TEST_F(FutureTest, testCollectAll) {
     EXPECT_TRUE(expected.empty());
 }
 
+TEST_F(FutureTest, testCollectAllVoid) {
+    SimpleExecutor executor(15);
+
+    size_t n = 10;
+    vector<Promise<void>> promise(n);
+    vector<Future<void>> futures;
+    for (size_t i = 0; i < n; ++i) {
+        futures.push_back(promise[i].getFuture().via(&executor));
+    }
+    vector<int> expected;
+    for (size_t i = 0; i < n; ++i) {
+        expected.push_back(i);
+    }
+    auto f = collectAll(futures.begin(), futures.end())
+                 .thenValue([&expected](vector<Try<void>>&& vec) {
+                     EXPECT_EQ(expected.size(), vec.size());
+                     expected.clear();
+                 });
+
+    for (size_t i = 0; i < n; ++i) {
+        promise[i].setValue();
+    }
+
+    f.wait();
+
+    EXPECT_TRUE(expected.empty());
+}
+
 TEST_F(FutureTest, testCollectReadyFutures) {
     SimpleExecutor executor(15);
 

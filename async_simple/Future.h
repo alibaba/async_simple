@@ -48,14 +48,22 @@ class Promise;
 // he should call makeReadyFuture().
 template <typename T>
 class Future {
+private:
+    // If T is void, the inner_value_type is Unit. It will be used by
+    // `FutureState` and `LocalState`. Because `Try<void>` cannot distinguish
+    // between `Nothing` state and `Value` state.
+    // It maybe remove Unit after next version, and then will change the
+    // `Try<void>` to distinguish between `Nothing` state and `Value` state
+    using inner_value_type = std::conditional_t<std::is_void_v<T>, Unit, T>;
+
 public:
-    using value_type = std::conditional_t<std::is_void_v<T>, Unit, T>;
-    Future(FutureState<value_type>* fs) : _sharedState(fs) {
+    using value_type = T;
+    Future(FutureState<inner_value_type>* fs) : _sharedState(fs) {
         if (_sharedState) {
             _sharedState->attachOne();
         }
     }
-    Future(Try<value_type>&& t)
+    Future(Try<inner_value_type>&& t)
         : _sharedState(nullptr), _localState(std::move(t)) {}
 
     ~Future() {
@@ -90,19 +98,17 @@ public:
         return _localState.hasResult() || _sharedState->hasResult();
     }
 
-    value_type&& value() && requires(!std::is_void_v<T>) {
-        return std::move(result().value());
+    std::add_rvalue_reference_t<T> value() && {
+        if constexpr (std::is_void_v<T>) {
+            return result().value();
+        } else {
+            return std::move(result().value());
+        }
     }
-    value_type& value() & requires(!std::is_void_v<T>) {
+    std::add_lvalue_reference_t<T> value() & { return result().value(); }
+    const std::add_lvalue_reference_t<T> value() const& {
         return result().value();
     }
-    const value_type& value() const& requires(!std::is_void_v<T>) {
-        return result().value();
-    }
-
-    void value() && requires(std::is_void_v<T>) { return result().value(); }
-    void value() & requires(std::is_void_v<T>) { return result().value(); }
-    void value() const& requires(std::is_void_v<T>) { return result().value(); }
 
     Try<T>&& result() && requires(!std::is_void_v<T>) {
         return std::move(getTry(*this));
@@ -306,10 +312,10 @@ private:
     }
 
 private:
-    FutureState<value_type>* _sharedState;
+    FutureState<inner_value_type>* _sharedState;
 
     // Ready-Future does not have a Promise, an inline state is faster.
-    LocalState<value_type> _localState;
+    LocalState<inner_value_type> _localState;
 
 private:
     template <typename Iter>
