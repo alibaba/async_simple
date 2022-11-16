@@ -5,7 +5,8 @@ set(BENCHMARK_SRCS
         CallDepth.bench.cpp
         Lazy.bench.cpp
         Future.bench.cpp
-        ThreadPool.bench.cpp)
+        ThreadPool.bench.cpp
+        Mutex.bench.cpp)
 
 if (UTHREAD)
   list(APPEND BENCHMARK_SRCS Uthread.bench.cpp)
