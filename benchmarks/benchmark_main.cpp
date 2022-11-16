@@ -20,9 +20,11 @@
 #include "Uthread.bench.h"
 #endif
 #include "CallDepth.bench.h"
+#include "Mutex.bench.h"
 #include "PureSwitch.bench.h"
 #include "ReadFile.bench.h"
 
+BENCHMARK(Mutex_chain);
 BENCHMARK(Future_chain);
 BENCHMARK(Future_collectAll);
 BENCHMARK(async_simple_Lazy_chain);
