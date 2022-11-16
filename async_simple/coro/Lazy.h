@@ -216,9 +216,8 @@ struct LazyAwaiterBase {
 
     bool await_ready() const noexcept { return false; }
 
-    template <typename T2 = T>
     auto awaitResume() {
-        if constexpr (std::is_void_v<T2>) {
+        if constexpr (std::is_void_v<T>) {
             _handle.promise().result();
             // We need to destroy the handle expclictly since the awaited
             // coroutine after symmetric transfer couldn't release it self any
