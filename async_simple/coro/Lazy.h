@@ -256,24 +256,20 @@ public:
             // current coro started, caller becomes my continuation
             this->_handle.promise()._continuation = continuation;
 
-            using R =
-                std::conditional_t<reschedule, void, std::coroutine_handle<>>;
-            return awaitSuspendImpl<R>();
+            return awaitSuspendImpl();
         }
 
     private:
-        template <std::same_as<std::coroutine_handle<>> R>
         auto awaitSuspendImpl() noexcept {
-            return this->_handle;
-        }
-
-        template <std::same_as<void> R>
-        auto awaitSuspendImpl() noexcept {
-            // executor schedule performed
-            auto& pr = this->_handle.promise();
-            logicAssert(pr._executor, "RescheduleLazy need executor");
-            pr._executor->schedule(
-                [h = this->_handle]() mutable { h.resume(); });
+            if constexpr (reschedule) {
+                // executor schedule performed
+                auto& pr = this->_handle.promise();
+                logicAssert(pr._executor, "RescheduleLazy need executor");
+                pr._executor->schedule(
+                    [h = this->_handle]() mutable { h.resume(); });
+            } else {
+                return this->_handle;
+            }
         }
     };
 
@@ -306,7 +302,7 @@ public:
     Executor* getExecutor() { return _coro.promise()._executor; }
 
     template <typename F>
-    void start(F&& callback) {
+    void start(F&& callback) requires(std::is_invocable_v<F&&, Try<T>>) {
         // callback should take a single Try<T> as parameter, return value will
         // be ignored. a detached coroutine will not suspend at initial/final
         // suspend point.
@@ -480,6 +476,8 @@ public:
             }
         });
     }
+    // RescheduleLazy should be only allowed in DetachedCoroutine
+    auto operator co_await() = delete;
 
 private:
     using Base::Base;
