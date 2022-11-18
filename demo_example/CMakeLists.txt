@@ -18,6 +18,9 @@ target_link_libraries(async_echo_server async_simple)
 add_executable(async_echo_client async_echo_client.cpp)
 target_link_libraries(async_echo_client async_simple)
 
+add_executable(async_multiple_core_echo_server async_multiple_core_echo_server.cpp)
+target_link_libraries(async_multiple_core_echo_server async_simple)
+
 add_executable(block_echo_server block_echo_server.cpp)
 target_link_libraries(block_echo_server ${CMAKE_THREAD_LIBS_INIT})
 
