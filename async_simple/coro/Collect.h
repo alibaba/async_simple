@@ -378,13 +378,12 @@ inline auto collectAllVariadicImpl(std::index_sequence<Indices...>,
 
     std::tuple<Try<Ts>...> results;
     std::vector<Lazy<void>> wraper_tasks;
+    wraper_tasks.reserve(sizeof...(Ts));
 
     // make wraper task
-    (void)std::initializer_list<bool>{
-        (wraper_tasks.push_back(std::move(makeWraperTask(
-             std::move(awaitables), std::get<Indices>(results)))),
-         true)...,
-    };
+    (wraper_tasks.push_back(
+         makeWraperTask(std::move(awaitables), std::get<Indices>(results))),
+     ...);
 
     co_await collectAllImpl<Para>(std::move(wraper_tasks));
     co_return std::move(results);
