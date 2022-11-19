@@ -22,8 +22,7 @@
 namespace async_simple {
 namespace uthread {
 
-class Attribute {
-public:
+struct Attribute {
     Executor* ex;
     size_t stack_size = 0;
 };

@@ -563,5 +563,22 @@ TEST_F(UthreadTest, testLatchThreadSafe) {
     }
 }
 
+TEST_F(UthreadTest, testAsync_v2) {
+    std::atomic<int> running = 1;
+    async(
+        Launch::Schedule, Attribute{.ex = &_executor, .stack_size = 4096},
+        [](int a, int b) { return a + b; }, 1, 2)
+        .thenValue([&running](int ans) {
+            EXPECT_EQ(ans, 3);
+            running--;
+        });
+    EXPECT_EQ(await(async(
+                  Launch::Current, Attribute{&_executor},
+                  [](int a, int b) { return a * b; }, 2, 512)),
+              1024);
+    while (running) {
+    }
+}
+
 }  // namespace uthread
 }  // namespace async_simple
