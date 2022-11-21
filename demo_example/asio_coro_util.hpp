@@ -20,6 +20,7 @@
 #include <async_simple/executors/SimpleExecutor.h>
 
 #include <chrono>
+#include <concepts>
 #include "asio.hpp"
 
 class AsioExecutor : public async_simple::Executor {
@@ -35,201 +36,121 @@ private:
     asio::io_context &io_context_;
 };
 
-class AcceptorAwaiter {
+template <typename T>
+requires(!std::is_reference<T>::value) struct AsioCallbackAwaiter {
 public:
-    AcceptorAwaiter(asio::ip::tcp::acceptor &acceptor,
-                    asio::ip::tcp::socket &socket)
-        : acceptor_(acceptor), socket_(socket) {}
-    bool await_ready() const noexcept { return false; }
+    using CallbackFunction =
+        std::function<void(std::coroutine_handle<>, std::function<void(T)>)>;
+
+    AsioCallbackAwaiter(CallbackFunction callback_function)
+        : callback_function_(std::move(callback_function)) {}
+
+    bool await_ready() noexcept { return false; }
+
     void await_suspend(std::coroutine_handle<> handle) {
-        acceptor_.async_accept(socket_, [this, handle](auto ec) mutable {
-            ec_ = ec;
-            handle.resume();
-        });
+        callback_function_(handle, [this](T t) { result_ = std::move(t); });
     }
-    auto await_resume() noexcept { return ec_; }
+
     auto coAwait(async_simple::Executor *executor) noexcept {
         return std::move(*this);
     }
 
+    T await_resume() noexcept { return std::move(result_); }
+
 private:
-    asio::ip::tcp::acceptor &acceptor_;
-    asio::ip::tcp::socket &socket_;
-    std::error_code ec_{};
+    CallbackFunction callback_function_;
+    T result_;
 };
 
 inline async_simple::coro::Lazy<std::error_code> async_accept(
     asio::ip::tcp::acceptor &acceptor, asio::ip::tcp::socket &socket) noexcept {
-    co_return co_await AcceptorAwaiter{acceptor, socket};
+    co_return co_await AsioCallbackAwaiter<std::error_code>{
+        [&](std::coroutine_handle<> handle, auto set_resume_value) {
+            acceptor.async_accept(
+                socket, [handle, set_resume_value = std::move(
+                                     set_resume_value)](auto ec) mutable {
+                    set_resume_value(std::move(ec));
+                    handle.resume();
+                });
+        }};
 }
-
-template <typename Socket, typename AsioBuffer>
-struct ReadSomeAwaiter {
-public:
-    ReadSomeAwaiter(Socket &socket, AsioBuffer &&buffer)
-        : socket_(socket), buffer_(buffer) {}
-    bool await_ready() { return false; }
-    auto await_resume() { return std::make_pair(ec_, size_); }
-    void await_suspend(std::coroutine_handle<> handle) {
-        socket_.async_read_some(std::move(buffer_),
-                                [this, handle](auto ec, auto size) mutable {
-                                    ec_ = ec;
-                                    size_ = size;
-                                    handle.resume();
-                                });
-    }
-    auto coAwait(async_simple::Executor *executor) noexcept {
-        return std::move(*this);
-    }
-
-private:
-    Socket &socket_;
-    AsioBuffer buffer_;
-
-    std::error_code ec_{};
-    size_t size_{0};
-};
 
 template <typename Socket, typename AsioBuffer>
 inline async_simple::coro::Lazy<std::pair<std::error_code, size_t>>
 async_read_some(Socket &socket, AsioBuffer &&buffer) noexcept {
-    co_return co_await ReadSomeAwaiter{socket, std::move(buffer)};
+    co_return co_await AsioCallbackAwaiter<std::pair<std::error_code, size_t>>{
+        [&](std::coroutine_handle<> handle, auto set_resume_value) mutable {
+            socket.async_read_some(
+                std::move(buffer),
+                [handle, set_resume_value = std::move(set_resume_value)](
+                    auto ec, auto size) mutable {
+                    set_resume_value(std::make_pair(std::move(ec), size));
+                    handle.resume();
+                });
+        }};
 }
-
-template <typename Socket, typename AsioBuffer>
-struct ReadAwaiter {
-public:
-    ReadAwaiter(Socket &socket, AsioBuffer &buffer)
-        : socket_(socket), buffer_(buffer) {}
-    bool await_ready() { return false; }
-    auto await_resume() { return std::make_pair(ec_, size_); }
-    void await_suspend(std::coroutine_handle<> handle) {
-        asio::async_read(socket_, buffer_,
-                         [this, handle](auto ec, auto size) mutable {
-                             ec_ = ec;
-                             size_ = size;
-                             handle.resume();
-                         });
-    }
-    auto coAwait(async_simple::Executor *executor) noexcept {
-        return std::move(*this);
-    }
-
-private:
-    Socket &socket_;
-    AsioBuffer &buffer_;
-
-    std::error_code ec_{};
-    size_t size_{0};
-};
 
 template <typename Socket, typename AsioBuffer>
 inline async_simple::coro::Lazy<std::pair<std::error_code, size_t>> async_read(
     Socket &socket, AsioBuffer &buffer) noexcept {
-    co_return co_await ReadAwaiter{socket, buffer};
+    co_return co_await AsioCallbackAwaiter<std::pair<std::error_code, size_t>>{
+        [&](std::coroutine_handle<> handle, auto set_resume_value) mutable {
+            asio::async_read(
+                socket, buffer,
+                [handle, set_resume_value = std::move(set_resume_value)](
+                    auto ec, auto size) mutable {
+                    set_resume_value(std::make_pair(std::move(ec), size));
+                    handle.resume();
+                });
+        }};
 }
-
-template <typename Socket, typename AsioBuffer>
-struct ReadUntilAwaiter {
-public:
-    ReadUntilAwaiter(Socket &socket, AsioBuffer &buffer,
-                     asio::string_view delim)
-        : socket_(socket), buffer_(buffer), delim_(delim) {}
-    bool await_ready() { return false; }
-    auto await_resume() { return std::make_pair(ec_, size_); }
-    void await_suspend(std::coroutine_handle<> handle) {
-        asio::async_read_until(socket_, buffer_, delim_,
-                               [this, handle](auto ec, auto size) mutable {
-                                   ec_ = ec;
-                                   size_ = size;
-                                   handle.resume();
-                               });
-    }
-    auto coAwait(async_simple::Executor *executor) noexcept {
-        return std::move(*this);
-    }
-
-private:
-    Socket &socket_;
-    AsioBuffer &buffer_;
-    asio::string_view delim_;
-
-    std::error_code ec_{};
-    size_t size_{0};
-};
 
 template <typename Socket, typename AsioBuffer>
 inline async_simple::coro::Lazy<std::pair<std::error_code, size_t>>
 async_read_until(Socket &socket, AsioBuffer &buffer,
                  asio::string_view delim) noexcept {
-    co_return co_await ReadUntilAwaiter{socket, buffer, delim};
+    co_return co_await AsioCallbackAwaiter<std::pair<std::error_code, size_t>>{
+        [&](std::coroutine_handle<> handle, auto set_resume_value) mutable {
+            asio::async_read_until(
+                socket, buffer, delim,
+                [handle, set_resume_value = std::move(set_resume_value)](
+                    auto ec, auto size) mutable {
+                    set_resume_value(std::make_pair(std::move(ec), size));
+                    handle.resume();
+                });
+        }};
 }
-
-template <typename Socket, typename AsioBuffer>
-struct WriteAwaiter {
-public:
-    WriteAwaiter(Socket &socket, AsioBuffer &&buffer)
-        : socket_(socket), buffer_(std::move(buffer)) {}
-    bool await_ready() { return false; }
-    auto await_resume() { return std::make_pair(ec_, size_); }
-    void await_suspend(std::coroutine_handle<> handle) {
-        asio::async_write(socket_, std::move(buffer_),
-                          [this, handle](auto ec, auto size) mutable {
-                              ec_ = ec;
-                              size_ = size;
-                              handle.resume();
-                          });
-    }
-    auto coAwait(async_simple::Executor *executor) noexcept {
-        return std::move(*this);
-    }
-
-private:
-    Socket &socket_;
-    AsioBuffer buffer_;
-
-    std::error_code ec_{};
-    size_t size_{0};
-};
 
 template <typename Socket, typename AsioBuffer>
 inline async_simple::coro::Lazy<std::pair<std::error_code, size_t>> async_write(
     Socket &socket, AsioBuffer &&buffer) noexcept {
-    co_return co_await WriteAwaiter{socket, std::move(buffer)};
+    co_return co_await AsioCallbackAwaiter<std::pair<std::error_code, size_t>>{
+        [&](std::coroutine_handle<> handle, auto set_resume_value) mutable {
+            asio::async_write(
+                socket, std::move(buffer),
+                [handle, set_resume_value = std::move(set_resume_value)](
+                    auto ec, auto size) mutable {
+                    set_resume_value(std::make_pair(std::move(ec), size));
+                    handle.resume();
+                });
+        }};
 }
-
-class ConnectAwaiter {
-public:
-    ConnectAwaiter(asio::io_context &io_context, asio::ip::tcp::socket &socket,
-                   const std::string &host, const std::string &port)
-        : io_context_(io_context), socket_(socket), host_(host), port_(port) {}
-    bool await_ready() const noexcept { return false; }
-    void await_suspend(std::coroutine_handle<> handle) {
-        asio::ip::tcp::resolver resolver(io_context_);
-        auto endpoints = resolver.resolve(host_, port_);
-        asio::async_connect(socket_, endpoints,
-                            [this, handle](std::error_code ec,
-                                           asio::ip::tcp::endpoint) mutable {
-                                ec_ = ec;
-                                handle.resume();
-                            });
-    }
-    auto await_resume() noexcept { return ec_; }
-    auto coAwait(async_simple::Executor *executor) noexcept {
-        return std::move(*this);
-    }
-
-private:
-    asio::io_context &io_context_;
-    asio::ip::tcp::socket &socket_;
-    std::string host_;
-    std::string port_;
-    std::error_code ec_{};
-};
 
 inline async_simple::coro::Lazy<std::error_code> async_connect(
     asio::io_context &io_context, asio::ip::tcp::socket &socket,
     const std::string &host, const std::string &port) noexcept {
-    co_return co_await ConnectAwaiter{io_context, socket, host, port};
+    co_return co_await AsioCallbackAwaiter<std::error_code>{
+        [&](std::coroutine_handle<> handle, auto set_resume_value) mutable {
+            asio::ip::tcp::resolver resolver(io_context);
+            auto endpoints = resolver.resolve(host, port);
+            asio::async_connect(
+                socket, endpoints,
+                [handle, set_resume_value = std::move(set_resume_value)](
+                    auto ec, auto size) mutable {
+                    set_resume_value(std::move(ec));
+                    handle.resume();
+                });
+        }};
 }
+
 #endif
