@@ -201,7 +201,7 @@ CXX=g++-11 CC=gcc-11 cmake .. -DCMAKE_BUILD_TYPE=Release
 # 如何贡献
 
 - 提前阅读下文档：[如何修复Issue](./docs/docs.en/HowToFixIssue.md)。
-- 确保修改后单元测试通过，代码格式化通过。（`git-clang-format HEAD^`）
+- 确保修改后单元测试通过，代码格式化通过。（`git-clang-format HEAD^`）。目前 CI 系统中的 clang-format 版本为 15。当 CI 中提示的 format 结果不好时，也可考虑暂时先 accept 并在 clang-format 社区提交相关 issue。
 - 创建并提交Pull Request，选择开发者Review代码。（候选人：ChuanqiXu9, RainMark, foreverhy, qicosmos）
 - 最终意见一致后，代码将会被合并。
 
