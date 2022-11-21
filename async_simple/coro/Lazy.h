@@ -48,7 +48,7 @@ class Lazy;
 struct Yield {};
 
 namespace detail {
-template <typename LazyType, typename IAlloc, typename OAlloc, bool Para>
+template <class, typename OAlloc, bool Para>
 struct CollectAllAwaiter;
 
 template <typename LazyType, typename IAlloc>
@@ -329,7 +329,7 @@ public:
 protected:
     Handle _coro;
 
-    template <typename LazyType, typename IAlloc, typename OAlloc, bool Para>
+    template <class, typename OAlloc, bool Para>
     friend struct detail::CollectAllAwaiter;
 
     template <typename LazyType, typename IAlloc>
