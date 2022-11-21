@@ -9,14 +9,15 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v2
       with: 
        fetch-depth: 0
     - name: install clang-format
-      run:  sudo apt install clang-format
+      run:  |
+            pip3 install clang-format
     - name: check-diff
       run: |
            diff=`git-clang-format --diff HEAD^`
