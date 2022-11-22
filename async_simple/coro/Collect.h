@@ -327,6 +327,7 @@ inline auto collectAllWindowedImpl(size_t maxConcurrency,
         detail::SimpleCollectAllAwaitable<Container, OAlloc, Para>,
         detail::CollectAllAwaiter<Container, OAlloc, Para>>;
     std::vector<Try<T>, OAlloc> output(out_alloc);
+    output.reserve(input.size());
     size_t input_size = input.size();
     // maxConcurrency == 0;
     // input_size <= maxConcurrency size;
@@ -337,12 +338,11 @@ inline auto collectAllWindowedImpl(size_t maxConcurrency,
     size_t start = 0;
     while (start < input_size) {
         size_t end = std::min(input_size, start + maxConcurrency);
-        std::vector<LazyType> tmp_group;
-        for (; start < end; ++start) {
-            tmp_group.push_back(std::move(input[start]));
-        }
-        auto tmp_output = co_await AT(std::move(tmp_group), out_alloc);
-        for (auto& t : tmp_output) {
+        std::vector<LazyType> tmp_group(
+            std::make_move_iterator(input.begin() + start),
+            std::make_move_iterator(input.begin() + end));
+        start = end;
+        for (auto& t : co_await AT(std::move(tmp_group), out_alloc)) {
             output.push_back(std::move(t));
         }
         if (yield) {
