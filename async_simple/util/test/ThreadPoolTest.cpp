@@ -20,6 +20,8 @@
 #include <functional>
 #include <thread>
 #include <vector>
+#include "async_simple/coro/Lazy.h"
+#include "async_simple/coro/SyncAwait.h"
 #include "async_simple/test/unittest.h"
 #include "async_simple/util/ThreadPool.h"
 
@@ -95,5 +97,21 @@ TEST(ThreadTest, BasicTest) {
                   /*enableWorkSteal = */ true);
     TestBasic(tp);
 }
+
+#ifdef __cpp_impl_coroutine
+TEST_F(ThreadPoolTest, testCoroScheduleById) {
+    std::cout << "main thread id: " << std::this_thread::get_id() << std::endl;
+    ThreadPool pool(1);
+    std::thread::id id;
+    pool.scheduleById([&] { id = std::this_thread::get_id(); });
+    async_simple::coro::syncAwait([&]() -> async_simple::coro::Lazy<void> {
+        auto ret = co_await pool.scheduleById();
+        std::cout << "scheduleById thread id: " << std::this_thread::get_id()
+                  << std::endl;
+        EXPECT_EQ(ret, ThreadPool::ERROR_TYPE::ERROR_NONE);
+        EXPECT_EQ(id, std::this_thread::get_id());
+    }());
+}
+#endif
 
 }  // namespace async_simple

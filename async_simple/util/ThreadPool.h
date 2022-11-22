@@ -30,6 +30,9 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#ifdef __cpp_impl_coroutine
+#include <coroutine>
+#endif
 
 #include "async_simple/util/Queue.h"
 namespace async_simple::util {
@@ -62,6 +65,29 @@ public:
     int32_t getCurrentId() const;
     size_t getItemCount() const;
     int32_t getThreadNum() const { return _threadNum; }
+
+#ifdef __cpp_impl_coroutine
+    class Awaiter {
+    public:
+        Awaiter(ThreadPool *thread_pool, int32_t id)
+            : thread_pool_(thread_pool), id_(id) {}
+        bool await_ready() { return false; }
+        void await_suspend(std::coroutine_handle<> handle) {
+            error_type_ =
+                thread_pool_->scheduleById([handle] { handle.resume(); }, id_);
+            if (ERROR_TYPE::ERROR_POOL_HAS_STOP == error_type_)
+                handle.resume();
+        }
+        auto await_resume() { return error_type_; }
+
+    private:
+        ThreadPool *thread_pool_;
+        int32_t id_;
+        ERROR_TYPE error_type_;
+    };
+
+    Awaiter scheduleById(int32_t id = -1) { return Awaiter{this, id}; }
+#endif
 
 private:
     std::pair<size_t, ThreadPool *> *getCurrent() const;
