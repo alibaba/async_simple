@@ -16,6 +16,7 @@
 #ifndef ASYNC_SIMPLE_CORO_COLLECT_H
 #define ASYNC_SIMPLE_CORO_COLLECT_H
 
+#include <array>
 #include <exception>
 #include <memory>
 #include <optional>
