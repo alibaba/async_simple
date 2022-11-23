@@ -12,7 +12,7 @@ env:
 
 jobs:
   build_with_bazel:
-    runs-on: macOS-latest
+    runs-on: macos-12
 
     steps:
     - uses: actions/checkout@v2
@@ -27,7 +27,7 @@ jobs:
       working-directory: ${{github.workspace}}
       run: bazel test --define=ASYNC_SIMPLE_DISABLE_AIO=true ...
   build_with_cmake:
-    runs-on: macOS-latest
+    runs-on: macos-12
 
     steps:
     - uses: actions/checkout@v2
