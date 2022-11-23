@@ -106,14 +106,16 @@ cc_binary(
 cc_binary(
     name = "smtp_client",
     srcs = ["smtp/smtp_client.cpp"],
-    deps = [":hdrs_dep"],
+    deps = [":hdrs_dep"] + select({
+        "//bazel/config:async_simple_enable_ssl": [
+            "@boringssl//:ssl",
+            "@boringssl//:crypto",
+        ],
+        "//conditions:default" : [],
+    }),
     copts = ASYNC_SIMPLE_COPTS,
     defines = select({
         "//bazel/config:async_simple_enable_ssl": ["ENABLE_SSL"],
-        "//conditions:default" : [],
-    }),
-    linkopts = select({
-        "//bazel/config:async_simple_enable_ssl": ["-lssl", "-lcrypto"],
         "//conditions:default" : [],
     }),
 )
