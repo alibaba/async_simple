@@ -109,9 +109,11 @@ mkdir build && cd build
 cmake .. && sudo make install
 ```
 
-## Install Clang Compiler
+## Compiler Requirement
 
 Required Compiler: clang (>= 13.0.0) or gcc (>= 10.3)
+
+Note that we need to add `-Wno-maybe-uninitialized` option when we use gcc12 due to a false positive diagnostic message by gcc12.
 
 ## Demo example dependency
 
