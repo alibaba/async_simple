@@ -46,11 +46,11 @@ namespace async_simple {
 //
 // Since the returned type is a future. So the user wants to get its value
 // could use `get()` method synchronously or `then*()` method asynchronously.
-template <typename Iter>
+template <std::input_iterator Iterator>
 inline Future<std::vector<
-    Try<typename std::iterator_traits<Iter>::value_type::value_type>>>
-collectAll(Iter begin, Iter end) {
-    using T = typename std::iterator_traits<Iter>::value_type::value_type;
+    Try<typename std::iterator_traits<Iterator>::value_type::value_type>>>
+collectAll(Iterator begin, Iterator end) {
+    using T = typename std::iterator_traits<Iterator>::value_type::value_type;
     size_t n = std::distance(begin, end);
 
     bool allReady = true;

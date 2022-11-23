@@ -49,9 +49,8 @@
 namespace async_simple {
 namespace uthread {
 
-// TODO: Add constraints for Iterator class.
 // TODO: Add Range version.
-template <Launch Policy, class Iterator>
+template <Launch Policy, std::input_iterator Iterator>
 auto collectAll(Iterator first, Iterator last, Executor* ex) {
     assert(std::distance(first, last) >= 0);
     static_assert(Policy != Launch::Prompt,
