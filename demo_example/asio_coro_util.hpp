@@ -77,7 +77,9 @@ inline async_simple::coro::Lazy<std::error_code> async_accept(
 
 template <typename Socket, typename AsioBuffer>
 inline async_simple::coro::Lazy<std::pair<std::error_code, size_t>>
-async_read_some(Socket &socket, AsioBuffer &&buffer) noexcept {
+async_read_some(Socket &socket, AsioBuffer &&buffer) noexcept
+    requires(std::is_rvalue_reference_v<decltype(buffer)>)
+{
     co_return co_await AsioCallbackAwaiter<std::pair<std::error_code, size_t>>{
         [&](std::coroutine_handle<> handle, auto set_resume_value) mutable {
             socket.async_read_some(
@@ -123,7 +125,9 @@ async_read_until(Socket &socket, AsioBuffer &buffer,
 
 template <typename Socket, typename AsioBuffer>
 inline async_simple::coro::Lazy<std::pair<std::error_code, size_t>> async_write(
-    Socket &socket, AsioBuffer &&buffer) noexcept {
+    Socket &socket, AsioBuffer &&buffer) noexcept
+    requires(std::is_rvalue_reference_v<decltype(buffer)>)
+{
     co_return co_await AsioCallbackAwaiter<std::pair<std::error_code, size_t>>{
         [&](std::coroutine_handle<> handle, auto set_resume_value) mutable {
             asio::async_write(
