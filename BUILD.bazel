@@ -20,7 +20,7 @@ uthread_hdrs = select({
         "async_simple/uthread/internal/thread.h",
         "async_simple/uthread/*.h",
     ]),
-    "//conditions:default" : [],
+    "//conditions:default": [],
 })
 
 cc_library(
@@ -38,11 +38,14 @@ cc_library(
     copts = ASYNC_SIMPLE_COPTS,
     visibility = ["//visibility:public"],
     linkopts = select({
-        "//bazel/config:async_simple_has_not_aio" : [],
-        "//conditions:default" : ["-laio"],
+        "//bazel/config:async_simple_has_not_aio": [],
+        "//conditions:default": ["-laio"],
+    }) + select({
+        "@bazel_tools//platforms:windows": [],
+        "//conditions:default": ["-lpthread"],
     }),
     defines = select({
-        "//bazel/config:async_simple_has_not_aio" : ["ASYNC_SIMPLE_HAS_NOT_AIO"],
-        "//conditions:default" : [],
+        "//bazel/config:async_simple_has_not_aio": ["ASYNC_SIMPLE_HAS_NOT_AIO"],
+        "//conditions:default": [],
     }),
 )
