@@ -179,6 +179,7 @@ endif()
 
 add_subdirectory(async_simple)
 option(ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE "Build the demo example" ON)
+option(ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE_FETCH_ASIO "Build the demo example fetch asio from github" OFF)
 if (ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE)
     add_subdirectory(demo_example)
 endif ()

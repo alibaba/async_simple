@@ -10,7 +10,19 @@ add_custom_command(
                 ${CMAKE_CURRENT_SOURCE_DIR}/Input
                 ${CMAKE_CURRENT_BINARY_DIR}/Input)
 
-include_directories(asio)
+if (ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE_FETCH_ASIO)
+    message(STATUS "Fetch Asio from https://github.com/chriskohlhoff/asio.git")
+    FetchContent_Declare(
+        asio
+        GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
+        GIT_TAG master
+    )
+    FetchContent_MakeAvailable(asio)
+    include_directories(${asio_SOURCE_DIR}/asio/include)
+else()
+    message(STATUS "Use local asio")
+    include_directories(asio)
+endif ()
 
 add_executable(async_echo_server async_echo_server.cpp)
 target_link_libraries(async_echo_server async_simple)
