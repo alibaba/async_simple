@@ -27,11 +27,75 @@ using namespace async_simple;
 uthread::async<uthread::Launch::Current>(<lambda>, ex);
 ```
 
+### async
+
+- We aslo provide the interface like `std::async`.
+
+```cpp
+template <class F, class... Args,
+          typename R = std::invoke_result_t<F&&, Args&&...>>
+inline Future<R> async(Launch policy, Attribute attr, F&& f, Args&&... args) 
+```
+#### Parameters
+```
+ policy - bitmask value, where individual bits control the allowed methods of execution
+   attr - uthread's attribute
+      f - Callable object to call 
+args... - parameters to pass to f
+```
+#### [Callable](https://en.cppreference.com/w/cpp/named_req/Callable)
+
+#### uthread::Launch
+```cpp
+enum class Launch {
+    Schedule,
+    Current,
+};
+```
+- Sepcifies the launch policy for a uthread executed by the uthread::async function.
+
+| Constant                   | Explanation  |
+|--------------------------- |--------------|
+| uthread::Launch::Schedule  | Create a Uthread to a specifiy executor. The `async` function would return immediately |
+| uthread::Launch::Current   | Create a Uthread and execute it in current thread. The `async` function would return after the created Uthread checked out |
+
+#### uthread::Attribute
+```cpp
+struct Attribute {
+    Executor* ex;
+    size_t stack_size = 0;
+};
+```
+- Uthread's attribute, ex is the [Executor](Executor.md). stack_size is the size of the stack when uthread is running.
+
+#### Return value
+- return a Future that will eventually hold the result of that function call
+
+#### Example
+```cpp
+TEST_F(UthreadTest, testAsync_v2) {
+    std::atomic<int> running = 1;
+    async(
+        Launch::Schedule, Attribute{.ex = &_executor, .stack_size = 4096},
+        [](int a, int b) { return a + b; }, 1, 2)
+        .thenValue([&running](int ans) {
+            EXPECT_EQ(ans, 3);
+            running--;
+        });
+    EXPECT_EQ(await(async(
+                  Launch::Current, Attribute{&_executor},
+                  [](int a, int b) { return a * b; }, 2, 512)),
+              1024);
+    while (running) {
+    }
+}
+```
+
 ### CollectAll
 
 async_simple offers `collectAll` interface for Uthread just as stackless coroutine Lazy and Future/Promise to execture Uthread concurrently.
 
-In the following example, `F` is a C++ lambda function, the type of returned value `value `is `std::vector<T>`, `T` is the return type of `F`. If `T` is `void`, `collectAll` would return `async_simple::Unit`.
+In the following example, `F` is a C++ lambda function, the type of returned value `value `is `std::vector<T>`, `T` is the return type of `F`. If `T` is `void`, `collectAll` would return `void`.
 
 - Specify multiple Uthread to executre concurrently. This requires that there is no data race in the multiple Uthread.
 

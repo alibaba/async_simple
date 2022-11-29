@@ -27,12 +27,77 @@ using namespace async_simple;
 uthread::async<uthread::Launch::Current>(<lambda>, ex);
 ```
 
+### async
+
+- 我们也提供了类似于`std::async`的接口
+
+```cpp
+template <class F, class... Args,
+          typename R = std::invoke_result_t<F&&, Args&&...>>
+inline Future<R> async(Launch policy, Attribute attr, F&& f, Args&&... args) 
+```
+
+#### 参数
+```
+ policy - 位掩码值，每个单独位控制允许的执行方法
+   attr - uthread的属性
+      f - 要调用的[可调用](Callable)对象 
+args... - 传递给f的参数
+```
+#### [Callable](https://zh.cppreference.com/w/cpp/named_req/Callable)
+
+#### uthread::Launch
+```cpp
+enum class Launch {
+    Schedule,
+    Current,
+};
+```
+- 指定 uthread::async 所指定的任务的的运行策略
+
+| 常量                        | 解释  |
+|--------------------------- |--------------|
+| uthread::Launch::Schedule  | 指定 std::async 所指定的任务的的运行策略 |
+| uthread::Launch::Current   | 创建uthread时立即在当前线程执行，此时当uthread执行过程中切换出去时async才会返回 |
+
+#### uthread::Attribute
+```cpp
+struct Attribute {
+    Executor* ex;
+    size_t stack_size = 0;
+};
+```
+- Uthread的属性, ex是[Executor](Executor.md)，stack_size是uthread在运行时使用的堆栈空间.
+
+#### 返回值
+- 返回最终将保有该函数调用结果的 Future 。 
+
+#### 例子
+```cpp
+TEST_F(UthreadTest, testAsync_v2) {
+    std::atomic<int> running = 1;
+    async(
+        Launch::Schedule, Attribute{.ex = &_executor, .stack_size = 4096},
+        [](int a, int b) { return a + b; }, 1, 2)
+        .thenValue([&running](int ans) {
+            EXPECT_EQ(ans, 3);
+            running--;
+        });
+    EXPECT_EQ(await(async(
+                  Launch::Current, Attribute{&_executor},
+                  [](int a, int b) { return a * b; }, 2, 512)),
+              1024);
+    while (running) {
+    }
+}
+```
+
 ###  collectAll
 
 类似于在async_simple中无栈协程中多个Lazy并发执行，uthread同样提供了collectAll接口实现多个有栈协程并发执行。
 
 下面例子中F为C++ lambda函数，返回值res类型为`std::vector<T>`, T为F函数返回值类型。当T等于void类型时，collectAll 返回
-`async_simple::Unit` 类型。
+`void` 类型。
 
 - 指定多个协程在多个线程中并行化执行，这种用法一般要求用户多个lambda函数之间不存在数据竞争。
 
