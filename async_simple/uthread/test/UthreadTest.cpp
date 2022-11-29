@@ -543,7 +543,7 @@ TEST_F(UthreadTest, testLatchThreadSafe) {
 TEST_F(UthreadTest, testAsync_v2) {
     std::atomic<int> running = 1;
     async(
-        Launch::Schedule, Attribute{.ex = &_executor, .stack_size = 4096},
+        Launch::Schedule, Attribute{.ex = &_executor, .stack_size = 128 * 1024},
         [](int a, int b) { return a + b; }, 1, 2)
         .thenValue([&running](int ans) {
             EXPECT_EQ(ans, 3);
