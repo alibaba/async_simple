@@ -113,7 +113,9 @@ cmake .. && sudo make install
 
 Required Compiler: clang (>= 13.0.0) or gcc (>= 10.3)
 
-Note that we need to add `-Wno-maybe-uninitialized` option when we use gcc12 due to a false positive diagnostic message by gcc12.
+Note that we need to add `-Wno-maybe-uninitialized` option when we use gcc12 due to a false positive diagnostic message by gcc12
+
+If you meet any problem about MSVC Compiler Error C4737. Try to add option /EHa to fix the problem.
 
 ## Demo example dependency
 
