@@ -19,6 +19,8 @@ async\_simple 涉及 C++20 协程，对编译器版本有较高要求。需要 c
 
 注意当使用 gcc12 时需要加上 `-Wno-maybe-uninitialized` 选项因为 gcc12 的一个误报。详情可见 https://github.com/alibaba/async_simple/issues/234。
 
+注意，如果使用msvc时遇到了C4737错误，请加上选项/EHa。
+
 ## Debian/Ubuntu系列
 
 - 安装clang11及其以上版本。安装方法见：[APT Packages](https://apt.llvm.org/)
