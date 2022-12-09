@@ -1596,12 +1596,12 @@ TEST_F(LazyTest, testDetach) {
     util::Condition cond;
     int count = 0;
     executors::SimpleExecutor e1(1);
-    auto test1 = [&]() -> Lazy<int> {
+    auto test1 = [](util::Condition& cond, int& count) -> Lazy<> {
         count += 2;
         cond.release();
-        co_return count;
+        co_return;
     };
-    test1().via(&e1).detach();
+    test1(cond, count).via(&e1).detach();
     cond.acquire();
     EXPECT_EQ(count, 2);
 }
