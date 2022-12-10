@@ -47,7 +47,8 @@ namespace detail {
 template <typename T>
 struct CollectAnyResult {
     CollectAnyResult() : _idx(static_cast<size_t>(-1)), _value() {}
-    CollectAnyResult(size_t idx, T&& value)
+    CollectAnyResult(size_t idx, std::add_rvalue_reference_t<T> value) requires(
+        !std::is_void_v<T>)
         : _idx(idx), _value(std::move(value)) {}
 
     CollectAnyResult(const CollectAnyResult&) = delete;
@@ -59,13 +60,20 @@ struct CollectAnyResult {
 
     size_t _idx;
     Try<T> _value;
-};
 
-template <>
-struct CollectAnyResult<void> {
-    CollectAnyResult() : _idx(static_cast<size_t>(-1)) {}
-    size_t _idx;
-    Try<void> _value;
+    size_t index() const { return _idx; }
+
+#if __cplusplus > 202002L
+    template <class Self>
+    auto&& value(this Self&& self) const {
+        return std::forward<Self>(self)._value.value();
+    }
+#else
+    const T& value() const& { return _value.value(); }
+    T& value() & { return _value.value(); }
+    T&& value() && { return std::move(_value).value(); }
+    const T&& value() const&& { return std::move(_value).value(); }
+#endif
 };
 
 template <typename LazyType, typename InAlloc>

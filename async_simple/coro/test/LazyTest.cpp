@@ -1101,8 +1101,12 @@ TEST_F(LazyTest, testCollectAny) {
         cnt = input.size() - 1;
         auto combinedLazy = collectAny(std::move(input));
         auto out = co_await std::move(combinedLazy);
+        auto index = out.index();
+        auto& value = out.value();
         EXPECT_EQ(out._value.value(), 16);
+        EXPECT_EQ(value, 16);
         EXPECT_EQ(out._idx, 15u);
+        EXPECT_EQ(index, 15u);
         {
             std::unique_lock lk{m};
             is_ready = true;
