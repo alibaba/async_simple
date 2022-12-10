@@ -65,7 +65,7 @@ struct CollectAnyResult {
 
 #if __cplusplus > 202002L
     template <class Self>
-    auto&& value(this Self&& self) const {
+    auto&& value(this Self&& self) {
         return std::forward<Self>(self)._value.value();
     }
 #else
