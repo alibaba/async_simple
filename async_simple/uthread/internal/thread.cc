@@ -55,13 +55,13 @@ inline void jmp_buf_link::switch_in() {
     link = std::exchange(g_current_context, this);
     if (!link)
         AS_UNLIKELY { link = &g_unthreaded_context; }
+    // `thread` is currently only used in `s_main`
     fcontext = _fl_jump_fcontext(fcontext, thread).fctx;
 }
 
 inline void jmp_buf_link::switch_out() {
     g_current_context = link;
-    auto from = _fl_jump_fcontext(link->fcontext, nullptr).fctx;
-    link->fcontext = from;
+    link->fcontext = _fl_jump_fcontext(link->fcontext, thread).fctx;
 }
 
 inline void jmp_buf_link::initial_switch_in_completed() {}
@@ -96,6 +96,7 @@ void thread_context::switch_out() { context_.switch_out(); }
 
 void thread_context::s_main(transfer_t t) {
     auto q = reinterpret_cast<thread_context*>(t.data);
+    assert(g_current_context->thread == q);
     q->context_.link->fcontext = t.fctx;
     q->main();
 }
@@ -122,6 +123,9 @@ void thread_context::main() {
     }
 
     context_.switch_out();
+
+    // never reach here
+    assert(false);
 }
 
 namespace thread_impl {

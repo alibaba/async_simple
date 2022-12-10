@@ -81,7 +81,7 @@ sudo pacman -S bazel
 brew install cmake
 brew install googletest
 # Use bazel to build project
-sudo pacman -S bazel
+brew install bazel
 ```
 
 
