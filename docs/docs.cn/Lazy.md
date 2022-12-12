@@ -360,22 +360,90 @@ Lazy<int> batch_sum(size_t total_number, size_t batch_size)  {
 
 当我们只需要等待所有计算任务中的任意一个任务完成时，我们可以使用 `collectAny` 来获取第一个完成的任务结果。此时其他尚未完成的任务的结果会被忽略。
 
-collectAll 接受两种类型的参数：
-- 参数类型：`std::vector<Lazy<T>>`。 返回类型： `Lazy<CollectAnyResult<T>>`。
-- 参数类型: `Lazy<T1>, Lazy<T2>, Lazy<T3>, ...`。 返回类型： `std::variant<Try<T1>, Try<T2>, Try<T3>, ...>`。
+#### 参数类型与行为
+
+collectAny 接受两种类型的参数：
+- 参数类型：`std::vector<LazyType<T>>`。 返回类型： `Lazy<CollectAnyResult<T>>`。
+- 参数类型: `LazyType<T1>, LazyType<T2>, LazyType<T3>, ...`。 返回类型： `std::variant<Try<T1>, Try<T2>, Try<T3>, ...>`。
+
+其中 LazyType 应为 `Lazy<T>` 或 `RescheduleLazy<T>`。
+
+当 LazyType 为 `Lazy<T>` 时，`collectAny` 的行为为在当前线程直接执行该协程任务，当该协程任务挂起后，再迭代到下一个任务。当 LazyType 为 `RescheduleLazy<T>` 时，`collectAny` 的行为为在该 `RescheduleLazy<T>` 指定的调度器中提交对应的任务后，再迭代到下一个任务。
+
+选择使用 `Lazy<T>` 还是 `RescheduleLazy<T>` 需要根据场景以及调度器实现的不同来进行选择。例如当任务到达第一个可能的暂停点相对较短时，使用 `Lazy<T>` 可以节约调度的开销，同时可能可以触发短路以节约计算。例如：
+
+```C++
+bool should_get_value();
+int default_value();
+Lazy<int> conditionalWait() {
+    if (should_get_value())
+        co_return co_await get_remote_value();
+    co_return default_value();
+}
+Lazy<int> getAnyConditionalValue() {
+    std::vector<Lazy<int>> input;
+    for (unsigned i = 0; i < 1000; i++)
+        input.push_back(conditionalWait());
+
+    auto any_result = co_await collectAny(std::move(input));
+    assert(!any_result.hasError());
+    co_return any_result.value();
+}
+```
+
+例如对于这个例子来说，每个任务到达第一个暂停点的路径都很短，同时有可能触发短路。例如可能在执行到第 1 个任务时 `should_get_value()` 就返回 `false`，此时可以不用将协程挂起而获得第一个任务的值，于是之后的 999 个任务都可以不执行。更具体的例子是每个任务对应一个带有 Buffer 的 IO 任务，每个任务会先在 Buffer 中查询值，当在 Buffer 中不存在对应的值时，就会异步查询一个耗时较长的 IO 任务，此时 Lazy 任务就会挂起，`collectAny` 就会开始执行下一个任务。
+
+但当任务到达第一个暂停点的路径相对较长或者说每个任务相对较重时，用 `RescheduleLazy<T>` 可能比较好。例如：
+
+```C++
+void prepare_for_long_time();
+Lazy<int> another_long_computing();
+Lazy<int> long_computing() {
+    prepare_for_long_time();
+    co_return co_await another_long_computing();
+}
+Lazy<int> getAnyConditionalValue(Executor* e) {
+    std::vector<RescheduleLazy<int>> input;
+    for (unsigned i = 0; i < 1000; i++)
+        input.push_back(conditionalWait().via(e));
+
+    auto any_result = co_await collectAny(std::move(input));
+    assert(!any_result.hasError());
+    co_return any_result.value();
+}
+```
+
+在这个 case 中，每一个任务可能都比较重。此时用 `Lazy<T>` 的话就有可能导致某个任务执行时间过长而迟迟不让出资源导致其他有可能有机会更早获得结果的任务无法开启。在这个情况下，用 `RescheduleLazy<T>` 可能就会更耗时一些。
+
+#### CollectAnyResult
 
 CollectAnyResult 的数据结构为：
+
 ```C++
 template <typename T>
-struct CollectAnyResult<void> {
+struct CollectAnyResult {
     size_t _idx;
     Try<T> _value;
+
+    size_t index() const;
+    bool hasError() const;
+    // Require hasError() == true. Otherwise it is UB to call
+    // this method.
+    std::exception getException() const;
+    // Require hasError() == false. Otherwise it is UB to call
+    // value() method.
+    const T& value() const&;
+    T& value() &;
+    T&& value() &&;
+    const T&& value() const&&;
 };
 ```
 
-其中 `_idx` 表示第一个完成的任务的编号，`_value` 表示第一个完成的任务的值。
+其中 `_idx` 表示第一个完成的任务的编号，可使用 `index()` 成员方法获取。`_value` 表示第一个完成的任务的值，
+可使用 `hasError()` 方法判断该任务是否成功；在该任务失败的情况下，可以使用 `getException()` 方法获取其异常；在该任务成功的情况下，可使用 `value()` 成员方法获取其值。
 
-例如：
+例子：
+
 ```C++
 Lazy<void> foo() {
     std::vector<Lazy<int>> input;
@@ -383,17 +451,17 @@ Lazy<void> foo() {
     input.push_back(ComputingTask(2));
 
     auto any_result = co_await collectAny(std::move(input));
-    std::cout << "The index of the first task completed is " << any_result._idx << "\n";
-    if (any_result._value.hasError())
+    std::cout << "The index of the first task completed is " << any_result.index() << "\n";
+    if (any_result.hasError())
         std::cout << "It failed.\n";
     else
-        std::cout << "Its result: " << any_result._value.value() << "\n";
+        std::cout << "Its result: " << any_result.value() << "\n";
 }
 Lazy<void> foo_var() {
-  auto res=collectAny(ComputingTask<int>(1),ComputingTask<int>(2),ComputingTask<double>(3.14f));
+  auto res = co_await collectAny(ComputingTask<int>(1),ComputingTask<int>(2),ComputingTask<double>(3.14f));
   std::cout<< "Index: " << res.index();
   std::visit([](auto &&value){
     std::cout<<"Value: "<< value <<std::endl;
-  },res);
+  }, res);
 }
 ```

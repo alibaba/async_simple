@@ -63,6 +63,15 @@ struct CollectAnyResult {
 
     size_t index() const { return _idx; }
 
+    bool hasError() const { return _value.hasError(); }
+    // Require hasError() == true. Otherwise it is UB to call
+    // this method.
+    std::exception getException() const {
+        return _value.getException();
+    }
+
+    // Require hasError() == false. Otherwise it is UB to call
+    // value() method.
 #if __cplusplus > 202002L
     template <class Self>
     auto&& value(this Self&& self) {

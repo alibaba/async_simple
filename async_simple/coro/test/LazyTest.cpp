@@ -1101,6 +1101,7 @@ TEST_F(LazyTest, testCollectAny) {
         cnt = input.size() - 1;
         auto combinedLazy = collectAny(std::move(input));
         auto out = co_await std::move(combinedLazy);
+        EXPECT_FALSE(out.hasError());
         auto index = out.index();
         auto& value = out.value();
         EXPECT_EQ(out._value.value(), 16);

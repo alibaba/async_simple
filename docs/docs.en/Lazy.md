@@ -355,10 +355,65 @@ Lazy<int> batch_sum(size_t total_number, size_t batch_size)  {
 
 ### collectAny
 
-Sometimes we need only a result of a lot of tasks. We could use `collectAny` in this case. `collectAny` would return the result of the first task get completed. All other tasks would detached and their results would be ignored.
+Sometimes we need only a result of a lot of tasks. We could use `collectAny` in this case. `collectAny` would return the result of the first task get completed. All other tasks would detach and their results would be ignored.
 
-- Argument type: `std::vector<Lazy<T>>`. Return type:  `Lazy<CollectAnyResult<T>>`.
-- Argument type: `Lazy<T1>, Lazy<T2>, Lazy<T3>, ...`. Return type: `std::variant<Try<T1>, Try<T2>, Try<T3>, ...>`.
+#### Parameter Type and the corresponding behavior
+
+- Argument type: `std::vector<LazyType<T>>`. Return type:  `Lazy<CollectAnyResult<T>>`.
+- Argument type: `LazyType<T1>, LazyType<T2>, LazyType<T3>, ...`. Return type: `std::variant<Try<T1>, Try<T2>, Try<T3>, ...>`.
+
+LazyType should be `Lazy<T>` or `RescheduleLazy<T>`.
+
+If LazyType is `Lazy<T>`, `collectAny` will execute the corresponding task in the current thread immediately until the coroutine task get suspended. If LazyType is `RescheduleLazy<T>`,
+`collectAny` will submit the task to the specified Executor. Then `collectAny` will iterate on the next task. 
+
+It depends on the use case and the implementation of Executor to choose `Lazy<T>` or `RescheduleLazy<T>`. If it takes a little time to reach the first possible suspend point, it may be better to use `Lazy<T>`. For example,
+
+```C++
+bool should_get_value();
+int default_value();
+Lazy<int> conditionalWait() {
+    if (should_get_value())
+        co_return co_await get_remote_value();
+    co_return default_value();
+}
+Lazy<int> getAnyConditionalValue() {
+    std::vector<Lazy<int>> input;
+    for (unsigned i = 0; i < 1000; i++)
+        input.push_back(conditionalWait());
+
+    auto any_result = co_await collectAny(std::move(input));
+    assert(!any_result.hasError());
+    co_return any_result.value();
+}
+```
+
+In this example, it takes a short time to reach the first suspend point. And it is possible we can short-cut it. It is possible that the 1st task returns its result on the first iteration and we don't need to evaluate all the other tasks.
+
+But if it takes a long time to reash the first suspend point, maybe it is better to use `RescheduleLazy<T>`.
+
+
+```C++
+void prepare_for_long_time();
+Lazy<int> another_long_computing();
+Lazy<int> long_computing() {
+    prepare_for_long_time();
+    co_return co_await another_long_computing();
+}
+Lazy<int> getAnyConditionalValue(Executor* e) {
+    std::vector<RescheduleLazy<int>> input;
+    for (unsigned i = 0; i < 1000; i++)
+        input.push_back(conditionalWait().via(e));
+
+    auto any_result = co_await collectAny(std::move(input));
+    assert(!any_result.hasError());
+    co_return any_result.value();
+}
+```
+
+In this case, every task is heavier. And if we use `Lazy<T>`, it is possible that one of the task takes the resources for a long time and other tasks can't get started. So it may be better to use `RescheduleLazy<T>` in such cases.
+
+#### CollectAnyResult
 
 The structure of `CollectAnyResult` would be:
 ```C++
@@ -366,10 +421,22 @@ template <typename T>
 struct CollectAnyResult<void> {
     size_t _idx;
     Try<T> _value;
+
+    size_t index() const;
+    bool hasError() const;
+    // Require hasError() == true. Otherwise it is UB to call
+    // this method.
+    std::exception getException() const;
+    // Require hasError() == false. Otherwise it is UB to call
+    // value() method.
+    const T& value() const&;
+    T& value() &;
+    T&& value() &&;
+    const T&& value() const&&;
 };
 ```
 
-`_idx` means the index of the first completed task. `_value` represents the corresponding value.
+`_idx` means the index of the first completed task, we can use `index()` method to get the index.. `_value` represents the corresponding value. We can use `hasError()` method to check if the result failed. If the result failed, we can use `getException()` method to get the exception pointer. If the result succeeded, we can use `value()` method to get the value.
 
 For exmaple:
 
@@ -380,17 +447,18 @@ Lazy<void> foo() {
     input.push_back(ComputingTask(2));
 
     auto any_result = co_await collectAny(std::move(input));
-    std::cout << "The index of the first task completed is " << any_result._idx << "\n";
-    if (any_result._value.hasError())
+    std::cout << "The index of the first task completed is " << any_result.index() << "\n";
+    if (any_result.hasError())
         std::cout << "It failed.\n";
     else
-        std::cout << "Its result: " << any_result._value.value() << "\n";
+        std::cout << "Its result: " << any_result.value() << "\n";
 }
 Lazy<void> foo_var() {
-  auto res=collectAny(ComputingTask<int>(1),ComputingTask<int>(2),ComputingTask<double>(3.14f));
+  auto res = co_await collectAny(ComputingTask<int>(1),ComputingTask<int>(2),ComputingTask<double>(3.14f));
   std::cout<< "Index: " << res.index();
   std::visit([](auto &&value){
     std::cout<<"Value: "<< value <<std::endl;
-  },res);
+  }, res);
 }
 ```
+
