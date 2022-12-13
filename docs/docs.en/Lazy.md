@@ -426,7 +426,7 @@ struct CollectAnyResult<void> {
     bool hasError() const;
     // Require hasError() == true. Otherwise it is UB to call
     // this method.
-    std::exception getException() const;
+    std::exception_ptr getException() const;
     // Require hasError() == false. Otherwise it is UB to call
     // value() method.
     const T& value() const&;

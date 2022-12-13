@@ -66,7 +66,7 @@ struct CollectAnyResult {
     bool hasError() const { return _value.hasError(); }
     // Require hasError() == true. Otherwise it is UB to call
     // this method.
-    std::exception getException() const {
+    std::exception_ptr getException() const {
         return _value.getException();
     }
 

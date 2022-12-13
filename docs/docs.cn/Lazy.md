@@ -413,7 +413,7 @@ Lazy<int> getAnyConditionalValue(Executor* e) {
 }
 ```
 
-在这个 case 中，每一个任务可能都比较重。此时用 `Lazy<T>` 的话就有可能导致某个任务执行时间过长而迟迟不让出资源导致其他有可能有机会更早获得结果的任务无法开启。在这个情况下，用 `RescheduleLazy<T>` 可能就会更耗时一些。
+在这个 case 中，每一个任务可能都比较重。此时用 `Lazy<T>` 的话就有可能导致某个任务执行时间过长而迟迟不让出资源导致其他有可能有机会更早获得结果的任务无法开启。在这个情况下，用 `RescheduleLazy<T>` 可能就会更好一些。
 
 #### CollectAnyResult
 
@@ -429,7 +429,7 @@ struct CollectAnyResult {
     bool hasError() const;
     // Require hasError() == true. Otherwise it is UB to call
     // this method.
-    std::exception getException() const;
+    std::exception_ptr getException() const;
     // Require hasError() == false. Otherwise it is UB to call
     // value() method.
     const T& value() const&;
