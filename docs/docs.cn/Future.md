@@ -97,6 +97,18 @@ p.setValue(1000);
 f.wait();
 ```
 
+我们也可以通过`Future::then(Callable&&)`来进行链式调用。它会根据`Callable`的参数来决定调用`Future::thenTry`还是`Future::thenValue`。
+
+```C++
+Promise<int> p;
+auto f = p.getFuture()
+                .then([](int i) { return i * 2; })
+                .then([](Try<int> t) { return t.value() * 2; })
+                .then([](int i) { return i; });
+p.setValue(1);
+f.wait();
+```
+
 如果我们希望由调度器决定 Callable 的执行时机，我们可以使用 `Future::via()` 来指定调度器：
 
 ```C++

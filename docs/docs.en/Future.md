@@ -125,6 +125,17 @@ auto f = std::move(future)
 p.setValue(1000);
 f.wait();
 ```
+We can also enable chaining call for Future by `Future::then(Callable&&)`. It will decide to call `Future::thenTry` or `Future::thenValue` based on the parameters of `Callable`.
+
+```C++
+Promise<int> p;
+auto f = p.getFuture()
+                .then([](int i) { return i * 2; })
+                .then([](Try<int> t) { return t.value() * 2; })
+                .then([](int i) { return i; });
+p.setValue(1);
+f.wait();
+```
 
 ## Get value from Lazy
 
