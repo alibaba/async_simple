@@ -565,4 +565,14 @@ TEST_F(FutureTest, testVoidFuture) {
     EXPECT_EQ(1, std::move(f4).get());
 }
 
+TEST_F(FutureTest, testThen) {
+    Promise<int> p1;
+    auto f1 = p1.getFuture()
+                  .then([](int i) { return i * 2; })
+                  .then([](Try<int> t) { return t.value() * 2; })
+                  .then([](int i) { return i; });
+    p1.setValue(1);
+    EXPECT_EQ(f1.value(), 4);
+}
+
 }  // namespace async_simple

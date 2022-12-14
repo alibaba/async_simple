@@ -202,6 +202,18 @@ public:
         return thenImpl<Func, TryCallableResult<T, Func>>(std::move(lambda));
     }
 
+    template <typename F,
+              typename R = std::conditional_t<std::is_invocable_v<F, T>,
+                                              ValueCallableResult<T, F>,
+                                              TryCallableResult<T, F>>>
+    Future<typename R::ReturnsFuture::Inner> then(F&& f) && {
+        if constexpr (std::is_invocable_v<F, T>) {
+            return std::move(*this).thenValue(std::forward<F>(f));
+        } else {
+            return std::move(*this).thenTry(std::forward<F>(f));
+        }
+    }
+
 public:
     // This section is public because they may invoked by other type of Future.
     // They are not suppose to be public.
