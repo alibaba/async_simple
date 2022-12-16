@@ -18,6 +18,7 @@
 
 #include <cassert>
 #include <exception>
+#include <functional>
 #include <new>
 #include <utility>
 #include <variant>
@@ -193,16 +194,16 @@ Try<T>::operator Try<void>() const {
 template <class T>
 Try(T) -> Try<T>;
 
-// T is Non void
 template <typename F, typename... Args>
 auto makeTryCall(F&& f, Args&&... args) {
     using T = std::invoke_result_t<F, Args...>;
     try {
         if constexpr (std::is_void_v<T>) {
-            std::forward<F>(f)(std::forward<Args>(args)...);
+            std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
             return Try<void>();
         } else {
-            return Try<T>(std::forward<F>(f)(std::forward<Args>(args)...));
+            return Try<T>(
+                std::invoke(std::forward<F>(f), std::forward<Args>(args)...));
         }
     } catch (...) {
         return Try<T>(std::current_exception());
