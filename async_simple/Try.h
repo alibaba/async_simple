@@ -68,9 +68,10 @@ public:
         return *this;
     }
 
-    template <class U>
-    Try(U&& value) requires std::is_convertible_v<U, T>
-        : _value(std::forward<U>(value)) {}
+    template <class... U>
+    Try(U&&... value)
+        requires std::is_constructible_v<T, U...>
+        : _value(std::in_place_type<T>, std::forward<U>(value)...) {}
 
     Try(std::exception_ptr error) : _value(error) {}
 
@@ -188,6 +189,9 @@ Try<T>::operator Try<void>() const {
     }
     return Try<void>();
 }
+
+template <class T>
+Try(T) -> Try<T>;
 
 // T is Non void
 template <typename F, typename... Args>
