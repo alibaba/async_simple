@@ -5,12 +5,13 @@
 创建空文件 `CountChar.cpp`, 并填入以下内容
 
 ```C++
-#include "async_simple/coro/SyncAwait.h"
-#include "async_simple/coro/Lazy.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
+#include "async_simple/coro/Lazy.h"
+#include "async_simple/coro/SyncAwait.h"
 
 using namespace async_simple::coro;
 

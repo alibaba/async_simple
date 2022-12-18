@@ -5,12 +5,13 @@ The docs shows a demo to use Lazy to calculate the number of specified char in a
 Create a file with name `CountChar.cpp` and fill the following codes.
 
 ```C++
-#include "async_simple/coro/SyncAwait.h"
-#include "async_simple/coro/Lazy.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
+#include "async_simple/coro/Lazy.h"
+#include "async_simple/coro/SyncAwait.h"
 
 using namespace async_simple::coro;
 
