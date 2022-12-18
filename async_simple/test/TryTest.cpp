@@ -134,4 +134,29 @@ TEST_F(TryTest, testVoid) {
     ASSERT_TRUE(ve.hasError());
 }
 
+TEST_F(TryTest, testConstruct) {
+    Try t1(1);
+    static_assert(std::is_same_v<decltype(t1), Try<int>>);
+    Try t2(2.0);
+    static_assert(std::is_same_v<decltype(t2), Try<double>>);
+    std::string hello = "hello";
+    Try t3(std::move(hello));
+    static_assert(std::is_same_v<decltype(t3), Try<std::string>>);
+
+    Try<std::pair<int, int>> t4(1, 2);
+    auto [i, j] = t4.value();
+    ASSERT_EQ(i, 1);
+    ASSERT_EQ(j, 2);
+
+    struct A {
+        int opcode;
+        std::string data;
+        A(int opcode, const std::string& data) : opcode(opcode), data(data) {}
+    };
+    Try<A> t5(5, "world");
+    auto [opcode, data] = t5.value();
+    ASSERT_EQ(opcode, 5);
+    ASSERT_EQ(data, "world");
+}
+
 }  // namespace async_simple
