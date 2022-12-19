@@ -18,6 +18,7 @@
 
 #include <cassert>
 #include <exception>
+#include <functional>
 #include <new>
 #include <utility>
 #include <variant>
@@ -68,9 +69,10 @@ public:
         return *this;
     }
 
-    template <class U>
-    Try(U&& value) requires std::is_convertible_v<U, T>
-        : _value(std::forward<U>(value)) {}
+    template <class... U>
+    Try(U&&... value)
+        requires std::is_constructible_v<T, U...>
+        : _value(std::in_place_type<T>, std::forward<U>(value)...) {}
 
     Try(std::exception_ptr error) : _value(error) {}
 
@@ -189,16 +191,19 @@ Try<T>::operator Try<void>() const {
     return Try<void>();
 }
 
-// T is Non void
+template <class T>
+Try(T) -> Try<T>;
+
 template <typename F, typename... Args>
 auto makeTryCall(F&& f, Args&&... args) {
     using T = std::invoke_result_t<F, Args...>;
     try {
         if constexpr (std::is_void_v<T>) {
-            std::forward<F>(f)(std::forward<Args>(args)...);
+            std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
             return Try<void>();
         } else {
-            return Try<T>(std::forward<F>(f)(std::forward<Args>(args)...));
+            return Try<T>(
+                std::invoke(std::forward<F>(f), std::forward<Args>(args)...));
         }
     } catch (...) {
         return Try<T>(std::current_exception());
