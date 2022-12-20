@@ -45,7 +45,7 @@ cc_library(
         "//bazel/config:async_simple_has_not_aio": [],
         "//conditions:default": ["-laio"],
     }) + select({
-        "@bazel_tools//platforms:windows": [],
+        "@platforms//os:windows": [],
         "//conditions:default": ["-lpthread"],
     }),
     defines = select({
