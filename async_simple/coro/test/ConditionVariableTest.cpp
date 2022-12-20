@@ -192,5 +192,105 @@ TEST_F(ConditionVariableTest, testSingleWaitPredicateWithScopeLock) {
         ;
 }
 
+// Same as https://en.cppreference.com/w/cpp/thread/condition_variable example
+TEST_F(ConditionVariableTest, testNotifyOne) {
+    static SpinLock mutex;
+    static ConditionVariable<SpinLock> cv;
+    static std::string data;
+    static bool ready = false;
+    static bool processed = false;
+
+    executors::SimpleExecutor e1(1);
+    executors::SimpleExecutor e2(1);
+
+    std::atomic<size_t> latch(2);
+    auto producer = []() -> Lazy<void> {
+        // Wait until awaiter() sends data
+        auto lk = co_await mutex.coScopedLock();
+        co_await cv.wait(mutex, [&] { return ready; });
+
+        // after the wait, we own the lock.
+        std::cout << "producer is processing data\n";
+        data += " after processing";
+
+        processed = true;
+        std::cout << "producer signals data processing completed\n";
+
+        lk.unlock();
+        cv.notifyOne();
+
+        co_return;
+    };
+    auto awaiter = []() -> Lazy<void> {
+        data = "Example data";
+        {
+            auto scoper = co_await mutex.coScopedLock();
+            ready = true;
+            std::cout << "awaiter signals data ready for processing\n";
+        }
+        cv.notifyOne();
+        // wait for the producer
+        {
+            auto scoper = co_await mutex.coScopedLock();
+            co_await cv.wait(mutex, [&]() { return processed; });
+        }
+        co_return;
+    };
+
+    awaiter().via(&e1).start(
+        [&](Try<void> var) { latch.fetch_sub(1u, std::memory_order_relaxed); });
+    producer().via(&e2).start(
+        [&](Try<void> var) { latch.fetch_sub(1u, std::memory_order_relaxed); });
+
+    while (latch.load(std::memory_order_relaxed))
+        ;
+    EXPECT_EQ(data, "Example data after processing");
+}
+
+TEST_F(ConditionVariableTest, testNotifyOneQueue) {
+    struct Queue {
+        void push(int i) {
+            {
+                std::unique_lock lk(mutex);
+                q.push(i);
+            }
+            cv.notifyOne();
+        }
+        Lazy<> pop(int& i) {
+            std::unique_lock lk(mutex);
+            co_await cv.wait(mutex, [&]() { return !q.empty(); });
+            i = q.front();
+            q.pop();
+        }
+        std::queue<int> q;
+        SpinLock mutex;
+        ConditionVariable<SpinLock> cv;
+    };
+
+    static Queue q;
+    executors::SimpleExecutor e(5);
+
+    auto ex = &e;
+
+    auto producer = []() -> Lazy<> {
+        for (int i = 0; i < 5; ++i) {
+            q.push(i);
+        }
+        co_return;
+    };
+    auto consumer = []() -> Lazy<> {
+        int i = 0x99;
+        co_await q.pop(i);
+        EXPECT_LT(i, 5);
+    };
+    for (int i = 0; i < 2; ++i) {
+        consumer().via(ex).detach();
+    }
+    producer().via(ex).detach();
+    for (int i = 2; i < 5; ++i) {
+        consumer().via(ex).detach();
+    }
+}
+
 }  // namespace coro
 }  // namespace async_simple

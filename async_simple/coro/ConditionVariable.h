@@ -33,7 +33,9 @@ public:
     ConditionVariable(const ConditionVariable&) = delete;
     ConditionVariable& operator=(const ConditionVariable&) = delete;
 
-    void notify() noexcept;
+    void notify() noexcept { notifyAll(); }
+    void notifyOne() noexcept;
+    void notifyAll() noexcept;
 
     template <class Pred>
     Lazy<> wait(Lock& lock, Pred&& pred) noexcept;
@@ -87,12 +89,26 @@ inline Lazy<> ConditionVariable<Lock>::wait(Lock& lock, Pred&& pred) noexcept {
 }
 
 template <class Lock>
-inline void ConditionVariable<Lock>::notify() noexcept {
+inline void ConditionVariable<Lock>::notifyAll() noexcept {
     auto awaitings = _awaiters.load(std::memory_order_relaxed);
     while (!_awaiters.compare_exchange_weak(awaitings, nullptr,
                                             std::memory_order_release,
                                             std::memory_order_relaxed))
         ;
+    resumeWaiters(awaitings);
+}
+
+template <class Lock>
+inline void ConditionVariable<Lock>::notifyOne() noexcept {
+    auto awaitings = _awaiters.load(std::memory_order_relaxed);
+    if (!awaitings) {
+        return;
+    }
+    while (!_awaiters.compare_exchange_weak(awaitings, awaitings->_next,
+                                            std::memory_order_release,
+                                            std::memory_order_relaxed))
+        ;
+    awaitings->_next = nullptr;
     resumeWaiters(awaitings);
 }
 
