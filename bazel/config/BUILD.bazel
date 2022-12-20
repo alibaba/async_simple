@@ -3,40 +3,40 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 config_setting(
     name = "linux_x86_64",
     constraint_values = [
-        "@bazel_tools//platforms:linux",
-        "@bazel_tools//platforms:x86_64",
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
     ],
 )
 
 config_setting(
     name = "linux_aarch64",
     constraint_values = [
-        "@bazel_tools//platforms:linux",
-        "@bazel_tools//platforms:aarch64",
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
     ],
 )
 
 config_setting(
     name = "linux_ppc64le",
     constraint_values = [
-        "@bazel_tools//platforms:linux",
-        "@bazel_tools//platforms:ppc",
+        "@platforms//os:linux",
+        "@platforms//cpu:ppc",
     ],
 )
 
 config_setting(
     name = "darwin_x86_64",
     constraint_values = [
-        "@bazel_tools//platforms:osx",
-        "@bazel_tools//platforms:x86_64",
+        "@platforms//os:osx",
+        "@platforms//cpu:x86_64",
     ],
 )
 
 config_setting(
     name = "darwin_aarch64",
     constraint_values = [
-        "@bazel_tools//platforms:osx",
-        "@bazel_tools//platforms:aarch64",
+        "@platforms//os:osx",
+        "@platforms//cpu:aarch64",
     ],
 )
 
@@ -63,14 +63,14 @@ config_setting(
 config_setting(
     name = "has_not_aio",
     constraint_values = [
-        "@bazel_tools//platforms:windows",
+        "@platforms//os:windows",
     ],
 )
 
 selects.config_setting_group(
     name = "async_simple_has_not_aio",
     match_any = [
-        "@bazel_tools//platforms:windows",
+        "@platforms//os:windows",
         ":async_simple_disable_aio",
     ],
 )
