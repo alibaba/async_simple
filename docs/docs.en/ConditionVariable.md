@@ -11,6 +11,8 @@ async_simple provide `ConditionVariable`, looks like `std::condition_variable`. 
 ```c++
 #include <async_simple/coro/ConditionVariable.h>
 
+using namespace async_simple::coro;
+
 SpinLock mtx;
 ConditionVariable<SpinLock> cond;
 int value = 0;
@@ -39,6 +41,8 @@ Lazy<> consumer() {
 
 ```c++
 #include <async_simple/coro/ConditionVariable.h>
+
+using namespace async_simple::coro;
 
 Notifier notifier;
 bool ready = false;

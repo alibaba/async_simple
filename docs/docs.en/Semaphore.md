@@ -7,6 +7,8 @@ Analogous to [`std::counting_semaphore`](https://en.cppreference.com/w/cpp/threa
 ```c++
 #include <async_simple/coro/Semaphore>
 
+using namespace async_simple::coro;
+
 BinarySemaphore notifier(0);
 bool ready = false;
 
@@ -25,6 +27,8 @@ Lazy<> consumer() {
 ### Mutex
 ```c++
 #include <async_simple/coro/Semaphore>
+
+using namespace async_simple::coro;
 
 BinarySemaphore sem(1);
 int count = 0;

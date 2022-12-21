@@ -11,6 +11,8 @@ async\_simple中实现的条件变量类似于C++标准库中`std::condition_var
 ```c++
 #include <async_simple/coro/ConditionVariable.h>
 
+using namespace async_simple::coro;
+
 SpinLock mtx;
 ConditionVariable<SpinLock> cond;
 int value = 0;
@@ -39,6 +41,8 @@ Lazy<> consumer() {
 
 ```c++
 #include <async_simple/coro/ConditionVariable.h>
+
+using namespace async_simple::coro;
 
 Notifier notifier;
 bool ready = false;
