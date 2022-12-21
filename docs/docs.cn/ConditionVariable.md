@@ -32,6 +32,8 @@ Lazy<> consumer() {
 }
 ```
 
+- 注意：与`std::condition_vaiable`不同的是，`ConditionVariable<Lock>`是一个模板类，`wait`的参数是`Lock`而非`std::unique_lock<std::mutex>`，我们也提供了`notifyAll`和`nofifyOne`接口，`notify`和`notifyAll`语义相同。
+
 ### Notifier
 - 当条件变量中条件只是true/false这种情况时，条件变量可以退化为Notifier。Notifier不依赖外部互斥锁。
 

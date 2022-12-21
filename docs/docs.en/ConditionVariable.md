@@ -32,6 +32,8 @@ Lazy<> consumer() {
 }
 ```
 
+- Note: Unlike `std::condition_vaiable`, `ConditionVariable<Lock>` is a template class, and the parameter of `wait` is `Lock` instead of `std::unique_lock<std::mutex>`, we Also provides `notifyAll` and `nofifyOne` interfaces, `notify` and `notifyAll` have the same semantics.
+
 ### Notifier
 - We can use Notifier to replace ConditionVariable when the condition is simply true or false. The Notifier never depend on any mutex.
 
