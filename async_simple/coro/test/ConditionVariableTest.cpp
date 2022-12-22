@@ -194,17 +194,17 @@ TEST_F(ConditionVariableTest, testSingleWaitPredicateWithScopeLock) {
 
 // Same as https://en.cppreference.com/w/cpp/thread/condition_variable example
 TEST_F(ConditionVariableTest, testNotifyOne) {
-    static SpinLock mutex;
-    static ConditionVariable<SpinLock> cv;
-    static std::string data;
-    static bool ready = false;
-    static bool processed = false;
+    SpinLock mutex;
+    ConditionVariable<SpinLock> cv;
+    std::string data;
+    bool ready = false;
+    bool processed = false;
 
     executors::SimpleExecutor e1(1);
     executors::SimpleExecutor e2(1);
 
     std::atomic<size_t> latch(2);
-    auto producer = []() -> Lazy<void> {
+    auto producer = [&]() -> Lazy<void> {
         // Wait until awaiter() sends data
         auto lk = co_await mutex.coScopedLock();
         co_await cv.wait(mutex, [&] { return ready; });
@@ -221,7 +221,7 @@ TEST_F(ConditionVariableTest, testNotifyOne) {
 
         co_return;
     };
-    auto awaiter = []() -> Lazy<void> {
+    auto awaiter = [&]() -> Lazy<void> {
         data = "Example data";
         {
             auto scoper = co_await mutex.coScopedLock();
@@ -267,29 +267,37 @@ TEST_F(ConditionVariableTest, testNotifyOneQueue) {
         ConditionVariable<SpinLock> cv;
     };
 
-    static Queue q;
+    Queue q;
     executors::SimpleExecutor e(5);
 
     auto ex = &e;
+    std::atomic<size_t> latch(5);
 
-    auto producer = []() -> Lazy<> {
+    auto producer = [&]() -> Lazy<> {
         for (int i = 0; i < 5; ++i) {
             q.push(i);
         }
         co_return;
     };
-    auto consumer = []() -> Lazy<> {
+    auto consumer = [&]() -> Lazy<> {
         int i = 0x99;
         co_await q.pop(i);
         EXPECT_LT(i, 5);
     };
     for (int i = 0; i < 2; ++i) {
-        consumer().via(ex).detach();
+        consumer().via(ex).start([&](auto&&){
+            latch--;
+        });
     }
     producer().via(ex).detach();
     for (int i = 2; i < 5; ++i) {
-        consumer().via(ex).detach();
+        consumer().via(ex).start([&](auto&&){
+            latch--;
+        });
     }
+
+    while (latch.load(std::memory_order_relaxed))
+        ;
 }
 
 }  // namespace coro
