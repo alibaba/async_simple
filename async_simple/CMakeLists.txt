@@ -5,14 +5,6 @@ if(${UTHREAD})
   file(GLOB uthread_src "uthread/internal/*.cc")
   if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
       CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "13")
-    # The address sanitizer may produce false-positive results for swap-context.
-    # See https://github.com/google/sanitizers/issues/189 for details.
-    # FIXME: A proper fix may add a __asan_enter_fiber and __asan_exit_fiber
-    # for the user thread.
-    # FIXME2: the new added sanitize action: address-use-after-return
-    # can't handle stackful coroutine well too. So disable it as a workaround now.
-    set_property(SOURCE ${uthread_src} PROPERTY COMPILE_OPTIONS "-fno-sanitize=address;-fsanitize-address-use-after-return=never")
-    #endif()
   endif()
 file(GLOB uthread_asm_src "uthread/internal/${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}/*.S")
 endif()

@@ -32,6 +32,18 @@
 #define AS_INLINE __attribute__((__always_inline__)) inline
 #endif
 
+#ifdef __clang__
+#if __has_feature(address_sanitizer)
+#define AS_INTERNAL_USE_ASAN 1
+#endif  // __has_feature(address_sanitizer)
+#endif  // __clang__
+
+#ifdef __GNUC__
+#ifdef __SANITIZE_ADDRESS__  // GCC
+#define AS_INTERNAL_USE_ASAN 1
+#endif  // __SANITIZE_ADDRESS__
+#endif  // __GNUC__
+
 namespace async_simple {
 // Different from assert, logicAssert is meaningful in
 // release mode. logicAssert should be used in case that

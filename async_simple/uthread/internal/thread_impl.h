@@ -23,6 +23,8 @@
 #ifndef ASYNC_SIMPLE_UTHREAD_INTERNAL_UTHREAD_IMPL_H
 #define ASYNC_SIMPLE_UTHREAD_INTERNAL_UTHREAD_IMPL_H
 
+#include "async_simple/Common.h"
+
 namespace async_simple {
 namespace uthread {
 namespace internal {
@@ -44,10 +46,17 @@ struct jmp_buf_link {
     jmp_buf_link* link = nullptr;
     thread_context* thread = nullptr;
 
+#ifdef AS_INTERNAL_USE_ASAN
+    const void* asan_stack_bottom = nullptr;
+    std::size_t asan_stack_size = 0;
+    void* asan_fake_stack = nullptr;
+#endif
+
 public:
     void switch_in();
     void switch_out();
     void initial_switch_in_completed();
+    void final_switch_out();
 };
 
 extern thread_local jmp_buf_link* g_current_context;
