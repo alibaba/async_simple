@@ -48,3 +48,8 @@ Lazy<> consumer() {
   co_return;
 }
 ```
+
+## 避免内存泄漏
+
+当一个协程 `co_await Semaphore::acquire(...);` 时，程序员需要保证该信号量在程序执行期间会被 `release()`，否则因为该协程不能释放导致内存泄漏问题。
+

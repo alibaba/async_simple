@@ -56,3 +56,7 @@ Lazy<> ready() {
 }
 ```
 
+## Avoid memory leaking 
+
+When we `co_await Latch::wait()` in a coroutine, we need to be sure that the counter of the latch will be reduced to zero before the end of the execution of the program. Otherwise, the memomry will leak.
+

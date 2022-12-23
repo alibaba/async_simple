@@ -61,3 +61,7 @@ Lazy<> consumer() {
 ```
 
 The multi coroutines can be blocked on the same ConditionVariable or Notifier. All of the coroutines will be resumed when `ConditionVariable::notify` invoked.
+
+## Avoid memory leaking 
+
+When we `co_await Condition_variable::wait()` in a coroutine, we need to be sure that the condition variable should be notified before the end of the execution of the program. Otherwise, the memomry will leak.

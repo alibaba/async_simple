@@ -47,3 +47,7 @@ Lazy<> consumer() {
   co_return;
 }
 ```
+
+## Avoid memory leaking 
+
+When we `co_await Semaphore::acquire()` in a coroutine, we need to be sure that the semaphore will be released before the end of the execution of the program. Otherwise, the memomry will leak.
