@@ -54,7 +54,6 @@ TEST_F(ConditionVariableTest, testSingleWait) {
         CHECK_EXECUTOR(&e2);
         notifier.notify();
         CHECK_EXECUTOR(&e2);
-        latch.fetch_sub(1u, std::memory_order_relaxed);
         co_return;
     };
     auto awaiter = [&]() -> Lazy<void> {
@@ -63,11 +62,12 @@ TEST_F(ConditionVariableTest, testSingleWait) {
         CHECK_EXECUTOR(&e1);
         EXPECT_EQ(1, data);
         data = 2;
-        latch.fetch_sub(1u, std::memory_order_relaxed);
         co_return;
     };
-    awaiter().via(&e1).start([](Try<void> var) {});
-    producer().via(&e2).start([](Try<void> var) {});
+    awaiter().via(&e1).start(
+        [&](Try<void> var) { latch.fetch_sub(1u, std::memory_order_relaxed); });
+    producer().via(&e2).start(
+        [&](Try<void> var) { latch.fetch_sub(1u, std::memory_order_relaxed); });
     while (latch.load(std::memory_order_relaxed))
         ;
     EXPECT_EQ(2, data);
@@ -87,17 +87,19 @@ TEST_F(ConditionVariableTest, testMultiWait) {
     auto awaiter1 = [&]() -> Lazy<void> {
         co_await notifier.wait();
         EXPECT_EQ(1, data);
-        barrier.fetch_add(1, std::memory_order_relaxed);
         co_return;
     };
     auto awaiter2 = [&]() -> Lazy<void> {
         co_await notifier.wait();
         EXPECT_EQ(1, data);
-        barrier.fetch_add(1, std::memory_order_relaxed);
         co_return;
     };
-    awaiter2().via(&_executor).start([](Try<void> var) {});
-    awaiter1().via(&_executor).start([](Try<void> var) {});
+    awaiter2().via(&_executor).start([&](Try<void> var) {
+        barrier.fetch_add(1, std::memory_order_relaxed);
+    });
+    awaiter1().via(&_executor).start([&](Try<void> var) {
+        barrier.fetch_add(1, std::memory_order_relaxed);
+    });
     producer().via(&_executor).start([](Try<void> var) {});
     // spin wait
     while (barrier.load(std::memory_order_relaxed) < 2)
@@ -108,17 +110,19 @@ TEST_F(ConditionVariableTest, testMultiWait) {
     auto producer2 = [&]() -> Lazy<void> {
         data = 0;
         notifier.notify();
-        latch.fetch_sub(1u, std::memory_order_relaxed);
         co_return;
     };
     auto awaiter3 = [&]() -> Lazy<void> {
         co_await notifier.wait();
         EXPECT_EQ(0, data);
-        latch.fetch_sub(1u, std::memory_order_relaxed);
         co_return;
     };
-    producer2().via(&_executor).start([](Try<void> var) {});
-    awaiter3().via(&_executor).start([](Try<void> var) {});
+    producer2().via(&_executor).start([&](Try<void> var) {
+        latch.fetch_sub(1u, std::memory_order_relaxed);
+    });
+    awaiter3().via(&_executor).start([&](Try<void> var) {
+        latch.fetch_sub(1u, std::memory_order_relaxed);
+    });
     while (latch.load(std::memory_order_relaxed))
         ;
     EXPECT_EQ(0, data);
@@ -143,7 +147,6 @@ TEST_F(ConditionVariableTest, testSingleWaitPredicate) {
         std::this_thread::sleep_for(500us);
         mutex.unlock();
         CHECK_EXECUTOR(&e2);
-        latch.fetch_sub(1u, std::memory_order_relaxed);
         co_return;
     };
     auto awaiter = [&]() -> Lazy<void> {
@@ -155,11 +158,12 @@ TEST_F(ConditionVariableTest, testSingleWaitPredicate) {
         mutex.unlock();
         CHECK_EXECUTOR(&e1);
         EXPECT_EQ(1, var);
-        latch.fetch_sub(1u, std::memory_order_relaxed);
         co_return;
     };
-    awaiter().via(&e1).start([](Try<void> var) {});
-    producer().via(&e2).start([](Try<void> var) {});
+    awaiter().via(&e1).start(
+        [&](Try<void> var) { latch.fetch_sub(1u, std::memory_order_relaxed); });
+    producer().via(&e2).start(
+        [&](Try<void> var) { latch.fetch_sub(1u, std::memory_order_relaxed); });
     while (latch.load(std::memory_order_relaxed))
         ;
 }

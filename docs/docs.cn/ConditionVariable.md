@@ -11,6 +11,8 @@ async\_simple中实现的条件变量类似于C++标准库中`std::condition_var
 ```c++
 #include <async_simple/coro/ConditionVariable.h>
 
+using namespace async_simple::coro;
+
 SpinLock mtx;
 ConditionVariable<SpinLock> cond;
 int value = 0;
@@ -32,11 +34,15 @@ Lazy<> consumer() {
 }
 ```
 
+- 注意：与`std::condition_vaiable`不同的是，`ConditionVariable<Lock>`是一个模板类，`wait`的参数是`Lock`而非`std::unique_lock<std::mutex>`，我们也提供了`notifyAll`和`nofifyOne`接口，`notify`和`notifyAll`语义相同。
+
 ### Notifier
 - 当条件变量中条件只是true/false这种情况时，条件变量可以退化为Notifier。Notifier不依赖外部互斥锁。
 
 ```c++
 #include <async_simple/coro/ConditionVariable.h>
+
+using namespace async_simple::coro;
 
 Notifier notifier;
 bool ready = false;

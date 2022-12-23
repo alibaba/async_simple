@@ -11,6 +11,8 @@ async_simple provide `ConditionVariable`, looks like `std::condition_variable`. 
 ```c++
 #include <async_simple/coro/ConditionVariable.h>
 
+using namespace async_simple::coro;
+
 SpinLock mtx;
 ConditionVariable<SpinLock> cond;
 int value = 0;
@@ -32,11 +34,15 @@ Lazy<> consumer() {
 }
 ```
 
+- Note: Unlike `std::condition_vaiable`, `ConditionVariable<Lock>` is a template class, and the parameter of `wait` is `Lock` instead of `std::unique_lock<std::mutex>`, we Also provides `notifyAll` and `nofifyOne` interfaces, `notify` and `notifyAll` have the same semantics.
+
 ### Notifier
 - We can use Notifier to replace ConditionVariable when the condition is simply true or false. The Notifier never depend on any mutex.
 
 ```c++
 #include <async_simple/coro/ConditionVariable.h>
+
+using namespace async_simple::coro;
 
 Notifier notifier;
 bool ready = false;
