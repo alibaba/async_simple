@@ -23,6 +23,8 @@
 #include "async_simple/Future.h"
 #include "async_simple/Try.h"
 
+#include <iostream>
+
 namespace async_simple {
 
 // collectAll - collect all the values for a range of futures.
