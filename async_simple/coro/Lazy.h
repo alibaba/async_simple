@@ -252,7 +252,7 @@ public:
         AwaiterBase(Handle coro) : Base(coro) {}
 
         AS_INLINE auto await_suspend(
-            std::coroutine_handle<> continuation) noexcept {
+            std::coroutine_handle<> continuation) noexcept(!reschedule) {
             // current coro started, caller becomes my continuation
             this->_handle.promise()._continuation = continuation;
 
@@ -260,7 +260,7 @@ public:
         }
 
     private:
-        auto awaitSuspendImpl() noexcept {
+        auto awaitSuspendImpl() noexcept(!reschedule) {
             if constexpr (reschedule) {
                 // executor schedule performed
                 auto& pr = this->_handle.promise();
