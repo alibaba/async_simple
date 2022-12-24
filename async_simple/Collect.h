@@ -23,8 +23,6 @@
 #include "async_simple/Future.h"
 #include "async_simple/Try.h"
 
-#include <iostream>
-
 namespace async_simple {
 
 // collectAll - collect all the values for a range of futures.
@@ -81,12 +79,11 @@ collectAll(Iterator begin, Iterator end) {
     };
 
     auto ctx = std::make_shared<Context>(n, std::move(promise));
-    for (size_t i = 0; i < n; ++i) {
-        auto cur = begin + i;
-        if (cur->hasResult()) {
-            ctx->results[i] = std::move(cur->result());
+    for (size_t i = 0; i < n; ++i, ++begin) {
+        if (begin->hasResult()) {
+            ctx->results[i] = std::move(begin->result());
         } else {
-            cur->setContinuation([ctx, i](Try<T>&& t) mutable {
+            begin->setContinuation([ctx, i](Try<T>&& t) mutable {
                 ctx->results[i] = std::move(t);
             });
         }
