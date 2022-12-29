@@ -417,6 +417,8 @@ struct CollectAllVariadicAwaiter {
                 if constexpr (Para == true && sizeof...(Ts) > 1) {
                     if (exec != nullptr)
                         AS_LIKELY { exec->schedule(std::move(func)); }
+                    else
+                        AS_UNLIKELY { func(); }
                 } else {
                     func();
                 }
@@ -459,7 +461,7 @@ template <bool Para, template <typename> typename LazyType, typename... Ts>
 inline auto collectAllVariadicImpl(LazyType<Ts>&&... awaitables) {
     static_assert(sizeof...(Ts) > 0);
     using AT = std::conditional_t<
-        is_lazy<LazyType<void>>::value,
+        is_lazy<LazyType<void>>::value && !Para,
         SimpleCollectAllVariadicAwaiter<Para, LazyType, Ts...>,
         CollectAllVariadicAwaiter<Para, LazyType, Ts...>>;
     return AT(std::move(awaitables)...);

@@ -342,7 +342,7 @@ TEST_F(LazyTest, testReadyCoro) {
 }
 TEST_F(LazyTest, testExecutor) {
     executors::SimpleExecutor e1(1);
-
+    executors::SimpleExecutor e2(1);
     auto addTwo = [&](int x) -> Lazy<int> {
         CHECK_EXECUTOR(&e1);
         auto tmp = co_await getValue(x);
@@ -1311,6 +1311,7 @@ TEST_F(LazyTest, testException) {
 
 TEST_F(LazyTest, testContext) {
     executors::SimpleExecutor e1(10);
+    executors::SimpleExecutor e2(10);
 
     auto addTwo = [&](int x) -> Lazy<int> {
         CHECK_EXECUTOR(&e1);
