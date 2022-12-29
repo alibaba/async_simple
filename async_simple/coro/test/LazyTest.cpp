@@ -342,11 +342,11 @@ TEST_F(LazyTest, testReadyCoro) {
 }
 TEST_F(LazyTest, testExecutor) {
     executors::SimpleExecutor e1(1);
-    executors::SimpleExecutor e2(1);
+
     auto addTwo = [&](int x) -> Lazy<int> {
-        CHECK_EXECUTOR(&e2);
+        CHECK_EXECUTOR(&e1);
         auto tmp = co_await getValue(x);
-        CHECK_EXECUTOR(&e2);
+        CHECK_EXECUTOR(&e1);
         co_return tmp + 2;
     };
     {
@@ -356,9 +356,9 @@ TEST_F(LazyTest, testExecutor) {
             CHECK_EXECUTOR(&e1);
             int y = co_await plusOne();
             CHECK_EXECUTOR(&e1);
-            int z = co_await addTwo(y).via(&e2);
+            auto z = co_await addTwo(y).coAwaitTry();
             CHECK_EXECUTOR(&e1);
-            co_return z;
+            co_return z.value();
         };
         triggerValue(100);
         auto val = syncAwait(test().via(&e1));
@@ -1311,13 +1311,12 @@ TEST_F(LazyTest, testException) {
 
 TEST_F(LazyTest, testContext) {
     executors::SimpleExecutor e1(10);
-    executors::SimpleExecutor e2(10);
 
     auto addTwo = [&](int x) -> Lazy<int> {
-        CHECK_EXECUTOR(&e2);
+        CHECK_EXECUTOR(&e1);
         auto tid = std::this_thread::get_id();
         auto tmp = co_await getValue(x);
-        CHECK_EXECUTOR(&e2);
+        CHECK_EXECUTOR(&e1);
         EXPECT_EQ(tid, std::this_thread::get_id());
         co_return tmp + 2;
     };
@@ -1330,10 +1329,10 @@ TEST_F(LazyTest, testContext) {
             int y = co_await plusOne();
             CHECK_EXECUTOR(&e1);
             EXPECT_EQ(tid, std::this_thread::get_id());
-            int z = co_await addTwo(y).via(&e2);
+            auto z = co_await addTwo(y).coAwaitTry();
             CHECK_EXECUTOR(&e1);
             EXPECT_EQ(tid, std::this_thread::get_id());
-            co_return z;
+            co_return z.value();
         };
         triggerValue(100);
         auto val = syncAwait(test().via(&e1));

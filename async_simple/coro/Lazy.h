@@ -51,6 +51,9 @@ namespace detail {
 template <class, typename OAlloc, bool Para>
 struct CollectAllAwaiter;
 
+template <bool Para, template <typename> typename LazyType, typename... Ts>
+struct CollectAllVariadicAwaiter;
+
 template <typename LazyType, typename IAlloc>
 struct CollectAnyAwaiter;
 
@@ -278,6 +281,17 @@ public:
         AS_INLINE Try<T> await_resume() noexcept {
             return AwaiterBase::awaitResumeTry();
         };
+
+        auto coAwait(Executor* ex) {
+            if constexpr (reschedule) {
+                logicAssert(false,
+                            "RescheduleLazy should be only allowed in "
+                            "DetachedCoroutine");
+            }
+            // derived lazy inherits executor
+            this->_handle.promise()._executor = ex;
+            return std::move(*this);
+        }
     };
 
     struct ValueAwaiter : public AwaiterBase {
@@ -327,6 +341,9 @@ protected:
 
     template <class, typename OAlloc, bool Para>
     friend struct detail::CollectAllAwaiter;
+
+    template <bool, template <typename> typename, typename...>
+    friend struct detail::CollectAllVariadicAwaiter;
 
     template <typename LazyType, typename IAlloc>
     friend struct detail::CollectAnyAwaiter;
@@ -475,6 +492,12 @@ public:
                 std::rethrow_exception(t.getException());
             }
         });
+    }
+
+    [[deprecated(
+        "RescheduleLazy should be only allowed in DetachedCoroutine")]] auto
+    operator co_await() {
+        return Base::operator co_await();
     }
 
 private:
