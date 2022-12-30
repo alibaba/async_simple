@@ -193,7 +193,7 @@ Lazy<int> bar() {
 
 # RescheduleLazy
 
-RescheduleLazy 在语义上是绑定了 Executor 的 Lazy。RescheduleLazy 在 `co_await` Lazy 时并不会使用对称变换立即执行 Lazy，而是将唤醒 Lazy 的任务提交到 RescheduleLazy 绑定的 Executor 中。因为语义上 RescheduleLazy 也是 Lazy，所以 RescheduleLazy 也能使用 Lazy 的接口 `co_await`、`.start` 和 `syncAwait`.
+RescheduleLazy 在语义上是绑定了 Executor 的 Lazy。RescheduleLazy 只支持`.start`和`syncAwait`的方式启动，启动时会将唤醒 RescheduleLazy 的任务提交到RescheduleLazy 绑定的 Executor 中。
 
 ## 创建 RescheduleLazy
 

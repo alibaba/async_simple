@@ -194,7 +194,7 @@ For an object `task` with type `Lazy<T>`, the type of expression `co_await task.
 
 # RescheduleLazy
 
-Semantically, RescheduleLazy is a Lazy with an executor. Unlike Lazy, `co_await` a RescheduleLazy wouldn't invoke symmetric transformation. It would submit the task to resume the RescheduleLazy to the corresponding executor. Since RescheduleLazy is a Lazy semantically. So RescheduleLazy would be able to use the methods as Lazy does: `co_await`, `.start` and `.syncAwait`.
+Semantically, RescheduleLazy is a Lazy with an executor. `RescheduleLazy` only supports `.start` and `syncAwait` to start. It would submit the task to resume the RescheduleLazy to the corresponding executor.
 
 ## Get RescheduleLazy
 
