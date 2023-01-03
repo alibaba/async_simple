@@ -155,6 +155,10 @@ struct CollectAnyVariadicAwaiter {
         : _input(std::make_unique<InputType>(std::move(inputs)...)),
           _result(nullptr) {}
 
+    CollectAnyVariadicAwaiter(InputType&& inputs)
+        : _input(std::make_unique<InputType>(std::move(inputs))),
+          _result(nullptr) {}
+
     CollectAnyVariadicAwaiter(const CollectAnyVariadicAwaiter&) = delete;
     CollectAnyVariadicAwaiter& operator=(const CollectAnyVariadicAwaiter&) =
         delete;
@@ -235,6 +239,20 @@ struct SimpleCollectAnyAwaitable {
 
     auto coAwait(Executor* ex) {
         return CollectAnyAwaiter<LazyType, InAlloc>(std::move(_input));
+    }
+};
+
+template <template <typename> typename LazyType, typename... Ts>
+struct SimpleCollectAnyVariadicAwaiter {
+    using InputType = std::tuple<LazyType<Ts>...>;
+
+    InputType _inputs;
+
+    SimpleCollectAnyVariadicAwaiter(LazyType<Ts>&&... inputs)
+        : _inputs(std::move(inputs)...) {}
+
+    auto coAwait(Executor* ex) {
+        return CollectAnyVariadicAwaiter(std::move(_inputs));
     }
 };
 
@@ -479,6 +497,16 @@ inline auto collectAnyImpl(std::vector<LazyType<T>, IAlloc> input) {
     return AT(std::move(input));
 }
 
+// collectAnyVariadic
+template <template <typename> typename LazyType, typename... Ts>
+inline auto CollectAnyVariadicImpl(LazyType<Ts>&&... inputs) {
+    using AT =
+        std::conditional_t<is_lazy<LazyType<void>>::value,
+                           SimpleCollectAnyVariadicAwaiter<LazyType, Ts...>,
+                           CollectAnyVariadicAwaiter<LazyType, Ts...>>;
+    return AT(std::move(inputs)...);
+}
+
 }  // namespace detail
 
 template <typename T, template <typename> typename LazyType,
@@ -490,7 +518,7 @@ inline auto collectAny(std::vector<LazyType<T>, IAlloc>&& input) {
 template <template <typename> typename LazyType, typename... Ts>
 inline auto collectAny(LazyType<Ts>... awaitables) {
     static_assert(sizeof...(Ts), "collectAny need at least one param!");
-    return detail::CollectAnyVariadicAwaiter(std::move(awaitables)...);
+    return detail::CollectAnyVariadicImpl(std::move(awaitables)...);
 }
 
 // The collectAll() function can be used to co_await on a vector of LazyType
