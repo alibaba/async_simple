@@ -19,7 +19,9 @@
 
 #include <concepts>
 #include <exception>
+#include <memory>
 #include <ranges>
+#include <type_traits>
 #include <utility>
 
 #include "async_simple/Common.h"
@@ -28,83 +30,112 @@
 
 namespace async_simple::coro {
 
-template <typename T>
+template <class Ref, class V = void, class Allocator = void>
 class Generator {
-public:
-    class promise_type;
+private:
+    using value =
+        std::conditional_t<std::is_void_v<V>, std::remove_cvref_t<Ref>, V>;
+    using reference = std::conditional_t<std::is_void_v<V>, Ref&&, Ref>;
+
     class iterator;
 
-    using Handle = std::coroutine_handle<promise_type>;
+    // clang-format off
+    static_assert(
+        std::same_as<std::remove_cvref_t<value>, value> &&
+            std::is_object_v<value>,
+        "generator's value type must be a cv-unqualified object type");
+    static_assert(std::is_reference_v<reference> ||
+                      (std::is_object_v<reference> &&
+                       std::same_as<std::remove_cv_t<reference>, reference> &&
+                       std::copy_constructible<reference>),
+                  "generator's second argument must be a reference type or a "
+                  "cv-unqualified "
+                  "copy-constructible object type");
+    // clang-format on
 
-    explicit Generator(Handle coro) noexcept;
+public:
+    class promise_type;
+
+    using Handle = std::coroutine_handle<promise_type>;
+    using yielded = std::conditional_t<std::is_reference_v<reference>,
+                                       reference, const reference&>;
+
     Generator(Generator&& other) noexcept
         : _coro(std::exchange(other._coro, nullptr)) {}
     Generator& operator=(Generator&& other) noexcept;
     ~Generator();
     Generator(const Generator&) = delete;
     Generator& operator=(const Generator&) = delete;
+    [[nodiscard]] iterator begin();
+    [[nodiscard]] std::default_sentinel_t end() const noexcept { return {}; }
 
-    //
-    explicit operator bool() const noexcept;
-
-    //
-    T operator()() const;
-    //
-    iterator begin();
-
-    //
-    std::default_sentinel_t end() const noexcept { return {}; }
+private:
+    explicit Generator(Handle coro) noexcept;
 
 private:
     Handle _coro = nullptr;
 };
 
-template <typename T>
-class Generator<T>::promise_type {
+template <class Ref, class V, class Allocator>
+class Generator<Ref, V, Allocator>::promise_type {
+private:
+    struct elementAwaiter {
+        std::remove_cvref_t<yielded> value_;
+        constexpr bool await_ready() const noexcept { return false; }
+
+        template <class Promise>
+        constexpr void await_suspend(
+            std::coroutine_handle<Promise> handle) noexcept {
+            auto& current = handle.promise();
+            current.value_ = std::addressof(value_);
+        }
+
+        constexpr void await_resume() const noexcept {}
+    };
+
 public:
     // Unlike `Lazy`, Generator will run directly when it is created until it is
     // suspended for the first time
     std::suspend_never initial_suspend() noexcept { return {}; }
     std::suspend_always final_suspend() noexcept { return {}; }
 
-    template <std::convertible_to<T> From>
-    std::suspend_always yield_value(From&& from) {
-        _value.emplace(std::forward<From>(from));
+    std::suspend_always yield_value(yielded val) noexcept {
+        value_ = std::addressof(val);
         return {};
     }
 
+    // clang-format off
+    auto yield_value(const std::remove_reference_t<yielded>& lval) requires
+        std::is_rvalue_reference_v<yielded> && std::constructible_from<
+        std::remove_cvref_t<yielded>, const std::remove_reference_t<yielded>& > 
+    { return elementAwaiter{lval}; }
+    // clang-format on
+
     void return_void() noexcept {}
-    void unhandled_exception() noexcept {
-        _value.setException(std::current_exception());
-    }
+    void await_transform() = delete;
+    void unhandled_exception() noexcept { except_ = std::current_exception(); }
 
     Generator get_return_object() noexcept {
         return Generator(Generator::Handle::from_promise(*this));
     }
 
-    std::exception_ptr getException() const {
-        return _value.hasError() ? _value.getException() : nullptr;
-    }
+    std::exception_ptr getException() const { return except_; }
 
     friend class Generator;
     friend class Generator::iterator;
 
 private:
-    Try<T> _value;
+    std::add_pointer_t<yielded> value_;
+    std::exception_ptr except_;
 };
 
-template <typename T>
-class Generator<T>::iterator {
+template <class Ref, class V, class Allocator>
+class Generator<Ref, V, Allocator>::iterator {
 public:
-    using value_type = T;
-    using reference = value_type&;
-    using pointer = value_type*;
+    using value_type = value;
     using difference_type = std::ptrdiff_t;
-    using iterator_category = std::input_iterator_tag;
 
-    friend class Generator;
-
-    explicit iterator() = default;
+    explicit iterator(Handle coro) : _coro(coro) { checkFinished(); }
     ~iterator() {
         if (_coro) {
             // TODO: error log
@@ -123,19 +154,16 @@ public:
 
     explicit operator bool() const noexcept { return _coro && !_coro.done(); }
 
-    bool operator==(std::default_sentinel_t) const {
+    [[nodiscard]] bool operator==(std::default_sentinel_t) const {
         return !_coro || _coro.done();
     }
-    bool operator==(const iterator& rhs) const { return _coro == rhs._coro; }
-    bool operator!=(const iterator& rhs) const { return _coro != rhs._coro; }
 
     reference operator*() const {
         logicAssert(
             this->operator bool(),
             "Should have a coroutine handle or the coroutine has not ended");
-        return _coro.promise()._value.value();
+        return static_cast<yielded>(*_coro.promise().value_);
     }
-    pointer operator->() const { return std::addressof(operator*()); }
 
     iterator& operator++() {
         if (_coro) {
@@ -164,16 +192,15 @@ private:
         }
     }
 
-    explicit iterator(Handle coro) : _coro(coro) { checkFinished(); }
-
     Handle _coro = nullptr;
 };
 
-template <typename T>
-Generator<T>::Generator(Handle coro) noexcept : _coro(coro) {}
+template <class Ref, class V, class Allocator>
+Generator<Ref, V, Allocator>::Generator(Handle coro) noexcept : _coro(coro) {}
 
-template <typename T>
-Generator<T>& Generator<T>::operator=(Generator&& other) noexcept {
+template <class Ref, class V, class Allocator>
+Generator<Ref, V, Allocator>& Generator<Ref, V, Allocator>::operator=(
+    Generator&& other) noexcept {
     if (_coro) {
         if (!_coro.done()) {
             // TODO: [Warning] the coroutine is not done!
@@ -184,8 +211,8 @@ Generator<T>& Generator<T>::operator=(Generator&& other) noexcept {
     return *this;
 }
 
-template <typename T>
-Generator<T>::~Generator() {
+template <class Ref, class V, class Allocator>
+Generator<Ref, V, Allocator>::~Generator() {
     if (_coro) {
         if (!_coro.done()) {
             // TODO: log
@@ -195,39 +222,17 @@ Generator<T>::~Generator() {
     }
 }
 
-template <typename T>
-Generator<T>::operator bool() const noexcept {
-    return _coro &&
-           (!_coro.done() ||
-            /* If there is an exception, then return true,
-                the purpose is to call operator () to throw an exception
-            */
-            _coro.promise()._value.hasError());
-}
-
-template <typename T>
-T Generator<T>::operator()() const {
-    logicAssert(!!_coro, "couroutine handle is nullptr");
-    auto res = std::move(_coro.promise()._value.value());
-#ifdef __APPLE__
-    // FIXME: `std::coroutine_handle.resume()` is a non-const member function in
-    // macos
-    const_cast<Generator<T>&>(*this)._coro();
-#else
-    _coro.resume();
-#endif
-    return res;
-}
-
-template <typename T>
-typename Generator<T>::iterator Generator<T>::begin() {
+template <class Ref, class V, class Allocator>
+typename Generator<Ref, V, Allocator>::iterator
+Generator<Ref, V, Allocator>::begin() {
     return iterator(std::exchange(_coro, nullptr));
 }
 
 }  // namespace async_simple::coro
 
-template <class T>
+template <class Ref, class V, class Allocator>
 inline constexpr bool
-    std::ranges::enable_view<async_simple::coro::Generator<T>> = true;
+    std::ranges::enable_view<async_simple::coro::Generator<Ref, V, Allocator>> =
+        true;
 
 #endif

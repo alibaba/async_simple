@@ -84,28 +84,40 @@ public:
             co_yield start++;
         }
     }
-};
 
-TEST_F(GeneratorTest, testOperator) {
-    size_t n = 16;
-    auto gen = fibonacci_sequence(n);
-    for (int j = 0; gen; ++j) {
-        EXPECT_EQ(gen(), fibonacci_expected[j]);
+    // These examples show different usages of reference/value_type
+    // template parameters
+
+    // value_type = std::unique_ptr<int>
+    // reference = std::unique_ptr<int>&&
+    Generator<std::unique_ptr<int>&&> unique_ints(const int high) {
+        for (auto i = 0; i < high; ++i) {
+            co_yield std::make_unique<int>(i);
+        }
     }
-}
+
+    // value_type = std::string_view
+    // reference = std::string_view
+    Generator<std::string_view, std::string_view> string_views() {
+        co_yield "foo";
+        co_yield "bar";
+    }
+
+    Generator<std::string_view, std::string> strings() {
+        co_yield "start";
+        std::string s;
+        for (auto sv : string_views()) {
+            s = sv;
+            s.push_back('!');
+            co_yield s;
+        }
+        co_yield "end";
+    }
+};
 
 TEST_F(GeneratorTest, testIterator) {
     size_t n = 15;
     for (int j = 0; int i : fibonacci_sequence(n)) {
-        EXPECT_EQ(i, fibonacci_expected[j++]);
-    }
-}
-
-TEST_F(GeneratorTest, testGenerate) {
-    std::size_t n = 10;
-    std::vector<int> vec(n);
-    std::generate(vec.begin(), vec.end(), fibonacci_sequence(n));
-    for (int j = 0; int i : vec) {
         EXPECT_EQ(i, fibonacci_expected[j++]);
     }
 }
@@ -122,37 +134,23 @@ TEST_F(GeneratorTest, testRange) {
 }
 #endif  // __clang__
 
+TEST_F(GeneratorTest, testExample) {
+    int j = 0;
+    for (auto&& i : unique_ints(15)) {
+        EXPECT_EQ(*i, j++);
+    }
+    EXPECT_EQ(j, 15);
+
+    for (auto sv : strings()) {
+        std::cout << sv << std::endl;
+    }
+}
+
 TEST_F(GeneratorTest, testException) {
     size_t n = 95;
-    try {
-        auto gen = fibonacci_sequence(n);
-        for (int j = 0; gen; ++j) {
-            EXPECT_EQ(gen(), fibonacci_expected[j]);
-        }
-        EXPECT_FALSE(true);
-    } catch (const std::runtime_error& ex) {
-        EXPECT_STREQ(ex.what(),
-                     "Too big Fibonacci sequence. Elements would overflow.");
-    } catch (...) {
-        EXPECT_FALSE(true);
-    }
 
     try {
         for (int j = 0; auto i : fibonacci_sequence(n)) {
-            EXPECT_EQ(i, fibonacci_expected[j++]);
-        }
-        EXPECT_FALSE(true);
-    } catch (const std::runtime_error& ex) {
-        EXPECT_STREQ(ex.what(),
-                     "Too big Fibonacci sequence. Elements would overflow.");
-    } catch (...) {
-        EXPECT_FALSE(true);
-    }
-
-    try {
-        std::vector<int> vec(n);
-        std::generate(vec.begin(), vec.end(), fibonacci_sequence(n));
-        for (int j = 0; auto i : vec) {
             EXPECT_EQ(i, fibonacci_expected[j++]);
         }
         EXPECT_FALSE(true);
@@ -166,33 +164,9 @@ TEST_F(GeneratorTest, testException) {
 
 TEST_F(GeneratorTest, testLuckException) {
     size_t n = 55;
-    try {
-        auto gen = fibonacci_sequence(n);
-        for (int j = 0; gen; ++j) {
-            EXPECT_EQ(gen(), fibonacci_expected[j]);
-        }
-        EXPECT_FALSE(true);
-    } catch (const std::logic_error& ex) {
-        EXPECT_STREQ(ex.what(), "Exception thrown in the middle of the test.");
-    } catch (...) {
-        EXPECT_FALSE(true);
-    }
 
     try {
         for (int j = 0; auto i : fibonacci_sequence(n)) {
-            EXPECT_EQ(i, fibonacci_expected[j++]);
-        }
-        EXPECT_FALSE(true);
-    } catch (const std::logic_error& ex) {
-        EXPECT_STREQ(ex.what(), "Exception thrown in the middle of the test.");
-    } catch (...) {
-        EXPECT_FALSE(true);
-    }
-
-    try {
-        std::vector<int> vec(n);
-        std::generate(vec.begin(), vec.end(), fibonacci_sequence(n));
-        for (int j = 0; auto i : vec) {
             EXPECT_EQ(i, fibonacci_expected[j++]);
         }
         EXPECT_FALSE(true);
@@ -209,12 +183,7 @@ TEST_F(GeneratorTest, testNoDefaultConstruct) {
         A() = delete;
     };
     auto lambda = []() -> Generator<A> { co_yield 1; };
-    for (auto& a : lambda()) {
-        (void)a;
-    }
-    auto gen = lambda();
-    while (gen) {
-        auto a = gen();
+    for (auto&& a : lambda()) {
         (void)a;
     }
 }
@@ -227,12 +196,6 @@ TEST_F(GeneratorTest, testYieldMultiValue) {
     };
 
     for (const auto& [i, str_i] : lambda()) {
-        EXPECT_EQ(i, std::stoi(str_i));
-    }
-
-    auto gen = lambda();
-    while (gen) {
-        auto [i, str_i] = gen();
         EXPECT_EQ(i, std::stoi(str_i));
     }
 }
@@ -251,18 +214,9 @@ TEST_F(GeneratorTest, testNoMoveClass) {
         co_yield a;
     };
 
-    for (auto& a : lambda()) {
+    for (auto&& a : lambda()) {
         (void)a;
     }
-
-    // Can't move, so can't use.
-    // This is exactly the difference between the iterator pattern and
-    // `operator()`. The iterator returns T&, but `operator()` returns T
-
-    // auto gen = lambda();
-    // while (gen) {
-    //     (void)gen();
-    // }
 }
 
 TEST_F(GeneratorTest, testNoCopyClass) {
@@ -275,13 +229,8 @@ TEST_F(GeneratorTest, testNoCopyClass) {
 
     auto lambda = []() -> Generator<A> { co_yield A{}; };
 
-    for (auto& a : lambda()) {
+    for (auto&& a : lambda()) {
         (void)a;
-    }
-
-    auto gen = lambda();
-    while (gen) {
-        (void)gen();
     }
 }
 
