@@ -113,6 +113,56 @@ public:
         }
         co_yield "end";
     }
+    
+    struct TreeNode {
+        int value;
+        TreeNode* left;
+        TreeNode* right;
+        TreeNode() : value(0), left(nullptr), right(nullptr) {}
+        TreeNode(int x) : value(x), left(nullptr), right(nullptr) {}
+        TreeNode(int x, TreeNode* left, TreeNode* right)
+            : value(x), left(left), right(right) {}
+    };
+
+    // Recursive generator
+
+    Generator<int> visit(TreeNode& tree) {
+        if (tree.left)
+            co_yield ranges::elements_of{visit(*tree.left)};
+        co_yield tree.value;
+        if (tree.right)
+            co_yield ranges::elements_of{visit(*tree.right)};
+    }
+
+    Generator<int> slow_visit(TreeNode& tree) {
+        if (tree.left) {
+            for (int x : slow_visit(*tree.left))
+                co_yield x;
+        }
+        co_yield tree.value;
+        if (tree.right) {
+            for (int x : slow_visit(*tree.right))
+                co_yield x;
+        }
+    }
+
+    Generator<const std::string&> delete_rows(std::string table,
+                                              std::vector<int> ids) {
+        for (int id : ids) {
+            // co_yield std::format("DELETE FROM {0} WHERE id = {1};", table,
+            // id);
+            co_yield "DELETE FROM " + table +
+                " WHERE id = " + std::to_string(id) + ";";
+        }
+    }
+
+    Generator<const std::string&> all_queries() {
+        std::vector<int> ids1{4, 5, 6, 7};
+        std::vector<int> ids2{11, 19};
+        co_yield ranges::elements_of{delete_rows("user", ids1)};
+        co_yield ranges::elements_of{delete_rows("order", ids2)};
+        co_return;
+    }
 };
 
 TEST_F(GeneratorTest, testIterator) {
@@ -144,6 +194,48 @@ TEST_F(GeneratorTest, testExample) {
     for (auto sv : strings()) {
         std::cout << sv << std::endl;
     }
+
+    auto f = []() -> Generator<int, int> {
+        std::vector<int> array{9, 2, 0};
+        co_yield ranges::elements_of{array};
+    };
+
+    std::array expect = {9, 2, 0};
+    for (int k = 0; int i : f()) {
+        EXPECT_EQ(expect[k++], i);
+    }
+
+    for (auto&& str : all_queries()) {
+        std::cout << str << std::endl;
+    }
+}
+
+TEST_F(GeneratorTest, testRecursion) {
+    /*
+                [7]
+               /  \
+             [3] [15]
+                 / \
+              [9] [20]
+    */
+    TreeNode node_3(9), node_4(20);
+    TreeNode node_1(3), node_2(15, &node_3, &node_4);
+    TreeNode root(7, &node_1, &node_2);
+
+    std::vector<int> vec1;
+    std::vector<int> vec2;
+
+    for (int i : slow_visit(root)) {
+        vec1.push_back(i);
+    }
+    EXPECT_TRUE(std::is_sorted(vec1.begin(), vec1.end()));
+
+    for (int i : visit(root)) {
+        vec2.push_back(i);
+    }
+    EXPECT_TRUE(std::is_sorted(vec2.begin(), vec2.end()));
+
+    EXPECT_EQ(vec1, vec2);
 }
 
 TEST_F(GeneratorTest, testException) {
