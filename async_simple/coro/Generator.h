@@ -21,12 +21,12 @@
 #include <concepts>
 #include <cstddef>
 #include <exception>
-#include <memory>
 #include <ranges>
 #include <type_traits>
 #include <utility>
 
 #include "async_simple/Common.h"
+#include "async_simple/coro/PromiseAllocator.h"
 #include "async_simple/experimental/coroutine.h"
 
 namespace async_simple::ranges {
@@ -236,7 +236,8 @@ protected:
 
 template <class Ref, class V, class Allocator>
 class Generator<Ref, V, Allocator>::promise_type
-    : public detail::gen_promise_base<yielded> {
+    : public detail::gen_promise_base<yielded>,
+      public detail::PromiseAllocator<Allocator> {
 public:
     using Base = detail::gen_promise_base<yielded>;
 

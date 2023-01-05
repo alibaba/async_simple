@@ -103,6 +103,7 @@ else()
         -std=c++20
         -D_GLIBCXX_USE_CXX11_ABI=1
         -Wno-deprecated-register
+        -Wno-mismatched-new-delete
         -D_FILE_OFFSET_BITS=64
         -fPIC
         -Wall

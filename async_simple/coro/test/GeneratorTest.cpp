@@ -163,6 +163,59 @@ public:
         co_yield ranges::elements_of{delete_rows("order", ids2)};
         co_return;
     }
+
+    template <typename T>
+    struct stateful_allocator {
+        using value_type = T;
+
+        int id;
+
+        explicit stateful_allocator(int id) noexcept : id(id) {}
+
+        template <typename U>
+        stateful_allocator(const stateful_allocator<U>& x) : id(x.id) {}
+
+        T* allocate(std::size_t count) {
+            std::printf("stateful_allocator(%i).allocate(%zu)\n", id, count);
+            return std::allocator<T>().allocate(count);
+        }
+
+        void deallocate(T* ptr, std::size_t count) noexcept {
+            std::printf("stateful_allocator(%i).deallocate(%zu)\n", id, count);
+            std::allocator<T>().deallocate(ptr, count);
+        }
+
+        template <typename U>
+        bool operator==(const stateful_allocator<U>& x) const {
+            return this->id == x.id;
+        }
+    };
+
+    Generator<int, void, std::allocator<std::byte>> stateless_example() {
+        co_yield 42;
+    }
+
+    Generator<int, void, std::allocator<std::byte>> stateless_example(
+        std::allocator_arg_t, std::allocator<std::byte>) {
+        co_yield 42;
+    }
+
+    Generator<int> stateless_void_example(std::allocator_arg_t,
+                                          std::allocator<std::byte>) {
+        co_yield 42;
+    }
+
+    template <typename Allocator>
+    Generator<int, void, Allocator> stateful_alloc_example(std::allocator_arg_t,
+                                                           Allocator) {
+        co_yield 42;
+    }
+
+    template <typename Allocator>
+    Generator<int> stateful_alloc_void_example(std::allocator_arg_t,
+                                               Allocator) {
+        co_yield 42;
+    }
 };
 
 TEST_F(GeneratorTest, testIterator) {
@@ -208,6 +261,18 @@ TEST_F(GeneratorTest, testExample) {
     for (auto&& str : all_queries()) {
         std::cout << str << std::endl;
     }
+
+    std::printf("\nstateless_alloc examples\n");
+
+    stateless_example();
+    stateless_example(std::allocator_arg, std::allocator<float>{});
+    stateless_void_example(std::allocator_arg, std::allocator<float>{});
+
+    std::printf("\nstateful_alloc example\n");
+
+    stateful_alloc_example(std::allocator_arg, stateful_allocator<double>{42});
+    stateful_alloc_void_example(std::allocator_arg,
+                                stateful_allocator<double>{42});
 }
 
 TEST_F(GeneratorTest, testRecursion) {
