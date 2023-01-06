@@ -47,6 +47,28 @@ concept HasRealPointers = std::same_as<Alloc, void> ||
     std::is_pointer_v<typename std::allocator_traits<Alloc>::pointer>;
 // clang-format on
 
+/**
+ * Implementation comes from [P2502R2]
+ * (https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2502r2.pdf)
+ *
+ * This class can be used as the base class of the coroutine promise_type class.
+ * It supports both stateless and stateful allocators.
+ * The proposed interface requires that, if an allocator is provided,
+ * it is the second argument to the coroutine function, immediately
+ * preceded by an argument of type std::allocator_arg_t. This approach
+ * is necessary to distinguish the allocator desired to allocate the coroutine
+ * state from allocators whose purpose is to be used in the body of the
+ * coroutine function.
+ *
+ * For Exmaple:
+ * Generator<int> stateless_void_example(std::allocator_arg_t,
+ *                                       std::allocator<std::byte>) {
+ *     co_yield 42;
+ * }
+ *
+ * stateless_void_example(std::allocator_arg, std::allocator<float>{});
+ *
+ */
 template <class Allocator>
 class PromiseAllocator {
 private:

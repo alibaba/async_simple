@@ -93,6 +93,209 @@ struct gen_promise_base;
 
 namespace async_simple::coro {
 
+// clang-format off
+/**
+ * Implementation comes from [P2502R2]
+ * (https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2502r2.pdf)
+ *
+ * Generator: Synchronous Coroutine Generator for Ranges.
+ * Synchronous generators are an important use case for coroutines.
+ * The Generator class represents a sequence of synchronously produced
+ * values where the values are produced by a coroutine. Generator is a
+ * move-only view which models input_range and has move-only iterators.
+ * This is because the coroutine state is a unique resource (even if the
+ * coroutine handle is copyable).
+ *
+ * Values are produced by using the 'co_yield' keyword.
+ * Using the 'co_await' keyword is not allowed In the body of Generator.
+ * The end of the sequence is indicated by executing 'co_return;' either
+ * explicitly or by letting execution run off the end of the coroutine.
+ * For example:
+ *
+ * Generator<int> answer() {
+ *   co_yield 42;
+ *   co_return;
+ * }
+ *
+ * Generator has 3 template parameters: Generator<Ref, V = void, Allocator = void>
+ * From Ref and V, we derive types:
+ * using value     = conditional_t<is_void_v<V>, remove_cvref_t<Ref>, V>;
+ * using reference = conditional_t<is_void_v<V>, Ref&&, Ref>;
+ * using yielded   = conditional_t<is_reference_v<reference>, reference, const reference&>;
+ *
+ * • value is a cv-unqualified object type that specifies the value type of the 
+ *   generator’s range and iterators
+ * • reference specifies the reference type (not necessarily a core language 
+ *   reference type) of the generator’s range and iterators, and it is the return 
+ *   value of the opeartor* member function of the generator's iterators.
+ * • yielded (necessarily a reference type) is the type of the parameter to the 
+ *   primary overload of yield_value in the generator’s associated promise type.
+ *
+ * Generator<meow>
+ * Our expectation is that 98% of use cases will need to specify only one 
+ * parameter. The resulting Generator:
+ * • has a value type of std::remove_cvref<meow>
+ * • has a reference type of meow, if it is reference type, or meow&& otherwise
+ * • has a yielded type of reference, because `std::is_reference_v<reference>` 
+ *   must be established at this time, but users don't need to care about this.
+ *  
+ *  // Following examples show difference between:
+    //
+    //                                 If I co_yield a...                reference     value
+    //                           X / X&&  | X&         | const X&
+    //                        ------------+------------+-----------
+    // - Generator<X>               (same as Generator<X&&>)              X&&           X
+    // - Generator<const X&>   ref        | ref        | ref              const X&     const X
+    // - Generator<X&&>        ref        | 1 copy     | 1 copy           X&&           X
+    // - Generator<X&>         ill-formed | ref        | ill-formed       X&            X
+    //
+ *
+ *  Generator<int> (same as Generator<int&&>)
+ *  Generator<int&&> xvalue_example() {
+ * [1]     co_yield 1;
+ * [2]     int x{2};
+ * [3]     co_yield x;             // well-formed: generated element is copy of lvalue
+ * [4]     const int y{3};         
+ * [5]     co_yield y;             // same as above
+ * [6]     int z{4};
+ * [7]     co_yield std::move(z);  // pass by rvalue reference.
+ *  }
+ *     
+ *  // Generator<int>::iterator operator* return type: 
+ *  //  -> Generator<int>::reference -> int&&
+ * 
+ *  for (auto&& i : xvalue_example()) { // auto -> int&&, no copy, no move
+ *      std::cout << i << std::endl;    // The variable z can still be used 
+ *                                      // after the sequence number 7
+ *  }
+ * 
+ *  for (auto i : xvalue_example()) {   // auto -> int
+ *      std::cout << i << std::endl;    // The variable z cannot be used 
+ *                                      // after the sequence number 7, 
+ *                                      // because it is moved. But the 
+ *                                      // variable x can still be used 
+ *                                      // after the sequence number 3,
+ *                                      // because the value returned by
+ *                                      // the iterator is the copied.
+ *  }
+ *  
+ *  // Pass by reference, no copy.
+ *  Generator<const int&> const_lvalue_example() {
+ *      co_yield 1;             // OK
+ *      const int x{2};
+ *      co_yield x;             // OK
+ *      co_yield std::move(x);  // OK: same as above
+ *      int y{3};
+ *      co_yield y;             // OK
+ *  }
+ * 
+ *  Geneartor<int&> lvalue_example() {
+ *      co_yield 1;             // ill-formed: prvalue -> non-const lvalue
+ *      int x{2};
+ *      co_yield x;             // OK
+ *      co_yield std::move(x);  // ill-formed: xvalue -> non-const lvalue
+ *      const int y{3};
+ *      co_yield y;             // ill-formed: const lvalue -> non-const lvalue
+ *  }
+ * 
+ * Generator<meow, woof>
+ * For the rare user who needs generator to step outside the box and use a 
+ * proxy reference type, or who needs to generate a range whose iterators 
+ * yield prvalues for whatever reason, we have two-argument generator. 
+ * If woof is void, this is generator<meow>. Otherwise, the resulting generator:
+ * 
+ * • has a value type of woof
+ * • has a reference type of meow
+ * // TODO: ...
+ *  
+ *  For example:
+ *  // value_type = std::string_view
+ *  // reference = std::string_view
+ *  // Generator::iterator operator* return type: std::string_view
+ *  // This can be expensive for types that are expensive to copy, 
+ *  // but can provide a small performance win for types that are cheap to copy 
+ *  // (like built-in integer types).
+ *  Generator<std::string_view, std::string_view> string_views() {
+ *      co_yield "foo";
+ *      co_yield "bar";
+ *  }
+ *  
+ *  // value_type = std::string
+ *  // reference = std::string_view
+ *  Generator<std::string_view, std::string> strings() {
+ *      co_yield "start";
+ *      std::string s;
+ *      for (auto sv : string_views()) {
+ *          s = sv;
+ *          s.push_back('!');
+ *          co_yield s;
+ *      }
+ *      co_yield "end";
+ *  }
+ * 
+ *  // conversion to a vector of strings
+ *  // If the value_type was string_view, it would convert to a vector of string_view,
+ *  // which would lead to undefined behavior operating on elements of v that were
+ *  // invalidated while iterating through the generator.
+ *  auto v = std::ranges::to<vector>(strings());
+ * 
+ * Allocator support: See async_simple/coro/PromiseAllocator.h
+ * 
+ * Recursive generator
+ * A "recursive generator" is a coroutine that supports the ability to directly co_yield 
+ * a generator of the same type as a way of emitting the elements of that generator as 
+ * elements of the current generator.
+ * 
+ * Example: A generator can co_yield other generators of the same type
+ * 
+ * Generator<const std::string&> delete_rows(std::string table, std::vector<int> ids) {
+ *     for (int id : ids) {
+ *         co_yield std::format("DELETE FROM {0} WHERE id = {1};", table, id);
+ *     }
+ * }
+ * 
+ * Generator<const std::string&> all_queries() {
+ *     co_yield std::ranges::elements_of(delete_rows("user", {4, 7, 9 10}));
+ *     co_yield std::ranges::elements_of(delete_rows("order", {11, 19}));
+ * }
+ * 
+ *  Example: A generator can also be used recursively
+ *  
+ *  Generator<int, int> visit(TreeNode& tree) {
+ *      if (tree.left)
+ *          co_yield ranges::elements_of{visit(*tree.left)};
+ *      co_yield tree.value;
+ *      if (tree.right)
+ *          co_yield ranges::elements_of{visit(*tree.right)};
+ *  }
+ * 
+ * In addition to being more concise, the ability to directly yield a nested generator 
+ * has some performance benefits compared to iterating over the contents of the nested 
+ * generator and manually yielding each of its elements.
+ * 
+ * Yielding a nested generator allows the consumer of the top-level coroutine to directly 
+ * resume the current leaf generator when incrementing the iterator, whereas a solution 
+ * that has each generator manually iterating over elements of the child generator requires 
+ * O(depth) coroutine resumptions/suspensions per element of the sequence.
+ * 
+ * Example:  Non-recursive form incurs O(depth) resumptions/suspensions per element 
+ * and is more cumbersome to write:
+ * 
+ *  Generator<int, int> slow_visit(TreeNode& tree) {
+ *      if (tree.left) {
+ *          for (int x : slow_visit(*tree.left))
+ *              co_yield x;
+ *      }
+ *      co_yield tree.value;
+ *      if (tree.right) {
+ *          for (int x : slow_visit(*tree.right))
+ *              co_yield x;
+ *      }
+ *  }
+ * 
+ */
+// clang-format on
+// See async_simple/coro/Generator.h
 template <class Ref, class V = void, class Allocator = void>
 class Generator {
 private:

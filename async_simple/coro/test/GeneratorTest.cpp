@@ -96,6 +96,7 @@ public:
         }
     }
 
+    // clang-format off
     // value_type = std::string_view
     // reference = std::string_view
     Generator<std::string_view, std::string_view> string_views() {
@@ -113,7 +114,8 @@ public:
         }
         co_yield "end";
     }
-    
+    // clang-format on
+
     struct TreeNode {
         int value;
         TreeNode* left;
