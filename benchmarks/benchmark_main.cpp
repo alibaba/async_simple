@@ -23,7 +23,14 @@
 #include "Mutex.bench.h"
 #include "PureSwitch.bench.h"
 #include "ReadFile.bench.h"
+#include "SpinLock.bench.h"
 
+BENCHMARK(SpinLock_coroutine_lock_bench);
+BENCHMARK(SpinLock_thread_lock_bench);
+BENCHMARK(SpinLock_diff_spin_count_bench)
+    ->RangeMultiplier(2)
+    ->Range(2 << 4, 2 << 10)
+    ->Iterations(3);
 BENCHMARK(Mutex_chain);
 BENCHMARK(Future_chain);
 BENCHMARK(Future_collectAll);

@@ -6,7 +6,8 @@ set(BENCHMARK_SRCS
         Lazy.bench.cpp
         Future.bench.cpp
         ThreadPool.bench.cpp
-        Mutex.bench.cpp)
+        Mutex.bench.cpp
+        SpinLock.bench.cpp)
 
 if (UTHREAD)
   list(APPEND BENCHMARK_SRCS Uthread.bench.cpp)
