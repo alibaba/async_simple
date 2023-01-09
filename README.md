@@ -111,7 +111,7 @@ cmake .. && sudo make install
 
 ## Compiler Requirement
 
-Required Compiler: clang (>= 13.0.0) or gcc (>= 10.3)
+Required Compiler: clang (>= 10.0.0) or gcc (>= 10.3) or Apple-clang (>= 14)
 
 Note that we need to add `-Wno-maybe-uninitialized` option when we use gcc12 due to a false positive diagnostic message by gcc12
 
