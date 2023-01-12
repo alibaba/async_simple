@@ -17,6 +17,26 @@
 #ifndef ASYNC_SIMPLE_CORO_GENERATOR_H
 #define ASYNC_SIMPLE_CORO_GENERATOR_H
 
+#if __has_include(<generator>)
+
+#include <generator>
+
+namespace async_simple::coro {
+
+template <class Ref, class V = void, class Allocator = void>
+using Generator = std::generator<Ref, V, AlloAllocator>;
+
+}  // namespace async_simple::coro
+
+namespace async_simple::ranges {
+
+template <class R, class Alloc = std::allocator<std::byte>>
+using elements_of = std::ranges::elements_of<R, Alloc>;
+
+}  // namespace async_simple::ranges
+
+#else
+
 #include <cassert>
 #include <concepts>
 #include <cstddef>
@@ -295,7 +315,6 @@ namespace async_simple::coro {
  * 
  */
 // clang-format on
-// See async_simple/coro/Generator.h
 template <class Ref, class V = void, class Allocator = void>
 class Generator {
 private:
@@ -597,4 +616,6 @@ inline constexpr bool
     std::ranges::enable_view<async_simple::coro::Generator<Ref, V, Allocator>> =
         true;
 
-#endif
+#endif  // __has_include(<generator>)
+
+#endif  // ASYNC_SIMPLE_CORO_GENERATOR_H
