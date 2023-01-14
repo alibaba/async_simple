@@ -17,7 +17,7 @@ jobs:
        fetch-depth: 0
     - name: install clang-format
       run:  |
-            pip3 install clang-format
+            sudo apt install -y clang-format
             clang-format --version
     - name: check-diff
       run: |
