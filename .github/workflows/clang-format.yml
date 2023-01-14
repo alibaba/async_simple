@@ -18,6 +18,7 @@ jobs:
     - name: install clang-format
       run:  |
             pip3 install clang-format
+            clang-format --version
     - name: check-diff
       run: |
            diff=`git-clang-format --diff HEAD^`
