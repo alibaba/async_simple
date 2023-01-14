@@ -35,8 +35,7 @@ namespace async_simple::coro {
 // makes the latch a single-use barrier.
 class Latch {
 public:
-    explicit Latch(std::size_t count) 
-        : count_(count) {}
+    explicit Latch(std::size_t count) : count_(count) {}
     ~Latch() = default;
     Latch(const Latch&) = delete;
     Latch& operator=(const Latch&) = delete;
