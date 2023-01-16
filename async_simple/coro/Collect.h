@@ -72,7 +72,7 @@ struct CollectAnyResult {
 
     // Require hasError() == false. Otherwise it is UB to call
     // value() method.
-#if __cplusplus > 202002L
+#if __cpp_explicit_this_parameter >= 202110L
     template <class Self>
     auto&& value(this Self&& self) {
         return std::forward<Self>(self)._value.value();
