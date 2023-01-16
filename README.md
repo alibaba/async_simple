@@ -209,7 +209,7 @@ Specifically, for defect report or feature enhancement, it'd be better to file a
 
 # How to Contribute
 1. Read the [How to fix issue](./docs/docs.en/HowToFixIssue.md) document firstly.
-2. Run tests and `git-clang-format HEAD^` locally for the change. Note that the  version of clang-format in CI is clang-format 15. So that it is possible your local 
+2. Run tests and `git-clang-format HEAD^` locally for the change. Note that the  version of clang-format in CI is clang-format 14. So that it is possible your local 
 format result is inconsistency with the format result in the CI. In the case, you need to install the new clang-format or adopt the suggested change by hand. In case the format result is not good, it is OK to accept the PR temporarily and file an issue for the clang-formt.
 3. Create a PR, fill in the PR template.
 4. Choose one or more reviewers from contributors: (e.g., ChuanqiXu9, RainMark, foreverhy, qicosmos).
