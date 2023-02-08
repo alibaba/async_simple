@@ -121,7 +121,7 @@ public:
         throw std::logic_error("Not implemented");
     }
 
-private:
+protected:
     virtual void schedule(Func func, Duration dur) {
         std::thread([this, func = std::move(func), dur]() {
             std::this_thread::sleep_for(dur);
