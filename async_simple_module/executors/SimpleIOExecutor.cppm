@@ -71,7 +71,7 @@ public:
     void loop() {
         while (!_shutdown) {
             io_event events[kMaxAio];
-            struct timespec timeout = {0, 1000 * 300};
+            // struct timespec timeout = {0, 1000 * 300};
             // The following call to io_getevents would cause a deadlock.
             // It should be a bug of aio.
             auto n = 0; //io_getevents(_ioContext, 1, kMaxAio, events, &timeout);
