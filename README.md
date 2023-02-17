@@ -198,6 +198,9 @@ After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with
 We also give a [Quantitative Analysis Report](docs/docs.en/QuantitativeAnalysisReportOfCoroutinePerformance.md) Of the
 Lazy (based on C++20 stackless coroutine) and the Uthread (based on stackful coroutine).
 
+# C++20 Modules Support
+
+We have experimental support for C++20 Modules in `modules/async_simple.cppm`. The `async_simple` module is built by `xmake`. We can find the related usage in `CountChar`, `ReadFiles`, `LazyTest.cpp` and `FutureTest.cpp`.
 
 # Questions
 

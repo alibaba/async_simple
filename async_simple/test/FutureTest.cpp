@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 #include <exception>
-
 #include <functional>
 #include <mutex>
+
 #include <vector>
+
+#ifdef USE_MODULES
+
+#include <atomic>
+#include "async_simple/test/unittest.h"
+import async_simple;
+#else
 #include "async_simple/Collect.h"
 #include "async_simple/Future.h"
 #include "async_simple/executors/SimpleExecutor.h"
 #include "async_simple/test/unittest.h"
+#endif
 
 using namespace std;
 using namespace async_simple::executors;
@@ -297,6 +305,9 @@ TEST_F(FutureTest, testVoid) {
     EXPECT_EQ(100, output);
 }
 
+// FIXME: It looks problematic to use `#include <thread>` with
+// `import async_simple;` now. There are some problem in the compiler side.
+#ifndef USE_MODULES
 TEST_F(FutureTest, testWait) {
     SimpleExecutor executor(5);
     int output;
@@ -385,6 +396,7 @@ TEST_F(FutureTest, testWaitCallback) {
     f.wait();
     ASSERT_EQ(6, std::move(f).get());
 }
+#endif
 
 TEST_F(FutureTest, testCollectAll) {
     SimpleExecutor executor(15);
@@ -482,6 +494,7 @@ TEST_F(FutureTest, testPromiseBroken) {
     EXPECT_TRUE(r.hasError());
 }
 
+#ifndef USE_MODULES
 TEST_F(FutureTest, testViaAfterWait) {
     Promise<int> promise;
     auto future = promise.getFuture();
@@ -496,6 +509,7 @@ TEST_F(FutureTest, testViaAfterWait) {
         [](int v) mutable { ASSERT_EQ(100, v); });
     t.join();
 }
+#endif
 
 TEST_F(FutureTest, testReadyFuture) {
     auto future = makeReadyFuture(3);
@@ -574,5 +588,4 @@ TEST_F(FutureTest, testThen) {
     p1.setValue(1);
     EXPECT_EQ(f1.value(), 4);
 }
-
 }  // namespace async_simple

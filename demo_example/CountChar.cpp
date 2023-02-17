@@ -18,8 +18,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#ifdef USE_MODULES
+import async_simple;
+#else
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SyncAwait.h"
+#endif
 
 using namespace async_simple::coro;
 
