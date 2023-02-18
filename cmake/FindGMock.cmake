@@ -22,7 +22,7 @@ if (NOT TARGET gmock)
 endif()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(gmock DEFAULT_MSG GMOCK_LIBRARIES GMOCK_INCLUDE_DIR)
+find_package_handle_standard_args(GMock DEFAULT_MSG GMOCK_LIBRARIES GMOCK_INCLUDE_DIR)
 
 MARK_AS_ADVANCED(
     GMOCK_INCLUDE_DIR

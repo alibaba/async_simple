@@ -22,7 +22,7 @@ if (NOT TARGET gtest)
 endif()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(gtest DEFAULT_MSG GTEST_LIBRARIES GTEST_INCLUDE_DIR)
+find_package_handle_standard_args(GTest DEFAULT_MSG GTEST_LIBRARIES GTEST_INCLUDE_DIR)
 
 MARK_AS_ADVANCED(
     GTEST_INCLUDE_DIR
