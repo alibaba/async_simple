@@ -1,3 +1,8 @@
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(APPEND CMAKE_CXX_FLAGS_RELEASE "-Wno-deprecated-declarations")
+    set(APPEND CMAKE_CXX_FLAGS_DEBUG "-Wno-deprecated-declarations")
+endif()
+
 add_executable(CountChar CountChar.cpp)
 target_link_libraries(CountChar async_simple)
 
