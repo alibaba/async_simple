@@ -38,7 +38,7 @@ jobs:
 
     - name: Build
       # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{matrix.mode}}
+      run: cmake --build ${{github.workspace}}/build --config ${{matrix.mode}} -j --verbose
 
     - name: Test
       working-directory: ${{github.workspace}}/build
