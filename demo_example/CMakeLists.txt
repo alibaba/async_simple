@@ -6,6 +6,12 @@ endif()
 add_executable(CountChar CountChar.cpp)
 target_link_libraries(CountChar async_simple)
 
+if (${ASYNC_SIMPLE_BUILD_MODULES})
+    add_executable(CountCharUsingModules CountChar.cpp)
+    target_compile_definitions(CountCharUsingModules PUBLIC USE_MODULES)
+    target_link_libraries(CountCharUsingModules async_simple_modules)
+endif()
+
 add_executable(ReadFiles ReadFiles.cpp)
 target_link_libraries(ReadFiles async_simple)
 

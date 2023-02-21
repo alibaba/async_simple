@@ -179,10 +179,27 @@ else()
 endif()
 
 add_subdirectory(async_simple)
+
+option(ASYNC_SIMPLE_BUILD_MODULES "Build async_simple library in C++20 Modules form" OFF)
+if(${ASYNC_SIMPLE_BUILD_MODULES}) 
+    set(CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API "2182bf5c-ef0d-489a-91da-49dbc3090d2a")
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        include(cxx_modules_rules_clang.cmake)
+    endif()
+
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+
+    add_subdirectory(modules)
+endif()
+
 option(ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE "Build the demo example" ON)
 if (ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE)
     add_subdirectory(demo_example)
 endif ()
+
 if (BENCHMARK_INCLUDE_DIR AND BENCHMARK_LIBRARIES)
     message(STATUS "Building benchmarks")
     add_subdirectory(benchmarks)
