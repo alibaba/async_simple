@@ -192,6 +192,28 @@ CXX=g++-11 CC=gcc-11 cmake .. -DCMAKE_BUILD_TYPE=Release
 
 关于基于C++20无栈协程（Lazy）和有栈协程（Uthread）的性能定量分析，详见[定量分析报告](./docs/docs.cn/基于async_simple的协程性能定量分析.md)。
 
+# C++20 Modules
+
+我们在 `modules/async_simple.cppm` 中对 C++20 Modules 做了实验性质的支持。`async_simple` Module 可被 `xmake` 和 `cmake` 编译。我们可以在 `CountChar`, `ReadFiles`, `LazyTest.cpp` 以及 `FutureTest.cpp` 中找到相关的使用方法。
+
+我们需要 clang16 (或 commit 号大于 d18806e6733) 来构建 `async_simple` Module。该功能只在 `libstdc++10.3` 中测试过。鉴于目前 Modules 的支持状况，如果在其他版本的标准库中无法正常使用 `async_simple` Module 并不意外。
+
+我们可以用 xmake (>= 0eccc6e) 来构建 `async_simple` Module：
+
+```
+xmake
+```
+
+我们可以用 cmake (>= d18806e673 或 cmake3.26)来构建 `async_simple` Module：
+
+```
+mkdir build_modules && cd build_modules
+CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Release -DASYNC_SIMPLE_BUILD_MODULES=ON -GNinja
+ninja
+```
+
+**需要注意:** 出于兼容性考虑，目前 main 分支中的 `async_simple` Module 本质上只是将 `async_simple` 的头文件封装为了 `Named Modules` 而已。我们可以在  https://github.com/alibaba/async_simple/tree/CXX20Modules 中找到更完整的 `Named Modules` 使用方式。该分支中同样包含 xmake 和 cmake 的支持。
+
 # 存在问题？
 
 如果在使用时遇到任何问题，我们建议先阅读 [文档](./docs/docs.cn), [issues](https://github.com/alibaba/async_simple/issues)
