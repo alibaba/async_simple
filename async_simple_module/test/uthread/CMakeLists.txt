@@ -3,4 +3,4 @@ add_executable(async_simple_uthread_test ../dotest.cpp ${test_src})
 
 target_link_libraries(async_simple_uthread_test async_simple ${deplibs} ${testdeplibs})
 
-add_test(NAME run_async_simple_test COMMAND async_simple_uthread_test)
+add_test(NAME run_async_simple_uthread_test COMMAND async_simple_uthread_test)

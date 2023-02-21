@@ -14,19 +14,36 @@ behavior is still fine. The demo_example_module provides some demo examples
 (including some sync/async http client/servers) by using async_simple module, std module and
 asio module.
 
-# Build System
-
-Due to the lack of modules support for C++20 modules in linux environments,
-the build script is written in Makefile.
-
 # ToolChain requirement
 
 Compiler: clang15.x
 STL Libraries: libstdc++10.3
 Other dependencies: libaio, gtest, gmock
 
+# Build System
+
+Now we can use cmake (higher or equal than d18806e67336d96a9a22b860), xmake (higher or equal than 0eccc6e) and Makefile to build this demo.
+
+If you choose cmake or xmake to build the project, the compiler should be clang16 (or higher than 64287d69827c).
+
 # How to run
 
+## Make
 ```
 make -j
+```
+
+## XMake
+
+```
+xmake && xmake -r
+```
+
+## CMake
+
+```
+mkdir build_cmake && cd build_cmake
+cmake .. -GNinja
+ninja
+ninja test
 ```
