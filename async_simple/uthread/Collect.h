@@ -63,14 +63,30 @@ auto collectAll(Iterator first, Iterator last, Executor* ex) {
         std::conditional_t<IfReturnVoid, void, std::vector<ValueType>>;
 
     struct Context {
+#ifndef NDEBUG
         std::atomic<std::size_t> tasks;
+#endif
         std::conditional_t<IfReturnVoid, bool, ResultType> result;
         Promise<ResultType> promise;
 
         Context(std::size_t n, Promise<ResultType>&& pr)
-            : tasks(n), promise(pr) {
+            :
+#ifndef NDEBUG
+            tasks(n),
+#endif
+            promise(pr) {
             if constexpr (!IfReturnVoid)
                 result.resize(n);
+        }
+
+        ~Context() {
+#ifndef NDEBUG
+            assert(tasks == 0);
+#endif
+            if constexpr (IfReturnVoid)
+                promise.setValue();
+            else
+                promise.setValue(std::move(result));
         }
     };
 
@@ -87,16 +103,9 @@ auto collectAll(Iterator first, Iterator last, Executor* ex) {
                     } else {
                         context->result[i] = std::move(f());
                     }
-                    auto lastTasks =
-                        context->tasks.fetch_sub(1u, std::memory_order_acq_rel);
-                    if (lastTasks == 1u) {
-                        if constexpr (IfReturnVoid) {
-                            context->promise.setValue();
-                        } else {
-                            context->promise.setValue(
-                                std::move(context->result));
-                        }
-                    }
+#ifndef NDEBUG
+                    context->tasks.fetch_sub(1u, std::memory_order_acq_rel);
+#endif
                 },
                 ex);
         }
