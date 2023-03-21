@@ -35,20 +35,14 @@ jobs:
         run: echo "${{ steps.conan.outputs.version }}"
 
       - name: Generate conan profile
-        run: CXX=clang++ CC=clang conan profile new ~/.conan/profiles/clang_tmp --detect
-
-      - name: Update conan profile
-        run: conan profile update settings.compiler.libcxx=libstdc++11 ~/.conan/profiles/clang_tmp
-
-      - name: Print conan profile
-        run: cat ~/.conan/profiles/clang_tmp
+        run: CXX=clang++ CC=clang conan profile detect --name clang_tmp
 
       - name: Install deps
         run: conan install ${{github.workspace}} -pr:b=clang_tmp -pr=clang_tmp -o header_only=False
 
       - name: Build
         # Build your program with the given configuration
-        run: CXX=clang++ CC=clang conan build ${{github.workspace}}
+        run: CXX=clang++ CC=clang conan build ${{github.workspace}} -pr:b=clang_tmp -pr=clang_tmp -o header_only=False
 
       - name: Test
         working-directory: ${{github.workspace}}/build/${{env.BUILD_TYPE}}
