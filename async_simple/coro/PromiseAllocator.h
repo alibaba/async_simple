@@ -123,7 +123,7 @@ public:
         return Allocate(static_cast<Alloc>(static_cast<Allocator>(al)), size);
     }
 
-    static void operator delete(void* const ptr, const size_t size) noexcept {
+    static void operator delete(void* const ptr, size_t size) noexcept {
         if constexpr (std::default_initializable<Alloc> &&
                       std::allocator_traits<Alloc>::is_always_equal::value) {
             // make stateless allocator
@@ -237,7 +237,7 @@ public:
     }
 
     static void operator delete(void* const ptr,
-                                const std::size_t size) noexcept {
+                                std::size_t size) noexcept {
         DeallocFn dealloc;
         ::memcpy(&dealloc, static_cast<const char*>(ptr) + size,
                  sizeof(DeallocFn));
