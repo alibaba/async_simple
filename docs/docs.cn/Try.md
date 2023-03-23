@@ -9,7 +9,7 @@ Try 的 idea 和实现来自 Facebook 的 Folly 库。
 Try 有三种状态：无状态、有异常、有值。
 
 使用默认构造函数构造的 Try 的状态为无状态，可以使用 `.available()` 接口检测。例如：
-```C++
+```cpp
 void foo() {
     Try<int> t;
     assert(!t.available());
@@ -19,7 +19,7 @@ void foo() {
 
 同时可以使用 `hasError()` 判断是否存在异常。
 
-```C++
+```cpp
 void foo() {
     Try<int> t(std::make_exception_ptr(std::runtime_error("")));
     assert(t.hasError());
@@ -28,7 +28,7 @@ void foo() {
 ```
 
 同时可以使用 `getException()` 与 `value()` 获取 Try 中的异常与值。例如:
-```C++
+```cpp
 void foo() {
     Try<int> t(std::make_exception_ptr(std::runtime_error("")));
     std::exception_ptr e = t.getException()
@@ -39,7 +39,7 @@ void foo() {
 ```
 
 同时需要注意，如果在 Try 对象处于有异常状态时使用 `value()` 取值，会直接抛出异常：
-```C++
+```cpp
 void foo() {
     Try<int> t(std::make_exception_ptr(std::runtime_error("")));
     int res = t.value(); // 抛出异常！

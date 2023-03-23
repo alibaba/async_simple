@@ -6,7 +6,7 @@ Executor is the key component for shceduling coroutine. A lot of the open-source
 
 It is easy to assign a coroutine instance to an executor. The user need to pass the executor to coroutine only. The users could assign an executor to a Lazy by `via/setEx`. They could use `async` to pass Executor to Uthread.
 
-```c++
+```cpp
 Executor e;
 
 // lazy
@@ -24,7 +24,7 @@ The readers could read Lazy and Uthread documentation for details.
 
 Executor defines following interfaces.
 
-```c++
+```cpp
 class Executor {
 public:
     using Func = std::function<void()>;

@@ -27,3 +27,8 @@ coro_trace.log
 test.h
 bazel-*
 !.bazelrc
+cmake-build-debug
+!docs/.vitepress
+docs/.vitepress/cache
+docs/public
+node_modules

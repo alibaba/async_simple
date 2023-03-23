@@ -1,12 +1,12 @@
-## Executor
+# Executor
 
 Executor是调度协程的关键组件。绝大多数开源协程框架提供内置的调度器，一般包含线程池和调度策略。基于这些协程框架开发时，用户不得不抛弃原有调度器。考虑到这一点，async_simple 设计一套抽象API接口，解耦合了Executor与协程。用户实现这些抽象API接口即可将自己的调度器接入 async_simple，Lazy和Uthread协程在运行时则通过这些接口被调度执行。
 
-### 使用Executor
+## 使用Executor
 
 让协程运行在指定的调度器中非常简单，只需要创建协程时传递Executor给协程即可。在Lazy中通过`via()/setEx()`可以传递Executor；在Uthread中设置`async()`的Executor参数传递。
 
-```c++
+```cpp
 Executor e;
 
 // lazy
@@ -19,13 +19,13 @@ uthread::async<uthread::Launch::Schedule>(<lambda>, &e);
 
 具体可以查看Lazy和Uthread相关文档。
 
-### 实现Executor
+## 实现Executor
 
-#### 接口定义
+### 接口定义
 
 Executor定义了如下相关接口。
 
-```c++
+```cpp
 class Executor {
 public:
     using Func = std::function<void()>;
@@ -49,7 +49,7 @@ public:
 - `virtual IOExecutor* getIOExecutor() = 0;` 接口返回IOExecutor，用于异步提交IO请求。
   - 继承实现IOExecutor中submitIO相关接口，用于对接不同异步IO引擎。IOExecutor接口简单，这里不展开阐述。
 
-#### SimpleExecutor
+### SimpleExecutor
 
 SimpleExecutor 为 async_simple 单元测试中使用的 Executor。SimpleExecutor 实现前面提到的Executor接口，包含`ThreadPool.h`中固定线程数的线程池，还包含 SimpleIOExecutor 用于异步提交本地IO请求。用户可以参考 SimpleExecutor 实现来接入业务的私有 Executor。
 

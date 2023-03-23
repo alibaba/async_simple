@@ -24,7 +24,7 @@
 
 ## 测试结果与分析
 
-测试用例见[benchmark](../../benchmarks)。
+测试用例见[benchmark](https://github.com/alibaba/async_simple/tree/main/benchmarks)。
 
 ### 语言角度的切换
 
@@ -49,7 +49,7 @@
 读不同大小的文件，每个任务只读一个文件，读完文件所有内容，使用相同libaio库。
 每次测试时任务数目相同，读取的文件大小不同。
 
-![](read_diff_size.png)
+![](images/read_diff_size.png)
 
 并行读多个文件，每个文件大小4KiB。
 每次测试时，读取的文件大小相同，任务数目不同。

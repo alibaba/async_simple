@@ -6,7 +6,7 @@ Lazy is implemented by C++20 stackless coroutine. A Lazy is a lazy-evaluated com
 
 We need to include `<async_simple/coro/Lazy.h>` first to use Lazy. And we need to implement a function whose return type is `Lazy<T>`. Like:
 
-```C++
+```cpp
 #include <async_simple/coro/Lazy.h>
 Lazy<int> task1(int x) {
     co_return x; // A function with co_return is a coroutine function.
@@ -15,7 +15,7 @@ Lazy<int> task1(int x) {
 
 We could `co_await` other `awaitable` objects in Lazy:
 
-```C++
+```cpp
 #include <async_simple/coro/Lazy.h>
 Lazy<int> task2(int x) {
     co_await std::suspend_always{};
@@ -31,7 +31,7 @@ We could start a Lazy by `co_await`, `syncAwait` and `.start(callback)`.
 
 For example:
 
-```C++
+```cpp
 #include <async_simple/coro/Lazy.h>
 Lazy<int> task1(int x) {
     co_return x;
@@ -57,7 +57,7 @@ Another thing we need to note is that the function contains a `co_await` would b
 ### .start(callback)
 
 For example:
-```C++
+```cpp
 #include <async_simple/coro/Lazy.h>
 #include <iostream>
 Lazy<int> task1(int x) {
@@ -84,7 +84,7 @@ The `callback` in `Lazy<T>::start(callback)` need to be a [callable](https://en.
 By design, `start` should be a non-blocking asynchronous interface. Semantically, user could image `start` would return immediately. User shouldn't assume when `start` would return. It depends on how the Lazy would execute actually.
 
 In case the `callback` isn't needed, we could write:
-```C++
+```cpp
 task().start([](auto&&){});
 ```
 
@@ -92,7 +92,7 @@ task().start([](auto&&){});
 
 For example:
 
-```C++
+```cpp
 #include <async_simple/coro/Lazy.h>
 Lazy<int> task1(int x) {
     co_return x;
@@ -115,7 +115,7 @@ For the object `task` whose type is `Lazy<T>`, the type of `co_await task` would
 
 For example:
 
-```C++
+```cpp
 Lazy<int> foo() {
     throw std::runtime_error("test");
     co_return 1;
@@ -141,7 +141,7 @@ Note that it is not a good practice to wrap `co_await` by `try...catch` statemen
 
 For example:
 
-```C++
+```cpp
 Lazy<int> foo() {
     throw std::runtime_error("test");
     co_return 1;
@@ -175,7 +175,7 @@ If there is an exception happened in the chain of Lazies, the exception would be
 
 If we want to handle the exception in place when we awaits exception, we could use `coAwaitTry` method. For example:
 
-```C++
+```cpp
 Lazy<int> foo() {
     throw std::runtime_error("test");
     co_return 1;
@@ -200,7 +200,7 @@ Semantically, RescheduleLazy is a Lazy with an executor. `RescheduleLazy` only s
 
 We couldn't create RescheduleLazy directly. And RescheduleLazy couldn't be the return type of a coroutine. We could only get the RescheduleLazy by the `via` method of `Lazy`. For example:
 
-```C++
+```cpp
 void foo() {
     executors::SimpleExecutor e1(1);
     auto addOne = [&](int x) -> Lazy<int> {
@@ -218,7 +218,7 @@ We could use Lazy only to write a seris of computation tasks. And we could assig
 
 For example:
 
-```C++
+```cpp
 #include <async_simple/coro/Lazy.h>
 #include <iostream>
 Lazy<int> task1(int x) {
@@ -260,7 +260,7 @@ We can get the current executor in a Lazy by `co_await async_simple::CurrentExec
 
 It is a common need to wait for a lot of tasks. We could use `collectAll` to do this. For example:
 
-```C++
+```cpp
 Lazy<int> foo() {
     std::vector<Lazy<int>> input;
     input.push_back(ComputingTask(1));
@@ -282,7 +282,7 @@ Lazy<int> foo() {
 
 The example for the second type:
 
-```C++
+```cpp
 Lazy<int> computeInt();
 Lazy<double> computeDouble();
 Lazy<std::string> computeString();
@@ -312,7 +312,7 @@ Here let's talk more about `collectAllPara`. Note that the current coroutine nee
 
 For example:
 
-```C++
+```cpp
 Lazy<int> foo() {
     std::vector<Lazy<int>> input;
     input.push_back(ComputingTask(1));
@@ -340,7 +340,7 @@ When we need to execute concurrent tasks in batches. We could use `collectAllWin
 
 For example:
 
-```C++
+```cpp
 Lazy<int> sum(std::vector<Try<int>> input);
 Lazy<int> batch_sum(size_t total_number, size_t batch_size)  {
     std::vector<Lazy<int>> input;
@@ -369,7 +369,7 @@ If LazyType is `Lazy<T>`, `collectAny` will execute the corresponding task in th
 
 It depends on the use case and the implementation of Executor to choose `Lazy<T>` or `RescheduleLazy<T>`. If it takes a little time to reach the first possible suspend point, it may be better to use `Lazy<T>`. For example,
 
-```C++
+```cpp
 bool should_get_value();
 int default_value();
 Lazy<int> conditionalWait() {
@@ -393,7 +393,7 @@ In this example, it takes a short time to reach the first suspend point. And it 
 But if it takes a long time to reash the first suspend point, maybe it is better to use `RescheduleLazy<T>`.
 
 
-```C++
+```cpp
 void prepare_for_long_time();
 Lazy<int> another_long_computing();
 Lazy<int> long_computing() {
@@ -416,7 +416,7 @@ In this case, every task is heavier. And if we use `Lazy<T>`, it is possible tha
 #### CollectAnyResult
 
 The structure of `CollectAnyResult` would be:
-```C++
+```cpp
 template <typename T>
 struct CollectAnyResult<void> {
     size_t _idx;
@@ -440,7 +440,7 @@ struct CollectAnyResult<void> {
 
 For exmaple:
 
-```C++
+```cpp
 Lazy<void> foo() {
     std::vector<Lazy<int>> input;
     input.push_back(ComputingTask(1));

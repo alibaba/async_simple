@@ -8,7 +8,7 @@ async\_simple中实现的条件变量类似于C++标准库中`std::condition_var
 
 - 条件变量需要配合一个互斥锁来使用。互斥锁用于保证更改条件和查询条件这些操作原子性。可以用任意一种带有`coLock()/unlock()`方法的互斥锁配合条件变量使用。下面展示了用自旋锁配合条件变量用法。
 
-```c++
+```cpp
 #include <async_simple/coro/ConditionVariable.h>
 
 using namespace async_simple::coro;
@@ -39,7 +39,7 @@ Lazy<> consumer() {
 ### Notifier
 - 当条件变量中条件只是true/false这种情况时，条件变量可以退化为Notifier。Notifier不依赖外部互斥锁。
 
-```c++
+```cpp
 #include <async_simple/coro/ConditionVariable.h>
 
 using namespace async_simple::coro;

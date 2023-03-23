@@ -1,6 +1,6 @@
 We need to offer multiple interfaces for an method implemented in stackless coroutine to make it could be used by different users.
 For example, we implement a `Read` method:
-```C++
+```cpp
 Lazy<size_t> Read();
 ```
 
@@ -9,7 +9,7 @@ But the caller of `Read` might be stackless coroutine, stackful coroutine and no
 # Stackless coroutine
 
 When the caller is also a stackless coroutine, we could `co_await` it directly:
-```C++
+```cpp
 Lazy<size_t> foo() {
     auto val = co_await Read();
     // ...
@@ -19,7 +19,7 @@ Lazy<size_t> foo() {
 # Stackful coroutine
 
 When the caller is in stackful coroutine, we could make a wrapper for `Read` by `await` method:
-```C++
+```cpp
 Lazy<size_t> Read();
 Future<size_t> ReadAsync() {
     return await(nullptr, Read);
@@ -36,7 +36,7 @@ void foo() { // in Uthread
 
 ### Class member method
 
-```C++
+```cpp
 template <class B, class Fn, class C, class... Ts>
 decltype(auto) await(Executor* ex, Fn B::* fn, C* cls, Ts&&... ts);
 ```
@@ -44,7 +44,7 @@ decltype(auto) await(Executor* ex, Fn B::* fn, C* cls, Ts&&... ts);
 Given the return type of `Fn` is `Lazy<T>`, the return type of `await` would be `T`.
 
 We could use it as:
-```C++
+```cpp
 class Foo {
 public:
    lazy<T> bar(int a, int b) {}
@@ -57,7 +57,7 @@ await(ex, &Foo::bar, &f, a, b);
 
 ### Normal Method
 
-```C++
+```cpp
 template <class Fn, class... Ts>
 decltype(auto) await(Executor* ex, Fn&& fn, Ts&&... ts);
 ```
@@ -65,7 +65,7 @@ decltype(auto) await(Executor* ex, Fn&& fn, Ts&&... ts);
 Given the return type of `Fn` is `Lazy<T>`, the return type of `await` would be `T`.
 
 We could use it as:
-```C++
+```cpp
 lazy<T> foo(Ts&&...);
 await(ex, foo, Ts&&...);
 auto lambda = [](Ts&&...) -> lazy<T> {
@@ -79,7 +79,7 @@ await(ex, lambda, Ts&&...);
 # Normal function
 
 The normal function could make a wrapper for `Read` by `syncAwait` method:
-```C++
+```cpp
 Lazy<size_t> Read();
 size_t ReadSync() {
     return syncAwait(Read());
@@ -91,7 +91,7 @@ void foo() {
 ```
 
 If it need an executor:
-```C++
+```cpp
 Lazy<size_t> Read();
 size_t ReadSync(Executor* ex) {
     return syncAwait(Read().via(ex));
@@ -106,7 +106,7 @@ void foo() {
 # Non-blocking call
 
 No matter the caller is a normal function, a stackful coroutine or a stackless coroutine, the caller could call a stackless coroutine in a non-blocking way by `.start` method.
-```C++
+```cpp
 Lazy<size_t> Read();
 void ReadCallback(std::function<void(Try<size_t>)> callback) {
     Read().start(callback);

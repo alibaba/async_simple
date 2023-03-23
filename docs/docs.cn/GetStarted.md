@@ -4,7 +4,7 @@
 
 创建空文件 `CountChar.cpp`, 并填入以下内容
 
-```C++
+```cpp
 #include <algorithm>
 #include <fstream>
 #include <iostream>

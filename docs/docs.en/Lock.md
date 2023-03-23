@@ -6,7 +6,7 @@ async_simple provided `SpinLock` contains coroutine-mode and thread-mode. Use th
 
 ###  Coroutine-Mode
 
-```c++
+```cpp
 #include <async_simple/coro/SpinLock.h>
 
 SpinLock lock;
@@ -30,7 +30,7 @@ Lazy<> doSomethingV2() {
 
 ### Thread-Mode
 
-```c++
+```cpp
 #include <async_simple/coro/SpinLock.h>
 
 SpinLock lock;
@@ -53,7 +53,7 @@ void doSomethingV2() {
 
 To avoid coroutines yield (re-scheduled by Executor) with high frequency when acquiring lock, We can adjust `SpinLock` spin count to control it.
 
-```c++
+```cpp
 #include <async_simple/coro/SpinLock.h>
 
 SpinLock lock(2048); // Spin Count

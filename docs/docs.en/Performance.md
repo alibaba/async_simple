@@ -28,7 +28,7 @@ Clang13
 ## Call Chain
 
 Simulates the speed of coroutine chain.
-```C++
+```cpp
 template<template<typename> typename LazyType, int N>
 struct lazy_fn {
     LazyType<int> operator()() {
@@ -51,7 +51,7 @@ Lazy<int> foo() {
 ## CollectAll
 
 Simulates the speed of concurrent coroutines.
-```C++
+```cpp
 Lazy<void> foo() {
     std::vector<Lazy<int>> lazies;
     for (int i = 0; i < 5000; i++)
@@ -64,7 +64,7 @@ Lazy<void> foo() {
 
 Here is the testing program. It uses google/benchmark.
 
-```C++
+```cpp
 template<template<typename> typename LazyType, int N>
 struct lazy_fn {
     LazyType<int> operator()() {

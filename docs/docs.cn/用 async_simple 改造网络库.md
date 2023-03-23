@@ -6,7 +6,7 @@ demo example依赖了独立版的[asio](https://github.com/chriskohlhoff/asio/tr
 
 # 改造同步网络库
 以一个同步的echo server/client为例，先来看看echo server：
-```c++
+```cpp
 void start_server(asio::io_context& io_context, unsigned short port) {
     tcp::acceptor a(io_context, tcp::endpoint(tcp::v4(), port));
     for (;;) {
@@ -16,7 +16,7 @@ void start_server(asio::io_context& io_context, unsigned short port) {
 }
 ```
 echo server启动时先监听端口，然后同步accept，当有新连接到来时在session中处理网络读写事件。
-```c++
+```cpp
 template <typename AsioBuffer>
 std::pair<asio::error_code, size_t> read_some(asio::ip::tcp::socket& sock,
                                               AsioBuffer&& buffer) {
@@ -37,7 +37,7 @@ void session(tcp::socket sock) {
 在一个循环中先同步读数据，再将读到的数据发送到对端。
 
 同步的echo client
-```c++
+```cpp
 void start(asio::io_context& io_context, std::string host, std::string port) {
     auto [ec, socket] = connect(io_context, host, port);
     const int max_length = 1024;
@@ -57,7 +57,7 @@ void start(asio::io_context& io_context, std::string host, std::string port) {
 
 ## 用async_simple改造同步echo server
 
-```c++
+```cpp
 async_simple::coro::Lazy<void> session(tcp::socket sock) {
     for (;;) {
         const size_t max_length = 1024;
@@ -92,7 +92,7 @@ async_simple::coro::Lazy<void> start_server(asio::io_context& io_context,
 对于一些已有的异步回调网络库，也可以用async_simple来消除回调，从而让我们可以用同步方式去使用异步接口，让代码变得更简洁易懂。
 
 以asio异步[http server](https://github.com/chriskohlhoff/asio/blob/master/asio/src/examples/cpp11/http/server/connection.cpp)为例：
-```c++
+```cpp
 void connection::do_read()
 {
   auto self(shared_from_this());
@@ -150,7 +150,7 @@ void connection::do_write()
 可以看到基于回调的异步网络库的代码比同步网络库复杂很多，如在异步读的回调中如果没有读到完整数据需要递归调用do_read，如果读到完整数据之后才能在回调中调用异步写接口。同时，还要注意将shared_from_this()得到的std::shared_ptr传入到异步接口的回调函数中以保证安全的回调。总之，异步回调代码的编写难度较大，可读性也较差，如果用async_simple改造则可以较好的解决这些问题，性能也不会降低。
 
 ## 用async_simple改造异步http server
-```c++
+```cpp
     async_simple::coro::Lazy<void> do_read() {
         auto self(shared_from_this());
         for (;;) {
