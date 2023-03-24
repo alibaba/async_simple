@@ -8,7 +8,7 @@ async_simple provide `ConditionVariable`, looks like `std::condition_variable`. 
 
 - `ConditionVariable` need a mutex to work. Any type of mutex that has `coLock()/unlock()` public method can be used. A `SpinLock/ConditionVariable` example as below.
 
-```c++
+```cpp
 #include <async_simple/coro/ConditionVariable.h>
 
 using namespace async_simple::coro;
@@ -39,7 +39,7 @@ Lazy<> consumer() {
 ### Notifier
 - We can use Notifier to replace ConditionVariable when the condition is simply true or false. The Notifier never depend on any mutex.
 
-```c++
+```cpp
 #include <async_simple/coro/ConditionVariable.h>
 
 using namespace async_simple::coro;

@@ -6,7 +6,7 @@ This article will show two examples to tell you how to use async_simple to refac
 
 # Refactor synchronous network libraries
 A synchronous echo server：
-```c++
+```cpp
 void start_server(asio::io_context& io_context, unsigned short port) {
     tcp::acceptor a(io_context, tcp::endpoint(tcp::v4(), port));
     for (;;) {
@@ -16,7 +16,7 @@ void start_server(asio::io_context& io_context, unsigned short port) {
 }
 ```
 The echo server listen a port, and then synchronously wait for accepting, when a new connection comming, handle read/write IO events in session function.
-```c++
+```cpp
 template <typename AsioBuffer>
 std::pair<asio::error_code, size_t> read_some(asio::ip::tcp::socket& sock,
                                               AsioBuffer&& buffer) {
@@ -37,7 +37,7 @@ void session(tcp::socket sock) {
 Read data and then write it to peer in an infinite loop.
 
 The synchronous echo client
-```c++
+```cpp
 void start(asio::io_context& io_context, std::string host, std::string port) {
     auto [ec, socket] = connect(io_context, host, port);
     const int max_length = 1024;
@@ -61,7 +61,7 @@ We can greatly improve the server's performance with async_simple([see benchmark
 
 ## Refactor synchronous echo server with async_simple
 
-```c++
+```cpp
 async_simple::coro::Lazy<void> session(tcp::socket sock) {
     for (;;) {
         const size_t max_length = 1024;
@@ -98,7 +98,7 @@ More details in demo_example echo server/client.
 For some existing asynchronous callback network library, it also can be refactored to a coroutine-based asynchronous library, the code will be more clean and easier to understand.
 
 Take asio [http server](https://github.com/chriskohlhoff/asio/blob/master/asio/src/examples/cpp11/http/server/connection.cpp) as an example:
-```c++
+```cpp
 void connection::do_read()
 {
   auto self(shared_from_this());
@@ -156,7 +156,7 @@ void connection::do_write()
 The asynchronous callback is much more complicated than synchronous usage, we have to pay attention to many details: recursive callback, pass shared_from_this() to callback to guarantee asynchronous safe callback. The code is hard to write and understand, we can solve the problems with async_simple, further more, there is no performance degradation.
 
 ## Refactor asynchronous http server with async_simple
-```c++
+```cpp
     async_simple::coro::Lazy<void> do_read() {
         auto self(shared_from_this());
         for (;;) {

@@ -6,44 +6,44 @@ Future/Promise 是经典的异步组件。在 async_simple 中也有其实现。
 
 经典的 Future/Promise 的使用案例为：先声明一个 Promise：
 
-```C++
+```cpp
 async_simple::Promise<int> p;
 ```
 
 当不需要类型参数时，可以使用 `async_simple::Unit` 类型，作为占位符：
 
-```C++
+```cpp
 async_simple::Promise<async_simple::Unit> p;
 ```
 
 通过 `Promise::getFuture()` 方法获取 Future：
 
-```C++
+```cpp
 async_simple::Future<int> f = p.getFuture();
 ```
 
 之后可以通过 `Future::wait()` 等待 Promise 设置值：
 
-```C++
+```cpp
 f.wait();
 ```
 
 当 `wait()` 结束后，可以使用 `Future::value()` 获取值。
 
-```C++
+```cpp
 f.wait();
 int v = f.value();
 ```
 
 也可以使用 `Future::get()` 方法，等待并获取值：
 
-```C++
+```cpp
 int v = f.get();
 ```
 
 当 Future 的结果可能为异常时，需要 `wait()` 后使用 `result()` 获取 `Try<T>`：
 
-```C++
+```cpp
 f.wait();
 Try<int> t = f.result();
 if (t.hasError())
@@ -54,7 +54,7 @@ else
 
 Promise 可以通过 `Promise::setValue()` 和 `Promise::setException()` 为 Future 设置值：
 
-```C++
+```cpp
 p.setValue(43);
 p.setValue(t); // t is Try<int>
 p.setException(ex_ptr); // ex_ptr is std::exception_ptr
@@ -70,7 +70,7 @@ Future 可以通过 `Future::thenValue(Callable&&)` 或 `Future::thenTry(Callabl
 
 `Future::thenValue(Callable&&)` 和 `Future::thenTry(Callable&&)` 的返回类型也是 Future，所以可以进行链式调用。当 Callable 的返回类型为 `Future<X>` 时，`Future::thenValue(Callable&&)` 和 `Future::thenTry(Callable&&)` 的返回类型是 `Future<X>`。当 Callable 的返回类型是 `X` 且 `X` 不是 Future 时，`Future::thenValue(Callable&&)` 和 `Future::thenTry(Callable&&)` 的返回类型是 `Future<X>`：
 
-```C++
+```cpp
 Promise<int> p;
 auto future = p.getFuture();
 auto f = std::move(future)
@@ -99,7 +99,7 @@ f.wait();
 
 我们也可以通过`Future::then(Callable&&)`来进行链式调用。它会根据`Callable`的参数来决定调用`Future::thenTry`还是`Future::thenValue`。
 
-```C++
+```cpp
 Promise<int> p;
 auto f = p.getFuture()
                 .then([](int i) { return i * 2; })
@@ -111,7 +111,7 @@ f.wait();
 
 如果我们希望由调度器决定 Callable 的执行时机，我们可以使用 `Future::via()` 来指定调度器：
 
-```C++
+```cpp
 Promise<int> p;
 auto future = p.getFuture().via(&executor); // executor 的类型是 async_simple::Executor 的子类
 auto f = std::move(future)
@@ -143,7 +143,7 @@ f.wait();
 需要 include `"async_simple/coro/FutureAwaiter.h"`。
 在无栈协程中，我们可以直接 `co_await` 一个 Future 来获取其值：
 
-```C++
+```cpp
 Promise<int> pr;
 auto fut = pr.getFuture();
 sum(1, 1, [pr = std::move(pr)](int val) mutable { pr.setValue(val); });
@@ -155,7 +155,7 @@ auto val = co_await std::move(fut);
 
 如果当前协程已设置了调度器，Future 未设置调度器且我们希望由该调度器介入，我们可以通过 `co_await CurrentExecutor{};` 来做到：
 
-```C++
+```cpp
 Promise<int> pr;
 auto fut = pr.getFuture().via(co_await CurrentExecutor{};);
 sum(1, 1, [pr = std::move(pr)](int val) mutable { pr.setValue(val); });
@@ -168,6 +168,6 @@ auto val = co_await std::move(fut);
 需要 include `"async_simple/uthread/Await.h"`。
 在有栈协程中，我们可以通过 `async_simple::uthread::await(Future<T>&&)` 来获取一个有栈协程的值。
 
-```C++
+```cpp
 auto v = async_simple::uthread::await(std::move(fut));
 ```

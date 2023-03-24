@@ -6,7 +6,7 @@ async_simple提供的自旋锁包含Lazy无栈协程版本以及普通线程版�
 
 ### 协程版用法
 
-```c++
+```cpp
 #include <async_simple/coro/SpinLock.h>
 
 SpinLock lock;
@@ -32,7 +32,7 @@ Lazy<> doSomethingV2() {
 
 线程版会使得当前线程死等，尽量避免在协程环境中使用。
 
-```c++
+```cpp
 #include <async_simple/coro/SpinLock.h>
 
 SpinLock lock;
@@ -55,7 +55,7 @@ void doSomethingV2() {
 
 尽管协程版自旋锁长时间获取不到锁会主动让出。但是重新调度会使得获取锁时间变得更加不确定，这取决于Executor调度行为。当临界区范围过大时，频繁让出可能引起性能下降。此时可以增大自旋次数来减少协程主动让出频率。
 
-```c++
+```cpp
 #include <async_simple/coro/SpinLock.h>
 
 SpinLock lock(2048); // Spin Count

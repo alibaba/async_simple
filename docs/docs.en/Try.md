@@ -10,7 +10,7 @@ Try has three state: Nothing, Exception and Value.
 
 The state of a Try object constructed by the default constructor is Nothing.
 We could use `.available()` method to query if a Try object is Nothing.
-```C++
+```cpp
 void foo() {
     Try<int> t;
     assert(!t.available());
@@ -20,7 +20,7 @@ void foo() {
 
 We could use `hasError()` to judge if there is Exception.
 
-```C++
+```cpp
 void foo() {
     Try<int> t(std::make_exception_ptr(std::runtime_error("")));
     assert(t.hasError());
@@ -30,7 +30,7 @@ void foo() {
 
 
 We could use `getException()` and `value()` to get the exception and value from Try. For example:
-```C++
+```cpp
 void foo() {
     Try<int> t(std::make_exception_ptr(std::runtime_error("")));
     std::exception_ptr e = t.getException()
@@ -41,7 +41,7 @@ void foo() {
 ```
 
 Note that it would throw exception if we use `value()` to extract the value from a Try object whose state is Exception:
-```C++
+```cpp
 void foo() {
     Try<int> t(std::make_exception_ptr(std::runtime_error("")));
     int res = t.value(); // Throw Exception

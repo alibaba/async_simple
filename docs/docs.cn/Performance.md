@@ -27,7 +27,7 @@ Clang - 13
 ## 链式调用
 
 模拟协程调用链的执行速度：
-```C++
+```cpp
 template<template<typename> typename LazyType, int N>
 struct lazy_fn {
     LazyType<int> operator()() {
@@ -50,7 +50,7 @@ Lazy<int> foo() {
 ## CollectAll
 
 模拟多个协程并发时的执行速度：
-```C++
+```cpp
 Lazy<void> foo() {
     std::vector<Lazy<int>> lazies;
     for (int i = 0; i < 5000; i++)
@@ -63,7 +63,7 @@ Lazy<void> foo() {
 
 以下是完整程序，使用了 google/benchmark 进行测量。
 
-```C++
+```cpp
 template<template<typename> typename LazyType, int N>
 struct lazy_fn {
     LazyType<int> operator()() {

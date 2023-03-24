@@ -6,7 +6,7 @@ used to synchronize coroutines. The value of the counter is initialized on creat
 to run.
 
 ## Usage
-```c++
+```cpp
 #include "async_simple/coro/Latch.h"
 
 using namespace async_simple::coro;
@@ -35,7 +35,7 @@ Lazy<> wait_lazy() {
 
 ```
 
-```c++
+```cpp
 #include "async_simple/coro/Latch.h"
 
 using namespace async_simple::coro;

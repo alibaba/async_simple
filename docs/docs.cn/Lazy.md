@@ -6,7 +6,7 @@ Lazy 由 C++20 无栈协程实现。一个 Lazy 代表一个惰性求值的计�
 
 想要使用 Lazy，需要先 `#inlude <async_simple/coro/Lazy.h>`, 再实现一个返回类型为 `Lazy<T>` 的协程函数即可。例如：
 
-```C++
+```cpp
 #include <async_simple/coro/Lazy.h>
 Lazy<int> task1(int x) {
     co_return x; // 带有 co_return 的函数是协程函数。
@@ -15,7 +15,7 @@ Lazy<int> task1(int x) {
 
 在 Lazy 中也可以 `co_await` 其他 `awaitable` 对象：
 
-```C++
+```cpp
 #include <async_simple/coro/Lazy.h>
 Lazy<int> task2(int x) {
     co_await std::suspend_always{};
@@ -31,7 +31,7 @@ Lazy<int> task2(int x) {
 
 例如:
 
-```C++
+```cpp
 #include <async_simple/coro/Lazy.h>
 Lazy<int> task1(int x) {
     co_return x; // 带有 co_return 的函数是协程函数。
@@ -57,7 +57,7 @@ Lazy<> task2() {
 ### .start(callback) 启动
 
 例如：
-```C++
+```cpp
 #include <async_simple/coro/Lazy.h>
 #include <iostream>
 Lazy<int> task1(int x) {
@@ -84,14 +84,14 @@ void func() {
 在设计上，`start` 是非阻塞异步调用接口。语义上，用户可以认为 `start` 在被调用后立即返回。用户不应该假设 `start`  在被调用后何时返回。这是由 Lazy 的执行情况决定的。
 
 对于不需要 `callback` 的情况，用户可以写:
-```C++
+```cpp
 task().start([](auto&&){});
 ```
 
 ### syncAwait 启动
 
 例如：
-```C++
+```cpp
 #include <async_simple/coro/Lazy.h>
 Lazy<int> task1(int x) {
     co_return x;
@@ -114,7 +114,7 @@ void func() {
 
 例如：
 
-```C++
+```cpp
 Lazy<int> foo() {
     throw std::runtime_error("test");
     co_return 1;
@@ -140,7 +140,7 @@ void baz() {
 
 例如：
 
-```C++
+```cpp
 Lazy<int> foo() {
     throw std::runtime_error("test");
     co_return 1;
@@ -174,7 +174,7 @@ void normal2() {
 
 如果不想让异常直接往上抛，而希望直接处理，则可以使用 `coAwaitTry` 接口。例如：
 
-```C++
+```cpp
 Lazy<int> foo() {
     throw std::runtime_error("test");
     co_return 1;
@@ -199,7 +199,7 @@ RescheduleLazy 在语义上是绑定了 Executor 的 Lazy。RescheduleLazy 只�
 
 RescheduleLazy 不能直接创建，也不能像 Lazy 一样作为协程的返回类型。RescheduleLazy 只能通过 Lazy 的 via 接口创建，例如:
 
-```C++
+```cpp
 void foo() {
     executors::SimpleExecutor e1(1);
     auto addOne = [&](int x) -> Lazy<int> {
@@ -217,7 +217,7 @@ void foo() {
 指定的调度器会随着 `co_await` 一路传递下去。
 例如：
 
-```C++
+```cpp
 #include <async_simple/coro/Lazy.h>
 #include <iostream>
 Lazy<int> task1(int x) {
@@ -263,7 +263,7 @@ void func(int x, Executor *e) {
 当我们有多个计算任务时，一个很常见的需求是等待所有计算任务完成以获取所有任务的结果后再进行进一步的计算。
 我们可以使用 `collectAll` 接口完成这个需求。例如：
 
-```C++
+```cpp
 Lazy<int> foo() {
     std::vector<Lazy<int>> input;
     input.push_back(ComputingTask(1));
@@ -286,7 +286,7 @@ collectAll 接受两种类型的参数：
 
 第二种参数类型的例子为：
 
-```C++
+```cpp
 Lazy<int> computeInt();
 Lazy<double> computeDouble();
 Lazy<std::string> computeString();
@@ -314,7 +314,7 @@ Lazy<> foo() {
 使用 collectAllPara 需要注意其所在协程必须要绑定调度器，否则依然是单线程执行所有 Lazy。
 
 例如：
-```C++
+```cpp
 Lazy<int> foo() {
     std::vector<Lazy<int>> input;
     input.push_back(ComputingTask(1));
@@ -343,7 +343,7 @@ collectAllWindowed 的参数列表及语义为为:
 
 例如：
 
-```C++
+```cpp
 Lazy<int> sum(std::vector<Try<int>> input);
 Lazy<int> batch_sum(size_t total_number, size_t batch_size)  {
     std::vector<Lazy<int>> input;
@@ -372,7 +372,7 @@ collectAny 接受两种类型的参数：
 
 选择使用 `Lazy<T>` 还是 `RescheduleLazy<T>` 需要根据场景以及调度器实现的不同来进行选择。例如当任务到达第一个可能的暂停点相对较短时，使用 `Lazy<T>` 可以节约调度的开销，同时可能可以触发短路以节约计算。例如：
 
-```C++
+```cpp
 bool should_get_value();
 int default_value();
 Lazy<int> conditionalWait() {
@@ -395,7 +395,7 @@ Lazy<int> getAnyConditionalValue() {
 
 但当任务到达第一个暂停点的路径相对较长或者说每个任务相对较重时，用 `RescheduleLazy<T>` 可能比较好。例如：
 
-```C++
+```cpp
 void prepare_for_long_time();
 Lazy<int> another_long_computing();
 Lazy<int> long_computing() {
@@ -419,7 +419,7 @@ Lazy<int> getAnyConditionalValue(Executor* e) {
 
 CollectAnyResult 的数据结构为：
 
-```C++
+```cpp
 template <typename T>
 struct CollectAnyResult {
     size_t _idx;
@@ -444,7 +444,7 @@ struct CollectAnyResult {
 
 例子：
 
-```C++
+```cpp
 Lazy<void> foo() {
     std::vector<Lazy<int>> input;
     input.push_back(ComputingTask(1));

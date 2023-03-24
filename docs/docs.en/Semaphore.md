@@ -4,7 +4,7 @@ Analogous to [`std::counting_semaphore`](https://en.cppreference.com/w/cpp/threa
 ## Usage
 
 ### Notifier
-```c++
+```cpp
 #include <async_simple/coro/Semaphore>
 
 using namespace async_simple::coro;
@@ -25,7 +25,7 @@ Lazy<> consumer() {
 }
 ```
 ### Mutex
-```c++
+```cpp
 #include <async_simple/coro/Semaphore>
 
 using namespace async_simple::coro;

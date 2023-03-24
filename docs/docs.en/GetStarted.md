@@ -4,7 +4,7 @@ The docs shows a demo to use Lazy to calculate the number of specified char in a
 
 Create a file with name `CountChar.cpp` and fill the following codes.
 
-```C++
+```cpp
 #include <algorithm>
 #include <fstream>
 #include <iostream>

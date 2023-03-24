@@ -7,7 +7,7 @@ Readfiles is a demo program to calculate the number of a specific character in m
 
 ## Traditional synchronous style
 
-```C++
+```cpp
 uint64_t CountCharInFiles(const std::vector<FileName> &Files, char c) {
     uint64_t ReadSize = 0;
     for (const auto &File : Files)
@@ -22,7 +22,7 @@ It is very straight forward, we could only need to traverse it.
 
 Althought the tranditional synchronous style is very simple, it might not be sufficent when the number of files is very large or the contents of one file is very large or the file is stored in remote storage. In this case, programmers might try to optimize it by asynchronous style. And Future/Promise is a classic asynchronous component.
 
-```C++
+```cpp
 Future<uint64_t> CountCharInFilesAsync(const std::vector<FileName> &Files, char c) {
     // std::shared_ptr is necessary here. Since ReadSize may be used after
     // CountCharInFilesAsync function ends.
@@ -43,7 +43,7 @@ The example above implements similar functionality. We need to introduce `std::s
 
 Programmers could write asynchronous code in synchronous way with stackless coroutine.
 
-```C++
+```cpp
 Lazy<uint64_t> CountCharInFilesCoro(const std::vector<FileName> &Files, char c) {
     uint64_t ReadSize = 0;
     for (const auto &File : Files)

@@ -6,44 +6,44 @@ Future/Promise are classic asynchronous components. It is implemented in async_s
 
 Declare a Promise:
 
-```C++
+```cpp
 async_simple::Promise<int> p;
 ```
 
 We could use `async_simple::Unit` if we don't want a value type.
 
-```C++
+```cpp
 async_simple::Promise<async_simple::Unit> p;
 ```
 
 We can get future by `Promise::getFuture()`.
 
-```C++
+```cpp
 async_simple::Future<int> f = p.getFuture();
 ```
 
 We can wait for Promise to set the value by `Future::wait()`
 
-```C++
+```cpp
 f.wait();
 ```
 
 After `wait()`, we can use `Future::value()` to get the value.
 
-```C++
+```cpp
 f.wait();
 int v = f.value();
 ```
 
 We can use `Future::get()` to wait and get the value.
 
-```C++
+```cpp
 int v = f.get();
 ```
 
 When there may be an exception, we need to use `wait()` and `result()` to get the wrapped result. `Try<T>`
 
-```C++
+```cpp
 f.wait();
 Try<int> t = f.result();
 if (t.hasError())
@@ -54,7 +54,7 @@ else
 
 Promise can set the value by `Promise::setValue()` and `Promise::setException()`.
 
-```C++
+```cpp
 p.setValue(43);
 p.setValue(t); // t is Try<int>
 p.setException(ex_ptr); // ex_ptr is std::exception_ptr
@@ -70,7 +70,7 @@ We could enable chaining call for Future by `Future::thenValue(Callable&&)` or `
 
 When Callable returns `Future<X>`,`Future::thenValue(Callable&&)` and `Future::thenTry(Callable&&)` returns `Future<X>`.When Callable returns `X` and `X` is not Future,`Future::thenValue(Callable&&)` and `Future::thenTry(Callable&&)` returns `Future<X>`:
 
-```C++
+```cpp
 Promise<int> p;
 auto future = p.getFuture();
 auto f = std::move(future)
@@ -99,7 +99,7 @@ f.wait();
 
 If we want the executor to decide when will the Callable be called, we can use `Future::via()` to specify the Executor.
 
-```C++
+```cpp
 Promise<int> p;
 auto future = p.getFuture().via(&executor); // the type of executor is derived type of async_simple::Executor
 auto f = std::move(future)
@@ -127,7 +127,7 @@ f.wait();
 ```
 We can also enable chaining call for Future by `Future::then(Callable&&)`. It will decide to call `Future::thenTry` or `Future::thenValue` based on the parameters of `Callable`.
 
-```C++
+```cpp
 Promise<int> p;
 auto f = p.getFuture()
                 .then([](int i) { return i * 2; })
@@ -142,7 +142,7 @@ f.wait();
 Need to include `"async_simple/coro/FutureAwaiter.h"`.
 In the Lazy,we can `co_await` a Future directly.
 
-```C++
+```cpp
 Promise<int> pr;
 auto fut = pr.getFuture();
 sum(1, 1, [pr = std::move(pr)](int val) mutable { pr.setValue(val); });
@@ -154,7 +154,7 @@ If the Future has set Executor already, the Executor would decide when will the 
 
 If the Lazy has set Executor already and we want to set that executor for the Future, we can make it by `co_await CurrentExecutor{};`.
 
-```C++
+```cpp
 Promise<int> pr;
 auto fut = pr.getFuture().via(co_await CurrentExecutor{};);
 sum(1, 1, [pr = std::move(pr)](int val) mutable { pr.setValue(val); });
@@ -168,6 +168,6 @@ Need to include `"async_simple/uthread/Await.h"`.
 
 In the uthread, we can get the value  of Future from `async_simple::uthread::await(Future<T>&&)`
 
-```C++
+```cpp
 auto v = async_simple::uthread::await(std::move(fut));
 ```

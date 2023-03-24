@@ -4,7 +4,7 @@ async_simple中实现的`Latch`类似于C++标准库中`std::latch`。主要区�
 `Latch`是`std::size_t`类型的向下计数器，它能用于同步`Lazy`。在创建时初始化计数器的值。当计数器减为0时，协程将会被挂起并且切换到其他协程去运行。
 
 ## 用法
-```c++
+```cpp
 #include "async_simple/coro/Latch.h"
 
 using namespace async_simple::coro;
@@ -33,7 +33,7 @@ Lazy<> wait_lazy() {
 
 ```
 
-```c++
+```cpp
 #include "async_simple/coro/Latch.h"
 
 using namespace async_simple::coro;

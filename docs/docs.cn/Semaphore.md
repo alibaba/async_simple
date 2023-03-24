@@ -4,7 +4,7 @@
 ## 用法
 
 ### Notifier
-```c++
+```cpp
 #include <async_simple/coro/Semaphore>
 
 using namespace async_simple::coro;
@@ -26,7 +26,7 @@ Lazy<> consumer() {
 ```
 
 ### Mutex
-```c++
+```cpp
 #include <async_simple/coro/Semaphore>
 
 using namespace async_simple::coro;
