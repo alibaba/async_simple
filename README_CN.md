@@ -184,6 +184,8 @@ CXX=g++-11 CC=gcc-11 cmake .. -DCMAKE_BUILD_TYPE=Release
 
 # 更多示例
 
+我们的文档托管在GitHub Pages上，[点击进入快速开始](https://alibaba.github.io/async_simple/docs.cn/GetStarted.html).
+
 接下来可以阅读更多API文档，例如C++20协程（[Lazy](./docs/docs.cn/Lazy.md)）。熟悉async\_simple组件，可以先跟着[Demo](./docs/docs.cn/GetStarted.md)用C++20协程来实现异步统计文件字符数功能。
 
 更多文档介绍见目录[docs](./docs/docs.cn)。

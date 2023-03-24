@@ -191,6 +191,8 @@ CXX=g++-11 CC=gcc-11 cmake .. -DCMAKE_BUILD_TYPE=Release
 
 # Get Started
 
+Our documents are hosted by GitHub Pages, [go to Get Started](https://alibaba.github.io/async_simple/docs.en/GetStarted.html).
+
 After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with API, here is a [demo](./docs/docs.en/GetStarted.md) use Lazy to count char in a file.
 
 # Performance
