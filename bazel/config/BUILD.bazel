@@ -81,12 +81,6 @@ config_setting(
 )
 
 config_setting(
-    name = "async_simple_enable_tests",
-    define_values = {"ASYNC_SIMPLE_ENABLE_TESTS": "ture"},
-    visibility = ["//visibility:public"],
-)
-
-config_setting(
     name = "async_simple_enable_ssl",
     define_values = {"ENABLE_SSL": "true"},
     visibility = ["//visibility:public"],
