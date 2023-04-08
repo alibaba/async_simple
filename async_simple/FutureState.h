@@ -144,7 +144,7 @@ public:
         _attached.fetch_add(1, std::memory_order_relaxed);
     }
     AS_INLINE void detachOne() {
-        auto old = _attached.fetch_sub(1, std::memory_order_relaxed);
+        auto old = _attached.fetch_sub(1, std::memory_order_acq_rel);
         assert(old >= 1u);
         if (old == 1) {
             delete this;
@@ -155,7 +155,7 @@ public:
         attachOne();
     }
     AS_INLINE void detachPromise() {
-        auto old = _promiseRef.fetch_sub(1, std::memory_order_relaxed);
+        auto old = _promiseRef.fetch_sub(1, std::memory_order_acq_rel);
         assert(old >= 1u);
         if (!hasResult() && old == 1) {
             try {
