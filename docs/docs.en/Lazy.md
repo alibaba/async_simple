@@ -137,7 +137,7 @@ void baz() {
 }
 ```
 
-Note that it is not a good practice to wrap `co_await` by `try...catch` statement all the time. One the one hand, it is inconvenient. On the other hand, the current coroutine would handle the unhandled_exception by the design of coroutine. For the example of `Lazy`, in case of an unhandled exception happens, the exception would be stored into the current Lazy.
+Note that it is not a good practice to wrap `co_await` by `try...catch` statement all the time. On the one hand, it is inconvenient. On the other hand, the current coroutine would handle the unhandled_exception by the design of coroutine. For the example of `Lazy`, in case of an unhandled exception happens, the exception would be stored into the current Lazy.
 
 For example:
 
