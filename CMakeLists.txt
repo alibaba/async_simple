@@ -115,10 +115,6 @@ endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     list(APPEND CXX_FLAGS "-fcoroutines")
-    # FIXME: [GCC12 compile fail](https://github.com/alibaba/async_simple/issues/234)
-    if (CMAKE_CXX_COMPILER_VERSION MATCHES "12.*")
-        list(APPEND CXX_FLAGS "-Wno-maybe-uninitialized")
-    endif()
 endif()
 
 set(HEADERS_PATH
