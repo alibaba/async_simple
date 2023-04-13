@@ -236,7 +236,7 @@ struct LazyAwaiterBase {
     }
 
     Try<T> awaitResumeTry() noexcept {
-        Try<T> ret = std::move(_handle.promise().tryResult());
+        Try<T> ret = _handle.promise().tryResult();
         _handle.destroy();
         _handle = nullptr;
         return ret;
