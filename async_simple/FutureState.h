@@ -195,7 +195,7 @@ public:
     //  ONLY_RESULT: promise.setValue called
     //  ONLY_CONTINUATION: future.thenImpl called
     void setResult(Try<T>&& value) {
-#if __GNUC__ < 12
+#if !defined(__GNUC__) || __GNUC__ < 12
         // GCC 12 issues a spurious uninitialized-var warning.
         // See details: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109448
         logicAssert(!hasResult(), "FutureState already has a result");
