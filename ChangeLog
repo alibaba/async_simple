@@ -1,3 +1,30 @@
+2023-4-23  Release Notes
+    * 1.1 Released
+    * SimpleExecutor will execute all the scheduled task before destructing
+    * `co_awit` a lvalue Future is deprected now. We should move the future explicitly before `co_awit`. 
+    * Use std::variant instead of union in Try
+    * Provided future<void> and promise<void>
+    * Added `value()` and `index()` interfaces to `CollectAnyResult`
+    * Added `future::then` interface
+    * Added `coro::Latch`
+    * Added `coro::Semaphore`
+    * Added Generator
+    * Added start_switch_fiber and finish_switch_fiber for uthread to enable address sanitizer
+    * Force RescheduleLazy to be allowed in DetachedCoroutine only
+    * Added C++20 modules support
+    * Added the second version of uthread::async
+    * Added Mutex benchmark
+    * Added SpinLock benchmark
+    * Added multiple core echo server example
+    * Added AsioCallbackAwaiter
+    * Added ppc64_le support for uthread
+    * Improved bazel support
+    * Added support for macos
+    * Added support for windows
+    * Added ubuntu and centos7 Dockerfile
+    * Fixed several compile failures
+
+
 2022-11-11
     * SimpleExecutor will execute all the scheduled task before destructing
     * `co_awit` a lvalue Future is deprected now. We should move the future explicitly before `co_awit`. 
