@@ -1,7 +1,8 @@
 2023-4-23  Release Notes
     * 1.1 Released
     * SimpleExecutor will execute all the scheduled task before destructing
-    * `co_awit` a lvalue Future is deprected now. We should move the future explicitly before `co_awit`. 
+    * `co_await` a lvalue Future is deprected now. We should move the future
+    explicitly before `co_await`.
     * Use std::variant instead of union in Try
     * Provided future<void> and promise<void>
     * Added `value()` and `index()` interfaces to `CollectAnyResult`
@@ -27,7 +28,8 @@
 
 2022-11-11
     * SimpleExecutor will execute all the scheduled task before destructing
-    * `co_awit` a lvalue Future is deprected now. We should move the future explicitly before `co_awit`. 
+    * `co_await` a lvalue Future is deprected now. We should move the future
+    explicitly before `co_await`. 
 
 2022-10-31 Release Notes
     * 1.0 Released
