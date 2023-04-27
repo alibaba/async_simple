@@ -1,8 +1,13 @@
 cmake_minimum_required(VERSION 3.15)
-project(async_simple CXX C ASM)
+project(async_simple
+        VERSION 1.1
+        LANGUAGES CXX C ASM)
+
 enable_testing()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 add_library(libasync_simple INTERFACE)
 target_compile_features(libasync_simple INTERFACE cxx_std_20)
 target_include_directories(libasync_simple INTERFACE

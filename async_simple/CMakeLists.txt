@@ -45,6 +45,10 @@ else()
   install(TARGETS async_simple DESTINATION lib/)
 endif()
 
+set_target_properties(async_simple PROPERTIES 
+                                   VERSION ${PROJECT_VERSION}
+                                   SOVERSION ${PROJECT_VERSION_MAJOR})
+
 install(FILES ${headers} DESTINATION include/async_simple)
 install(FILES ${coro_header} DESTINATION include/async_simple/coro)
 install(FILES ${executors_header} DESTINATION include/async_simple/executors)
