@@ -69,3 +69,45 @@ Lazy<> doSomething() {
 ## Mutex
 
 Coming soon.
+
+## Condition Varible
+
+Comming soon.
+
+## SharedMutex
+
+async_simple provide a SharedMutex in coroutine for the situation than read operation is much more than write.
+
+There is a `SpinLock` and two `ConditionVarible` in`SharedMutex` implementation. The default spin count is 128, and could be changed by constructor. Because the critical section is only in the internal implementation and it's short, the `SpinLock` is a bbetter choice than mutex.
+
+When one or more reader locks is held a writer gets priority and no more reader locks can be taken while the writer is queued.
+
+
+### Example
+
+```cpp
+#include <async_simple/coro/SharedMutex.h>
+using namespace async_simple::coro;
+
+SharedMutex lock;
+
+Lazy<void> read() {
+  co_await lock.coLockShared();
+  // critical read section
+  co_await lock.unlockShared();
+  co_return;
+}
+
+Lazy<void> write() {
+  co_await lock.coLock();
+  // critical write section
+  co_await lock.unlock();
+  co_return;
+}
+```
+
+### RAII
+
+Unfortunately，`SharedMutex` can't work with a RAII lock_guard/unique_lock/scopeLock helper class, because the destructor of c++ class/struct is not a coroutine function, so it's impossible to `co_await lock.unlock()` in destructor.
+
+When your code has a complex logic/may throw expection, please take care of it and remember to unlock the `SharedMutex`.
