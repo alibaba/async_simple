@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "SharedLock.bench.h"
+#include "SharedMutex.bench.h"
 
 #include "async_simple/coro/Collect.h"
 #include "async_simple/coro/Lazy.h"
-#include "async_simple/coro/SharedLock.h"
+#include "async_simple/coro/SharedMutex.h"
 #include "async_simple/coro/SyncAwait.h"
 #include "async_simple/executors/SimpleExecutor.h"
 
@@ -28,8 +28,8 @@
 using namespace async_simple;
 using namespace async_simple::coro;
 
-void SharedLock_ReadMoreThanWrite_chain(benchmark::State& state) {
-    SharedLock m;
+void SharedMutex_ReadMoreThanWrite_chain(benchmark::State& state) {
+    SharedMutex m;
     executors::SimpleExecutor executor(8);
 
     std::default_random_engine e;
@@ -106,7 +106,7 @@ void SpinLock_ReadMoreThanWrite_chain(benchmark::State& state) {
                     sum += *iter;
                 }
             }
-            m.unlockShared();
+            m.unlock();
         };
         std::vector<Lazy<void>> works;
 

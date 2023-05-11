@@ -26,7 +26,7 @@ cc_binary(
         "ThreadPool.bench.cpp",
         "Mutex.bench.cpp",
         "SpinLock.bench.cpp",
-        "SharedLock.bench.cpp"
+        "SharedMutex.bench.cpp"
     ] + select({
         "//bazel/config:async_simple_with_uthread": ["Uthread.bench.cpp"],
         "//conditions:default": [],

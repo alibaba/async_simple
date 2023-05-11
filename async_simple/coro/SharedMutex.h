@@ -21,9 +21,9 @@
 #include "async_simple/coro/Mutex.h"
 #include "async_simple/coro/SpinLock.h"
 namespace async_simple::coro {
-namespace detail {
+
 template <typename Lock>
-class SharedLockBase {
+class SharedMutexBase {
     // Based on Howard Hinnant's reference implementation from N2406.
 
     // The high bit of state_ is the write-entered flag which is set to
@@ -70,13 +70,13 @@ class SharedLockBase {
 
 public:
     template <typename... Args>
-    SharedLockBase(Args&&... args)
+    SharedMutexBase(Args&&... args)
         : mut_(std::forward<Args>(args)...), state_(0) {}
 
-    ~SharedLockBase() { assert(state_ == 0); }
+    ~SharedMutexBase() { assert(state_ == 0); }
 
-    SharedLockBase(const SharedLockBase&) = delete;
-    SharedLockBase& operator=(const SharedLockBase&) = delete;
+    SharedMutexBase(const SharedMutexBase&) = delete;
+    SharedMutexBase& operator=(const SharedMutexBase&) = delete;
 
     // Exclusive ownership
 
@@ -149,8 +149,7 @@ public:
         }
     }
 };
-}  // namespace detail
-struct SharedLock : public detail::SharedLockBase<SpinLock> {
-    SharedLock(int count = 128) : SharedLockBase<SpinLock>(count) {}
+struct SharedMutex : public SharedMutexBase<SpinLock> {
+    SharedMutex(int count = 128) : SharedMutexBase<SpinLock>(count) {}
 };
 }  // namespace async_simple::coro

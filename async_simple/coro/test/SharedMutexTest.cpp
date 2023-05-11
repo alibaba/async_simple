@@ -22,7 +22,7 @@
 #include "async_simple/Future.h"
 #include "async_simple/coro/Collect.h"
 #include "async_simple/coro/Lazy.h"
-#include "async_simple/coro/SharedLock.h"
+#include "async_simple/coro/SharedMutex.h"
 #include "async_simple/coro/Sleep.h"
 #include "async_simple/coro/SpinLock.h"
 #include "async_simple/coro/SyncAwait.h"
@@ -34,17 +34,17 @@ using namespace std;
 namespace async_simple {
 namespace coro {
 
-class SharedLockTest : public FUTURE_TESTBASE {
+class SharedMutexTest : public FUTURE_TESTBASE {
 public:
-    SharedLockTest() : _executor(4) {}
+    SharedMutexTest() : _executor(4) {}
     void caseSetUp() override {}
     void caseTearDown() override {}
 
     executors::SimpleExecutor _executor;
 };
 
-TEST_F(SharedLockTest, testTryLock) {
-    SharedLock m;
+TEST_F(SharedMutexTest, testTryLock) {
+    SharedMutex m;
     EXPECT_TRUE(m.tryLock());
     EXPECT_FALSE(m.tryLock());
     syncAwait(m.unlock());
@@ -52,8 +52,8 @@ TEST_F(SharedLockTest, testTryLock) {
     syncAwait(m.unlock());
 }
 
-TEST_F(SharedLockTest, testTryLockShared) {
-    SharedLock m;
+TEST_F(SharedMutexTest, testTryLockShared) {
+    SharedMutex m;
     EXPECT_TRUE(m.tryLock());
     EXPECT_FALSE(m.tryLockShared());
     syncAwait(m.unlock());
@@ -63,8 +63,8 @@ TEST_F(SharedLockTest, testTryLockShared) {
     syncAwait(m.unlockShared());
 }
 
-TEST_F(SharedLockTest, testLockShared) {
-    SharedLock m;
+TEST_F(SharedMutexTest, testLockShared) {
+    SharedMutex m;
 
     std::default_random_engine e;
     std::uniform_int_distribution<int> rnd(0, 100000);

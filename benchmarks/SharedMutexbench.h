@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 #include <benchmark/benchmark.h>
-void SharedLock_ReadMoreThanWrite_chain(benchmark::State &state);
+void SharedMutex_ReadMoreThanWrite_chain(benchmark::State &state);
 void SpinLock_ReadMoreThanWrite_chain(benchmark::State &state);
