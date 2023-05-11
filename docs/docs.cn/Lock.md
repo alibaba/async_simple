@@ -71,3 +71,47 @@ Lazy<> doSomething() {
 ## Mutex
 
 Coming soon.
+
+## Condition Varible
+
+Comming soon.
+
+## SharedLock
+
+async_simple提供了协程版本的读写锁读写锁，用于处理读操作较重并且读远远多于写（达到两个数量级及以上）的情况。
+
+SharedLock内部由一个SpinLock和两个ConditionVarible组成，默认自旋128次。用户可以通过构造函数来改变自旋次数。由于该锁仅在SharedLock内部使用，各临界区已确定且极短，因此我们使用SpinLock而不是Mutex来实现读写锁。
+
+SharedLock的实现不存在写操作饥饿问题。
+
+
+### 示例代码
+
+```cpp
+#include <async_simple/coro/SharedLock.h>
+using namespace async_simple::coro;
+
+SharedLock lock;
+
+Lazy<void> read() {
+  co_await lock.coLockShared();
+  // critical read section
+  co_await lock.unlockShared();
+  co_return;
+}
+
+Lazy<void> write() {
+  co_await lock.coLock();
+  // critical write section
+  co_await lock.unlock();
+  co_return;
+}
+```
+
+
+
+### RAII
+
+很遗憾的是，SharedLock不能提供一个RAII的lock_guard/unique_lock/scopeLock，来自动加锁/解锁。这是因为c++的对象的析构函数不能是无栈协程，由于因此RAII对象无法在析构时解锁。
+
+因此，当代码逻辑复杂/可能抛出异常时，很可能会在某个分支忘记解锁SharedLock，请务必小心。
