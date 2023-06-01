@@ -85,10 +85,7 @@ public:
         void await_suspend(std::coroutine_handle<> handle) {
             logicAssert(_executor,
                         "Yielding is only meaningful with an executor!");
-            std::function<void()> func = [h = std::move(handle)]() mutable {
-                h.resume();
-            };
-            _executor->schedule(func);
+            _executor->schedule(std::move(handle));
         }
         void await_resume() noexcept {}
 
@@ -268,8 +265,7 @@ public:
                 // executor schedule performed
                 auto& pr = this->_handle.promise();
                 logicAssert(pr._executor, "RescheduleLazy need executor");
-                pr._executor->schedule(
-                    [h = this->_handle]() mutable { h.resume(); });
+                pr._executor->schedule(this->_handle);
             } else {
                 return this->_handle;
             }

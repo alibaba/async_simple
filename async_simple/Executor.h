@@ -143,10 +143,7 @@ public:
 
     template <typename PromiseType>
     void await_suspend(std::coroutine_handle<PromiseType> continuation) {
-        std::function<void()> func = [c = continuation]() mutable {
-            c.resume();
-        };
-        _ex->schedule(func, _dur);
+        _ex->schedule(std::move(continuation), _dur);
     }
     void await_resume() const noexcept {}
 
