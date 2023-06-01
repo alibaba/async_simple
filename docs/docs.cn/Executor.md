@@ -45,7 +45,7 @@ public:
 - `virtual Context checkout();` 接口获取当前执行上下文信息。实现时一般可以直接返回当前线程在Executor中唯一标识id。
 - `virtual bool checkin(Func func, Context ctx, ScheduleOptions opts);` 接口用于调度lambda函数到特定id的线程上执行。ctx来自`checkout()`。
   - `checkout()/checkin()`主要用于协程挂起前记录当前线程，协程恢复时，调度回挂起前所运行的线程。避免可能的数据竞争问题。
-  - 当`opts.prompt`为true时，checkin中不可原地执行func。
+  - 当`opts.prompt`为 false 时，checkin 中不可原地执行 func。
 - `virtual IOExecutor* getIOExecutor() = 0;` 接口返回IOExecutor，用于异步提交IO请求。
   - 继承实现IOExecutor中submitIO相关接口，用于对接不同异步IO引擎。IOExecutor接口简单，这里不展开阐述。
 

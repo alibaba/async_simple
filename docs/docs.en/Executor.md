@@ -44,7 +44,7 @@ public:
 - `virtual Context checkout();` It would be called in case the user (Lazy, Uthread and Future/Promise) want to leave the current thread. The return value of `checkout` is the identity of the current thread. User who want to schedule back to the original thread should use the identity returned from `checkout`.
 - `virtual bool checkin(Func func, Context ctx, ScheduleOptions opts);` It would schedule the task (`Func func`) to the specified thread. `ctx` comes from `checkout()`.
     - `checkout()/checkin()` would record the current thread. And it would shcedule the task to the original thread before the resuming the coroutine to avoid potential data race problems.
-    - When `opts.prompt` is True, `checkin()` isn't allowed to execute func in place.
+    - When `opts.prompt` is False, `checkin()` isn't allowed to execute func in place.
 - `virtual IOExecutor* getIOExecutor() = 0;`. It would return an IOExecutor, which is used to submit asynchronous IO request.
     - User could implement a class derived from IOExecutor to use different IO Executor.
 
