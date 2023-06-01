@@ -516,6 +516,9 @@ TEST_F(FutureTest, testReadyFuture) {
     future.wait();
     std::move(future).via(nullptr).thenValue(
         [](int v) mutable { ASSERT_EQ(3, v); });
+    auto future2 = makeReadyFuture();
+    EXPECT_TRUE(future2.hasResult());
+    EXPECT_TRUE(future2.valid());
 }
 
 TEST_F(FutureTest, testPromiseCopy) {
