@@ -1,10 +1,18 @@
 workspace(name = "com_github_async_simple")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("//bazel/config:deps.bzl", "async_simple_dependencies")
+async_simple_dependencies()
 
-BAZEL_SKYLIB_VERSION = "1.1.1"  # 2021-09-27
-BAZEL_SKYLIB_SHA256 = "c6966ec828da198c5d9adbaa94c05e3a1c7f21bd012a0b29ba8ddbccb2c93b0d"
-
+http_archive(
+    name = "rules_python", 
+    sha256 = "e5470e92a18aa51830db99a4d9c492cc613761d5bdb7131c04bd92b9834380f6",
+    strip_prefix = "rules_python-4b84ad270387a7c439ebdccfd530e2339601ef27",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_python/archive/4b84ad270387a7c439ebdccfd530e2339601ef27.tar.gz",
+        "https://github.com/bazelbuild/rules_python/archive/4b84ad270387a7c439ebdccfd530e2339601ef27.tar.gz",
+    ],
+)
 
 http_archive(
     name = "com_google_googletest",  # 2021-07-09
@@ -13,23 +21,6 @@ http_archive(
     urls = ["https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip"],
 )
 
-http_archive(
-    name = "platforms",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.6/platforms-0.0.6.tar.gz",
-        "https://github.com/bazelbuild/platforms/releases/download/0.0.6/platforms-0.0.6.tar.gz",
-    ],
-    sha256 = "5308fc1d8865406a49427ba24a9ab53087f17f5266a7aabbfc28823f3916e1ca",
-)
-
-http_archive(
-    name = "bazel_skylib",
-    sha256 = BAZEL_SKYLIB_SHA256,
-    urls = [
-        "https://github.com/bazelbuild/bazel-skylib/releases/download/{version}/bazel-skylib-{version}.tar.gz".format(version = BAZEL_SKYLIB_VERSION),
-        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/{version}/bazel-skylib-{version}.tar.gz".format(version = BAZEL_SKYLIB_VERSION),
-    ],
-)
 http_archive(
     name = "com_google_benchmark",  # 2022-07-25
     sha256 = "e0e6a0f2a5e8971198e5d382507bfe8e4be504797d75bb7aec44b5ea368fa100",

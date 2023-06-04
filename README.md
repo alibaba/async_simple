@@ -163,7 +163,7 @@ bazel build --action_env=CXX=clang++ --action_env=CC=clang ...
 bazel build --copt='-O0' --copt='-ggdb' ...
 ```
 - See [this](https://bazel.build/run/build) get more infomation
-- ` ...` Indicates recursively scan all targets, recognized as ../.. in `oh-my-zsh`, can be replaced by other `shell` or `bash -c 'commond'` to run, such as `bash -c 'bazel build' ...` or use `bazel build ...:all`
+- ` ...` Indicates recursively scan all targets, recognized as `../..` in `oh-my-zsh`, can be replaced by other `shell` or `bash -c 'commond'` to run, such as `bash -c 'bazel build' ...` or use `bazel build ...:all`
 
 # Docker Compile Environment
 ```

@@ -41,17 +41,6 @@ git_repository(
 )
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-BAZEL_SKYLIB_VERSION = "1.1.1"  # 2021-09-27
-BAZEL_SKYLIB_SHA256 = "c6966ec828da198c5d9adbaa94c05e3a1c7f21bd012a0b29ba8ddbccb2c93b0d"
-
-http_archive(
-    name = "bazel_skylib",
-    sha256 = BAZEL_SKYLIB_SHA256,
-    urls = [
-        "https://github.com/bazelbuild/bazel-skylib/releases/download/{version}/bazel-skylib-{version}.tar.gz".format(version = BAZEL_SKYLIB_VERSION),
-        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/{version}/bazel-skylib-{version}.tar.gz".format(version = BAZEL_SKYLIB_VERSION),
-    ],
-)
 
 # Use http_archive
 AYSNC_SIMPLE_VERSION = ""
@@ -63,6 +52,10 @@ http_archive(
     urls = ["https://github.com/alibaba/async_simple/archive/refs/tags/{version}.zip".format(version = AYSNC_SIMPLE_VERSION)],
     strip_prefix = "async_simple-{version}".format(version = AYSNC_SIMPLE_VERSION),
 )
+
+# Load async_simple async_simple_dependencies
+load("@com_github_async_simple//bazel/config:deps.bzl", "async_simple_dependencies")
+async_simple_dependencies()
 ```
 
 *BUILD.bazel*:
@@ -75,6 +68,6 @@ cc_binary(
 )
 ```
 
-The *BUILD* file defines a binary named `Demo` that has a dependency to {async_simple}.  
+The *BUILD* file defines a binary named `hello` that has a dependency to {async_simple}.  
 
 To execute the binary you can run `bazel run :hello`.
