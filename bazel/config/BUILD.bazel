@@ -59,18 +59,11 @@ config_setting(
     },
 )
 
-#TODO has_not_aio
-config_setting(
-    name = "has_not_aio",
-    constraint_values = [
-        "@platforms//os:windows",
-    ],
-)
-
 selects.config_setting_group(
     name = "async_simple_has_not_aio",
     match_any = [
         "@platforms//os:windows",
+        "@platforms//os:macos",
         ":async_simple_disable_aio",
     ],
 )
