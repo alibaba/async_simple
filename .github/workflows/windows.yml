@@ -39,22 +39,15 @@ jobs:
         run: ctest -C ${{ matrix.mode }} --output-on-failure
 
   build_with_bazel:
-    runs-on: windows-latest
+    runs-on: windows-2019
 
-    strategy:
-      matrix:
-        mode: [ Release ]
-        arch: [ x86 ]
-    env:
-      CXX: cl.exe
-      CC: cl.exe
     steps:
       - uses: actions/checkout@v2
 
       - name: Build 
         working-directory: ${{github.workspace}}
-        run: bazel build --cxxopt=/std:c++20 ...
+        run: bazel build ...
 
       - name: Test
         working-directory: ${{github.workspace}}
-        run: bazel test --cxxopt=/std:c++20 --test_output=errors ...
+        run: bazel test --test_output=errors ...
