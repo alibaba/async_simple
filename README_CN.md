@@ -240,10 +240,6 @@ ninja
 <img src="./docs/docs.cn/images/ding_talk_group.png" alt="dingtalk" width="200" height="200" align="bottom" />
 </center>
 
-# 性能监控
-
-我们可在 https://alibaba.github.io/async_simple/benchmark-monitoring/index.html 中检查每个 commit 前后的性能。
-
 # 许可证
 
 async\_simple遵循Apache License (Version 2.0)开源许可证。async\_simple包含的部分第三方组件可能遵循其它开源许可证。相关详细信息可以查看NOTICE文件。

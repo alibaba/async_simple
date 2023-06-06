@@ -247,10 +247,6 @@ Please scan the following QR code of DingTalk to contact us.
 <img src="./docs/docs.cn/images/ding_talk_group.png" alt="dingtalk" width="200" height="200" align="bottom" />
 </center>
 
-# Performance Monitoring
-
-We could monitor the performance change history in: https://alibaba.github.io/async_simple/benchmark-monitoring/index.html.
-
 # License
 
 async_simple is distributed under the Apache License (Version 2.0)
