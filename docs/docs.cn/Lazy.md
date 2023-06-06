@@ -23,6 +23,11 @@ Lazy<int> task2(int x) {
 }
 ```
 
+## 对齐限制
+
+由于 ABI、编译器实现与 async_simple 内部实现限制，我们要求 `Lazy<T>` 中
+`T` 的对齐要求值不能超过 `alignof(std::max_align_t)`（一般为 16）。
+
 ## 启动方式
 
 一个 Lazy 应该以 `co_await`、 `syncAwait` 以及 `.start(callback)` 方式启动。

@@ -23,6 +23,11 @@ Lazy<int> task2(int x) {
 }
 ```
 
+## Alignment Requirement
+
+Due the limitation of ABI, Compiler Implementation and the usage
+of async_simple itself, we requrie the alignment of `T` in `Lazy<T>` can exceed `alignof(std::max_align_t)` (which is generally 16).
+
 ## Start Lazy
 
 We could start a Lazy by `co_await`, `syncAwait` and `.start(callback)`.
