@@ -74,6 +74,10 @@ public:
         bool await_ready() const noexcept { return false; }
         template <typename PromiseType>
         auto await_suspend(std::coroutine_handle<PromiseType> h) noexcept {
+            static_assert(
+                std::is_base_of<LazyPromiseBase, PromiseType>::value,
+                "the final awaiter is only allowed to be called by Lazy");
+
             return h.promise()._continuation;
         }
         void await_resume() noexcept {}
@@ -82,7 +86,12 @@ public:
     struct YieldAwaiter {
         YieldAwaiter(Executor* executor) : _executor(executor) {}
         bool await_ready() const noexcept { return false; }
-        void await_suspend(std::coroutine_handle<> handle) {
+        template <typename PromiseType>
+        void await_suspend(std::coroutine_handle<PromiseType> handle) {
+            static_assert(
+                std::is_base_of<LazyPromiseBase, PromiseType>::value,
+                "'co_await Yield' is only allowed to be called by Lazy");
+
             logicAssert(_executor,
                         "Yielding is only meaningful with an executor!");
             _executor->schedule(std::move(handle));
@@ -251,8 +260,15 @@ public:
         using Base = detail::LazyAwaiterBase<T>;
         AwaiterBase(Handle coro) : Base(coro) {}
 
-        AS_INLINE auto await_suspend(
-            std::coroutine_handle<> continuation) noexcept(!reschedule) {
+        template <typename PromiseType>
+        AS_INLINE auto await_suspend(std::coroutine_handle<PromiseType>
+                                         continuation) noexcept(!reschedule) {
+            static_assert(
+                std::is_base_of<LazyPromiseBase, PromiseType>::value ||
+                    std::is_same_v<detail::DetachedCoroutine::promise_type,
+                                   PromiseType>,
+                "'co_await Yield' is only allowed to be called by Lazy");
+
             // current coro started, caller becomes my continuation
             this->_handle.promise()._continuation = continuation;
 

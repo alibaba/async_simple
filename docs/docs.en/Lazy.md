@@ -52,7 +52,7 @@ Note that, we couldn't assume that the statements after a `co_await expression` 
 - There is an bug in the scheduler. The task submitted to the scheduler wouldn't be promised to schedule.
 - There is an exception happened in the waited task. In this case, the current coroutine would return to its caller instead of executing the following statments.
 
-Another thing we need to note is that the function contains a `co_await` would be a C++20 stackless coroutine too.
+Note that we should only `co_await` a Lazy in a Lazy function in users code.
 
 ### .start(callback)
 
