@@ -24,6 +24,9 @@ target("async_simple_coro_test")
     add_defines("USE_MODULES")
     add_includedirs(".")
     add_packages("gtest")
+    if is_plat("windows") then
+        remove_files("async_simple/coro/test/LazyTest.cpp")
+    end
 
 target("async_simple_test")
     add_deps("async_simple")
@@ -31,14 +34,23 @@ target("async_simple_test")
     add_defines("USE_MODULES")
     add_includedirs(".")
     add_packages("gtest")
+    if is_plat("windows") then
+        remove_files("async_simple/test/FutureTest.cpp")
+    end
 
 target("CountChar")
     add_deps("async_simple")
     add_files("demo_example/CountChar.cpp")
     add_defines("USE_MODULES")
+    if is_plat("windows") then
+        set_enabled(false)
+    end
 
 target("ReadFiles")
     add_deps("async_simple")
     add_files("demo_example/ReadFiles.cpp")
     add_defines("USE_MODULES")
+    if is_plat("windows") then
+        set_enabled(false)
+    end
 
