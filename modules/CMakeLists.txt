@@ -14,5 +14,5 @@ if(NOT ${UTHREAD})
 endif()
 
 if (${ASYNC_SIMPLE_DISABLE_AIO} OR NOT LIBAIO_INCLUDE_DIR OR NOT LIBAIO_LIBRARIES)
-  target_compile_definitions(libasync_simple INTERFACE ASYNC_SIMPLE_HAS_NOT_AIO)
+  add_definitions(-DASYNC_SIMPLE_HAS_NOT_AIO)
 endif()
