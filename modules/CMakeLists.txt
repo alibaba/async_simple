@@ -5,3 +5,7 @@ target_sources(async_simple_modules
     async_simple.cppm
 )
 target_include_directories(async_simple_modules PUBLIC ..)
+
+if(NOT ${UTHREAD})
+  target_compile_definitions(async_simple_modules INTERFACE ASYNC_SIMPLE_MODULES_HAS_NOT_UTHREAD)
+endif()

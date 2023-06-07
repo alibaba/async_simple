@@ -11,11 +11,13 @@ module;
 
 #include "async_simple/executors/SimpleExecutor.h"
 
+#ifndef ASYNC_SIMPLE_MODULES_HAS_NOT_UTHREAD
 #include "async_simple/uthread/Async.h"
 #include "async_simple/uthread/Await.h"
 #include "async_simple/uthread/Collect.h"
 #include "async_simple/uthread/Latch.h"
 #include "async_simple/uthread/Uthread.h"
+#endif
 
 #include "async_simple/Future.h"
 #include "async_simple/Collect.h"
@@ -63,6 +65,7 @@ namespace coro {
     export using async_simple::coro::syncAwait;
 }
 
+#ifndef ASYNC_SIMPLE_MODULES_HAS_NOT_UTHREAD
 namespace uthread {
     export using async_simple::uthread::collectAll;
 
@@ -72,6 +75,7 @@ namespace uthread {
     export using async_simple::uthread::Latch;
     export using async_simple::uthread::Uthread;
 }
+#endif
 
 namespace util {
     export using async_simple::util::Condition;
