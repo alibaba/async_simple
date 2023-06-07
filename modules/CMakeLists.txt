@@ -7,5 +7,8 @@ target_sources(async_simple_modules
 target_include_directories(async_simple_modules PUBLIC ..)
 
 if(NOT ${UTHREAD})
-  target_compile_definitions(async_simple_modules INTERFACE ASYNC_SIMPLE_MODULES_HAS_NOT_UTHREAD)
+  add_definitions(-DASYNC_SIMPLE_MODULES_HAS_NOT_UTHREAD)
+  # FIXME: It looks like `target_compile_definitions` doesn't work
+  # for CXX_MODULES FILES. We should file an issue for this.
+  # target_compile_definitions(async_simple_modules INTERFACE ASYNC_SIMPLE_MODULES_HAS_NOT_UTHREAD)
 endif()
