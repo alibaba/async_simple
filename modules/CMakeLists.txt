@@ -12,3 +12,7 @@ if(NOT ${UTHREAD})
   # for CXX_MODULES FILES. We should file an issue for this.
   # target_compile_definitions(async_simple_modules INTERFACE ASYNC_SIMPLE_MODULES_HAS_NOT_UTHREAD)
 endif()
+
+if (${ASYNC_SIMPLE_DISABLE_AIO} OR NOT LIBAIO_INCLUDE_DIR OR NOT LIBAIO_LIBRARIES)
+  target_compile_definitions(libasync_simple INTERFACE ASYNC_SIMPLE_HAS_NOT_AIO)
+endif()
