@@ -189,6 +189,10 @@ if(${ASYNC_SIMPLE_BUILD_MODULES})
         include(cxx_modules_rules_clang.cmake)
     endif()
 
+    if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        set(CMAKE_EXPERIMENTAL_CXX_MODULE_DYNDEP 1)
+    endif()
+
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_EXTENSIONS OFF)
