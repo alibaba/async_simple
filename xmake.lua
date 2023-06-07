@@ -8,7 +8,7 @@ if is_plat("linux") then
     add_syslinks("pthread")
     add_cxxflags("-stdlib=libstdc++")
 else
-    add_defines("ASYNC_SIMPLE_HAS_NOT_AIO")
+    add_defines("ASYNC_SIMPLE_HAS_NOT_AIO", "ASYNC_SIMPLE_MODULES_HAS_NOT_UTHREAD")
 end
 
 target("async_simple")
