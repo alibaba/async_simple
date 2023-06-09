@@ -14,5 +14,9 @@ cc_test(
         "//async_simple/test:gtest_main",
         ":hdrs_dep",
     ],  
-    copts = ASYNC_SIMPLE_COPTS,
+    copts = ASYNC_SIMPLE_COPTS + select({
+        "@platforms//os:windows": [],
+        # Clang gives incorrect warnings, See https://github.com/llvm/llvm-project/issues/56768
+        "//conditions:default": ["-Wno-unsequenced"],
+    })
 )
