@@ -18,6 +18,7 @@
 #include "async_simple/coro/FutureAwaiter.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SyncAwait.h"
+#include "async_simple/executors/SimpleExecutor.h"
 #include "async_simple/test/unittest.h"
 
 namespace async_simple {
@@ -58,6 +59,19 @@ TEST_F(FutureAwaiterTest, testWithFuture) {
         EXPECT_EQ(2, val);
     };
     syncAwait(lazy2());
+
+    async_simple::executors::SimpleExecutor ex1(2);
+    async_simple::executors::SimpleExecutor ex2(2);
+    auto lazy3 = [&]() -> Lazy<> {
+        Promise<int> pr;
+        auto fut = pr.getFuture().via(&ex1);
+        sum(1, 1, [pr = std::move(pr)](int val) mutable { pr.setValue(val); });
+        auto val = co_await std::move(fut);
+        EXPECT_EQ(2, val);
+        Executor* ex = co_await CurrentExecutor{};
+        EXPECT_EQ(ex, &ex2);
+    };
+    syncAwait(lazy3().via(&ex2));
 }
 
 namespace detail {
