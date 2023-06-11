@@ -17,24 +17,44 @@
 #define ASYNC_SIMPLE_CORO_FUTURE_AWAITER_H
 
 #include "async_simple/Future.h"
+#include "async_simple/coro/Lazy.h"
 #include "async_simple/experimental/coroutine.h"
+
+#include <type_traits>
 
 namespace async_simple {
 
+namespace coro::detail {
+template <typename T>
+struct FutureAwaiter {
+    Future<T> future_;
+
+    bool await_ready() { return future_.hasResult(); }
+
+    template <typename PromiseType>
+    void await_suspend(std::coroutine_handle<PromiseType> continuation) {
+        static_assert(std::is_base_of_v<LazyPromiseBase, PromiseType>,
+                      "FutureAwaiter is only allowed to be called by Lazy");
+        Executor* ex = continuation.promise()._executor;
+        Executor::Context ctx = Executor::NULLCTX;
+        if (ex != nullptr) {
+            ctx = ex->checkout();
+        }
+        future_.setContinuation([continuation, ex, ctx](Try<T>&& t) mutable {
+            if (ex != nullptr) {
+                ex->checkin(continuation, ctx);
+            } else {
+                continuation.resume();
+            }
+        });
+    }
+    auto await_resume() { return std::move(future_.value()); }
+};
+}  // namespace coro::detail
+
 template <typename T>
 auto operator co_await(Future<T>&& future) {
-    struct FutureAwaiter {
-        Future<T> future_;
-
-        bool await_ready() { return future_.hasResult(); }
-        void await_suspend(coro::CoroHandle<> continuation) {
-            future_.setContinuation(
-                [continuation](Try<T>&& t) mutable { continuation.resume(); });
-        }
-        auto await_resume() { return std::move(future_.value()); }
-    };
-
-    return FutureAwaiter{std::move(future)};
+    return coro::detail::FutureAwaiter<T>{std::move(future)};
 }
 
 template <typename T>
