@@ -31,6 +31,7 @@
 #include "async_simple/coro/Traits.h"
 
 #include <atomic>
+#include <cassert>
 #include <mutex>
 #include <utility>
 
@@ -175,7 +176,8 @@ struct [[nodiscard]] ViaAsyncAwaiter {
 template <typename Awaitable>
 inline auto coAwait(Executor* ex, Awaitable&& awaitable) {
     if constexpr (detail::HasCoAwaitMethod<Awaitable>) {
-        return std::forward<Awaitable>(awaitable).coAwait(ex);
+        return detail::getAwaiter(
+            std::forward<Awaitable>(awaitable).coAwait(ex));
     } else {
         using AwaiterType =
             decltype(detail::getAwaiter(std::forward<Awaitable>(awaitable)));
