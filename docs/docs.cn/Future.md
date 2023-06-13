@@ -151,7 +151,7 @@ std::this_thread::sleep_for(std::chrono::milliseconds(500));
 auto val = co_await std::move(fut);
 ```
 
-如果 Future 已经设置过 Executor，那么此时当前协程的 Resumption 由该调度器控制。
+如果 Future 已经设置过 Executor，那么此时当前协程何时 Resumption 由该调度器控制。注意这不会更改当前协程的 Executor 环境。
 
 如果当前协程已设置了调度器，Future 未设置调度器且我们希望由该调度器介入，我们可以通过 `co_await CurrentExecutor{};` 来做到：
 
