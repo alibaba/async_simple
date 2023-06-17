@@ -68,8 +68,8 @@ void Generator_pure_switch_bench(benchmark::State &state) {
     for (auto _ : state) {
         auto g = f();
         for (int i = 0; i < num; ++i) {
-            benchmark::DoNotOptimize(g());
-            // g();
+            int value = g();
+            benchmark::DoNotOptimize(value);
         }
     }
 }
