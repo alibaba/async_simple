@@ -9,8 +9,6 @@ module;
 #include "async_simple/coro/Semaphore.h"
 #include "async_simple/coro/Sleep.h"
 
-#include "async_simple/executors/SimpleExecutor.h"
-
 #ifndef ASYNC_SIMPLE_MODULES_HAS_NOT_UTHREAD
 #include "async_simple/uthread/Async.h"
 #include "async_simple/uthread/Await.h"
@@ -38,10 +36,6 @@ namespace async_simple {
     export using async_simple::operator co_await;
 
     export using async_simple::Unit;
-
-namespace executors {
-    export using async_simple::executors::SimpleExecutor;
-}
 
 namespace coro {
     export using async_simple::coro::Lazy;

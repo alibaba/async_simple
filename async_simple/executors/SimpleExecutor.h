@@ -28,6 +28,9 @@ namespace async_simple {
 
 namespace executors {
 
+// 0xBFFFFFFF == ~0x40000000
+inline constexpr int64_t kContextMask = 0x40000000;
+
 // This is a simple executor. The intention of SimpleExecutor is to make the
 // test available and show how user should implement their executors. People who
 // want to have fun with async_simple could use SimpleExecutor for convenience,
@@ -43,8 +46,10 @@ public:
     using Context = Executor::Context;
 
 public:
-    explicit SimpleExecutor(size_t threadNum);
-    ~SimpleExecutor();
+    explicit SimpleExecutor(size_t threadNum) : _pool(threadNum) {
+        _ioExecutor.init();
+    }
+    ~SimpleExecutor() { _ioExecutor.destroy(); }
 
 public:
     bool schedule(Func func) override {
@@ -58,8 +63,22 @@ public:
 
     size_t currentContextId() const override { return _pool.getCurrentId(); }
 
-    Context checkout() override;
-    bool checkin(Func func, Context ctx, ScheduleOptions opts) override;
+    Context checkout() override {
+        // avoid CurrentId equal to NULLCTX
+        return reinterpret_cast<Context>(_pool.getCurrentId() | kContextMask);
+    }
+
+    bool checkin(Func func, Context ctx, ScheduleOptions opts) override {
+        int64_t id = reinterpret_cast<int64_t>(ctx);
+        auto prompt =
+            _pool.getCurrentId() == (id & (~kContextMask)) && opts.prompt;
+        if (prompt) {
+            func();
+            return true;
+        }
+        return _pool.scheduleById(std::move(func), id & (~kContextMask)) ==
+               util::ThreadPool::ERROR_NONE;
+    }
 
     IOExecutor* getIOExecutor() override { return &_ioExecutor; }
 

@@ -18,6 +18,7 @@ cc_library(
     ],
     deps = [
         "//:async_simple",
+        "//:simple_executors",
         ":asio",
     ],
 )
@@ -32,7 +33,10 @@ cc_binary(
 cc_binary(
     name = "ReadFiles",
     srcs = ["ReadFiles.cpp"],
-    deps = ["//:async_simple"],
+    deps = [
+        "//:async_simple",
+        "//:simple_executors",
+    ],
     copts = ASYNC_SIMPLE_COPTS,
 )
 

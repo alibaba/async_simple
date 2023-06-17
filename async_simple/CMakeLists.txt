@@ -1,6 +1,3 @@
-file(GLOB coro_src "coro/*.cpp")
-file(GLOB executors_src "executors/*.cpp")
-
 if(${UTHREAD})
   file(GLOB uthread_src "uthread/internal/*.cc")
   if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
@@ -11,7 +8,6 @@ endif()
 
 file(GLOB headers "*.h")
 file(GLOB coro_header "coro/*.h")
-file(GLOB executors_header "executors/*.h")
 file(GLOB experimental_header "experimental/*.h")
 file(GLOB util_header "util/*.h")
 if(UTHREAD)
@@ -20,16 +16,18 @@ if(UTHREAD)
 endif()
 
 
-set(SRCS
-  ${coro_src}
-  ${executors_src}
-  )
+set(SRCS "")
 if(UTHREAD)
   list(APPEND SRCS ${uthread_src})
   list(APPEND SRCS ${uthread_asm_src})
 endif()
 
-if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+# If there is no Uthread, async_simple is a header only library 
+if(NOT UTHREAD) 
+  add_library(async_simple INTERFACE ${SRCS})
+  target_link_libraries(async_simple INTERFACE libasync_simple)
+  install(TARGETS async_simple DESTINATION lib/)
+elseif(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   add_library(async_simple_static STATIC ${SRCS})
   add_library(async_simple SHARED ${SRCS})
   target_link_libraries(async_simple PUBLIC libasync_simple)

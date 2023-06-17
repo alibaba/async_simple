@@ -25,14 +25,14 @@ find_package(Aio QUIET)
 find_package(Benchmark)
 
 option(ASYNC_SIMPLE_ENABLE_TESTS "Build the tests" ON)
-option(ASYNC_SIMPLE_DISABLE_AIO "Don't build with AIO" OFF)
+option(ASYNC_SIMPLE_DISABLE_AIO "Don't build SimpleIOExecutor with AIO" OFF)
 
 if(NOT ${ASYNC_SIMPLE_DISABLE_AIO} AND LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
     message(STATUS "aio found")
     message(STATUS "aio: ${LIBAIO_INCLUDE_DIR}, ${LIBAIO_LIBRARIES}.")
-    target_link_libraries(libasync_simple INTERFACE ${LIBAIO_LIBRARIES})
 else()
-    target_compile_definitions(libasync_simple INTERFACE ASYNC_SIMPLE_HAS_NOT_AIO)
+    # Just for SimpleIOExecutor.h
+    add_definitions(-DASYNC_SIMPLE_HAS_NOT_AIO)
 endif()
 
 if (${ASYNC_SIMPLE_ENABLE_TESTS})
@@ -132,6 +132,9 @@ set(testdeplibs)
 list(APPEND testdeplibs ${GTEST_LIBRARIES})
 list(APPEND testdeplibs ${GMOCK_LIBRARIES})
 list(APPEND testdeplibs ${CMAKE_THREAD_LIBS_INIT})
+if(NOT ${ASYNC_SIMPLE_DISABLE_AIO} AND LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
+    list(APPEND testdeplibs ${LIBAIO_LIBRARIES})
+endif()
 
 if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     if(CMAKE_BUILD_BITS EQUAL 32)
