@@ -6,6 +6,7 @@ cc_library(
     hdrs = glob(["*.h", "*.hpp"]),
     deps = [
         "//:async_simple",
+        "//:simple_executors",
         "@com_google_benchmark//:benchmark",
     ],
     defines = select({

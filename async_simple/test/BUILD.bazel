@@ -4,7 +4,10 @@ cc_library(
     name = "gtest_main",
     srcs = ["dotest.cpp"],
     hdrs = ["unittest.h"],
-    deps = ["@com_google_googletest//:gtest"],
+    deps = [
+        "//:simple_executors",
+        "@com_google_googletest//:gtest"
+    ],
     copts = ASYNC_SIMPLE_COPTS,
     visibility = ["//visibility:public"],
 )
