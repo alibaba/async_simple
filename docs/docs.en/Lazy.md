@@ -250,6 +250,43 @@ In the above example, `task1...task4` represents a task chain consists of Lazy. 
 
 So we could assign the executor at the root the task chain simply.
 
+# LazyLocals
+LazyLocals is similar to thread_local in the thread environment, and users can share data for related Lazies through LazyLocals.
+LazyLocals can only be bound to RescheduleLazy, and it will be passed along with co_wait.
+LazyLocals held by RescheduleLazy and Lazy have void* type, type conversion and lifecycle need to be managed by users,the following is an example:
+```c++
+    int* i = new int(10);
+    async_simple::executors::SimpleExecutor ex(2);
+
+    auto sub_task = [&]() -> Lazy<> {
+        // There is no runtime detection for Type conversion, and the correctness is guaranteed by users
+        int* v = co_await LazyLocals<int>{};
+        EXPECT_EQ(v, i);
+        EXPECT_EQ(*v, 20);
+        *v = 30;
+    };
+
+    auto task = [&]() -> Lazy<> {
+        void* v = co_await LazyLocals{};
+        EXPECT_EQ(v, i);
+        (*i) = 20;
+        co_await sub_task();
+        co_return;
+    };
+    syncAwait(task().via(&ex).setLazyLocal(i));
+    EXPECT_EQ(*i, 30);
+    delete i;
+```
+If the user starts Lazy through 'start (callback)' and needs to recycle LazyLocals resources after Lazy execution is completed, it can be done in the callback, for example:
+
+```c++
+    int* i = new int(10);
+    task().via(&ex).setLazyLocal(i).start([&](Try<void>) {
+        delete i;
+        i = nullptr;
+    });
+```
+
 # Yield
 
 Sometimes we may want the executing Lazy to yield out. (For example, we found the Lazy has been executed for a long time)
