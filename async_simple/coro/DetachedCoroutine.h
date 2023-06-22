@@ -57,6 +57,7 @@ struct DetachedCoroutine {
         // Hint to gdb script for that there is no continuation for
         // DetachedCoroutine.
         std::coroutine_handle<> _continuation = nullptr;
+        void* _lazy_local = nullptr;
     };
 };
 

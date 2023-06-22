@@ -252,6 +252,42 @@ void func(int x, Executor *e) {
 
 总之，当我们需要为多个 Lazy 组成的任务链指定调度器时，我们只需要在任务链的开头指定调度器就好了。
 
+# LazyLocals
+LazyLocals类似于线程环境下的thread_local，用户可以通过LazyLocals为具有调用关系的Lazy间共享数据。
+只允许为RescheduleLazy绑定LazyLocals，其会随着co_await一路传递。
+RescheduleLazy和Lazy持有的LazyLocals为一个void*类型的指针，类型转换与生命周期需要由用户管理，以下为使用示例：
+```c++
+    int* i = new int(10);
+    async_simple::executors::SimpleExecutor ex(2);
+
+    auto sub_task = [&]() -> Lazy<> {
+        // 类型转换无运行时检测，正确性由用户保证
+        int* v = co_await LazyLocals<int>{};
+        EXPECT_EQ(v, i);
+        EXPECT_EQ(*v, 20);
+        *v = 30;
+    };
+
+    auto task = [&]() -> Lazy<> {
+        void* v = co_await LazyLocals{};
+        EXPECT_EQ(v, i);
+        (*i) = 20;
+        co_await sub_task();
+        co_return;
+    };
+    syncAwait(task().via(&ex).setLazyLocal(i));
+    EXPECT_EQ(*i, 30);
+    delete i;
+```
+如果用户通过`start(callback)`启动并需要在Lazy执行完毕后回收LazyLocals资源，则可以在callback中完成，例如：
+```c++
+    int* i = new int(10);
+    task().via(&ex).setLazyLocal(i).start([&](Try<void>) {
+        delete i;
+        i = nullptr;
+    });
+```
+
 # Yield
 
 有时我们可能希望主动让出一个 Lazy 协程的执行，将执行资源交给其他任务。（例如我们发现当前协程执行的时间太长了）

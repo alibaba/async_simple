@@ -48,6 +48,9 @@ class Lazy;
 // This would suspend the executing coroutine.
 struct Yield {};
 
+template <typename T = void>
+struct LazyLocals {};
+
 namespace detail {
 template <class, typename OAlloc, bool Para>
 struct CollectAllAwaiter;
@@ -104,7 +107,7 @@ public:
     };
 
 public:
-    LazyPromiseBase() : _executor(nullptr) {}
+    LazyPromiseBase() : _executor(nullptr), _lazy_local(nullptr) {}
     // Lazily started, coroutine will not execute until first resume() is called
     std::suspend_always initial_suspend() noexcept { return {}; }
     FinalAwaiter final_suspend() noexcept { return {}; }
@@ -118,12 +121,19 @@ public:
     auto await_transform(CurrentExecutor) {
         return ReadyAwaiter<Executor*>(_executor);
     }
+
+    template <typename T>
+    auto await_transform(LazyLocals<T>) {
+        return ReadyAwaiter<T*>(static_cast<T*>(_lazy_local));
+    }
+
     auto await_transform(Yield) { return YieldAwaiter(_executor); }
 
     /// IMPORTANT: _continuation should be the first member due to the
     /// requirement of dbg script.
     std::coroutine_handle<> _continuation;
     Executor* _executor;
+    void* _lazy_local;
 };
 
 template <typename T>
@@ -271,11 +281,16 @@ public:
                 std::is_base_of<LazyPromiseBase, PromiseType>::value ||
                     std::is_same_v<detail::DetachedCoroutine::promise_type,
                                    PromiseType>,
-                "'co_await Yield' is only allowed to be called by Lazy");
+                "'co_await Lazy' is only allowed to be called by Lazy or "
+                "DetachedCoroutine");
 
             // current coro started, caller becomes my continuation
             this->_handle.promise()._continuation = continuation;
-
+            if constexpr (std::is_base_of<LazyPromiseBase,
+                                          PromiseType>::value) {
+                this->_handle.promise()._lazy_local =
+                    continuation.promise()._lazy_local;
+            }
             return awaitSuspendImpl();
         }
 
@@ -508,6 +523,13 @@ public:
                 std::rethrow_exception(t.getException());
             }
         });
+    }
+
+    RescheduleLazy<T> setLazyLocal(void* lazy_local) && {
+        logicAssert(this->_coro.operator bool(),
+                    "Lazy do not have a coroutine_handle");
+        this->_coro.promise()._lazy_local = lazy_local;
+        return RescheduleLazy<T>(std::exchange(this->_coro, nullptr));
     }
 
     [[deprecated(
