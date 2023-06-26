@@ -74,7 +74,6 @@ void SharedMutex_ReadMoreThanWrite_chain(benchmark::State& state) {
     };
     for ([[maybe_unused]] const auto& _ : state)
         tester();
-    std::cout << sum << std::endl;
 }
 
 void SpinLock_ReadMoreThanWrite_chain(benchmark::State& state) {
@@ -123,5 +122,4 @@ void SpinLock_ReadMoreThanWrite_chain(benchmark::State& state) {
     };
     for ([[maybe_unused]] const auto& _ : state)
         tester();
-    std::cout << sum << std::endl;
 }
