@@ -51,10 +51,6 @@ cc_library(
         "async_simple/util/*.h",
     ]) + uthread_hdrs,
     copts = ASYNC_SIMPLE_COPTS,
-    defines = select({
-        "//bazel/config:async_simple_has_not_aio": ["ASYNC_SIMPLE_HAS_NOT_AIO"],
-        "//conditions:default": [],
-    }),
     linkopts = select({
         "@platforms//os:windows": [],
         "//conditions:default": ["-lpthread"],
