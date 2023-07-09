@@ -13,6 +13,7 @@ hello-async_simple/
 │   └── hello.cc
 └── WORKSPACE.bazel
 ```
+You can find these files in this directory.
 
 *hello.cc:*
 ```cpp
@@ -25,21 +26,12 @@ int main() {
     });
 }
 ```
+This is an example of `async_simple::uthread`. [hello.cc](hello.cc) is an example of `async_simple::Lazy`.
 The expected output of this example is `Hello async_simple!`.
 
-*WORKSPACE.bazel*:
+*[WORKSPACE.bazel](WORKSPACE.bazel)*:
+You can also use the `http_archive` method to download async_simple:
 ```python
-# Use git_repository
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-
-ASYNC_SIMPLE_COMMID_ID = ""
-
-git_repository(
-    name = "com_github_async_simple",
-    commit = ASYNC_SIMPLE_COMMID_ID,
-    remote = "https://github.com/alibaba/async_simple.git",
-)
-
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # Use http_archive
@@ -58,7 +50,7 @@ load("@com_github_async_simple//bazel/config:deps.bzl", "async_simple_dependenci
 async_simple_dependencies()
 ```
 
-*BUILD.bazel*:
+*[BUILD.bazel](BUILD.bazel)*:
 ```python
 cc_binary(
     name = "hello",

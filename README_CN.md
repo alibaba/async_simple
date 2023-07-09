@@ -159,6 +159,7 @@ bazel build --copt='-O0' --copt='-ggdb' ...
 ```
 - 看[这里](https://bazel.build/run/build)获得`bazel build`的更多信息
 - `...`表示递归扫描所有目标，在`oh-my-zsh`中被识别为`../..`，可更换其他`shell`或使用`bash -c 'command.'`运行，例如`bash -c 'bazel build ...'`， 或者使用`bazel build ...:all`
+- 使用`async_simple`作为第三方依赖库，也可以看看[bazel support](bazel/support/README.md)
 
 # Docker 编译环境
 ```

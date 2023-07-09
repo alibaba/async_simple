@@ -166,6 +166,7 @@ bazel build --copt='-O0' --copt='-ggdb' ...
 ```
 - See [this](https://bazel.build/run/build) get more infomation
 - ` ...` Indicates recursively scan all targets, recognized as `../..` in `oh-my-zsh`, can be replaced by other `shell` or `bash -c 'commond'` to run, such as `bash -c 'bazel build' ...` or use `bazel build ...:all`
+- Use `async_simple` as a dependency, see also [bazel support](bazel/support/README.md)
 
 # Docker Compile Environment
 ```

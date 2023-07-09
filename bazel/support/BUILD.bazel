@@ -1,0 +1,6 @@
+cc_binary(
+    name = "hello",
+    srcs = ["hello.cc"],
+    copts = ["-std=c++20"],
+    deps = ["@com_github_async_simple//:async_simple"],
+)

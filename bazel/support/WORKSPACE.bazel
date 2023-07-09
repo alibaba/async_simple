@@ -1,0 +1,16 @@
+workspace(name = "hello_async_simple")
+
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+ASYNC_SIMPLE_COMMID_ID = "8ccc63142b23c6660f61d58f08a151020fa39da0"
+
+git_repository(
+    name = "com_github_async_simple",
+    commit = ASYNC_SIMPLE_COMMID_ID,
+    remote = "https://github.com/alibaba/async_simple.git",
+)
+
+# Load async_simple async_simple_dependencies
+load("@com_github_async_simple//bazel/config:deps.bzl", "async_simple_dependencies")
+
+async_simple_dependencies()
