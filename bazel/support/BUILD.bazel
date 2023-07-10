@@ -1,0 +1,16 @@
+config_setting(
+    name = "msvc_compiler",
+    flag_values = {
+        "@bazel_tools//tools/cpp:compiler": "msvc-cl",
+    },
+)
+
+cc_binary(
+    name = "hello",
+    srcs = ["hello.cc"],
+    copts = select({
+        ":msvc_compiler": ["/std:c++20"],
+        "//conditions:default": ["-std=c++20"],
+    }),
+    deps = ["@com_github_async_simple//:async_simple"],
+)

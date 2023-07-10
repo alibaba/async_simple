@@ -6,7 +6,7 @@ build_options.*
 config.log
 *.o
 build/
-build*
+build*/
 _external/
 core.*
 \#*\#
@@ -26,6 +26,7 @@ coro_trace.log
 *.log
 test.h
 bazel-*
+!.bazelignore
 !.bazelrc
 cmake-build-debug
 !docs/.vitepress
