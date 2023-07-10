@@ -327,6 +327,16 @@ TEST_F(LazyTest, testYield) {
     m2.unlock();
 }
 
+TEST_F(LazyTest, testPriority) {
+    int8_t priority = 0;
+    auto test = [&]() -> Lazy<void> {
+        priority = co_await Priority{};
+        co_return;
+    };
+    syncAwait(test().via(&_executor).setPriority(100));
+    EXPECT_EQ(priority, 100);
+}
+
 TEST_F(LazyTest, testVoid) {
     std::atomic<int> value = 0;
     auto test = [this, &value]() -> Lazy<> {

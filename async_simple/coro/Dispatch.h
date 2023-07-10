@@ -73,7 +73,8 @@ public:
         }
         Executor* old_ex = h.promise()._executor;
         ChangeLaziessExecutorTo(h, _ex);
-        bool succ = _ex->schedule(std::move(h));
+        int8_t priority = h.promise()._priority;
+        bool succ = _ex->scheduleWithPriority(std::move(h), priority);
         // cannot access *this after schedule.
         // If the scheduling fails, we must change the executor back to its
         // original value, as the user may catch exceptions and handle them

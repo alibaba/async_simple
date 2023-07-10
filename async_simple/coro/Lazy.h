@@ -51,6 +51,8 @@ struct Yield {};
 template <typename T = void>
 struct LazyLocals {};
 
+struct Priority {};
+
 namespace detail {
 template <class, typename OAlloc, bool Para>
 struct CollectAllAwaiter;
@@ -98,7 +100,8 @@ public:
 
             logicAssert(_executor,
                         "Yielding is only meaningful with an executor!");
-            _executor->schedule(std::move(handle));
+            int8_t priority = handle.promise()._priority;
+            _executor->scheduleWithPriority(std::move(handle), priority);
         }
         void await_resume() noexcept {}
 
@@ -107,7 +110,8 @@ public:
     };
 
 public:
-    LazyPromiseBase() : _executor(nullptr), _lazy_local(nullptr) {}
+    LazyPromiseBase()
+        : _executor(nullptr), _lazy_local(nullptr), _priority(0) {}
     // Lazily started, coroutine will not execute until first resume() is called
     std::suspend_always initial_suspend() noexcept { return {}; }
     FinalAwaiter final_suspend() noexcept { return {}; }
@@ -127,6 +131,8 @@ public:
         return ReadyAwaiter<T*>(static_cast<T*>(_lazy_local));
     }
 
+    auto await_transform(Priority) { return ReadyAwaiter<int8_t>(_priority); }
+
     auto await_transform(Yield) { return YieldAwaiter(_executor); }
 
     /// IMPORTANT: _continuation should be the first member due to the
@@ -134,6 +140,7 @@ public:
     std::coroutine_handle<> _continuation;
     Executor* _executor;
     void* _lazy_local;
+    int8_t _priority;
 };
 
 template <typename T>
@@ -290,6 +297,8 @@ public:
                                           PromiseType>::value) {
                 this->_handle.promise()._lazy_local =
                     continuation.promise()._lazy_local;
+                this->_handle.promise()._priority =
+                    continuation.promise()._priority;
             }
             return awaitSuspendImpl();
         }
@@ -300,7 +309,8 @@ public:
                 // executor schedule performed
                 auto& pr = this->_handle.promise();
                 logicAssert(pr._executor, "RescheduleLazy need executor");
-                pr._executor->schedule(this->_handle);
+                int8_t priority = pr._priority;
+                pr._executor->scheduleWithPriority(this->_handle, priority);
             } else {
                 return this->_handle;
             }
@@ -529,6 +539,13 @@ public:
         logicAssert(this->_coro.operator bool(),
                     "Lazy do not have a coroutine_handle");
         this->_coro.promise()._lazy_local = lazy_local;
+        return RescheduleLazy<T>(std::exchange(this->_coro, nullptr));
+    }
+
+    RescheduleLazy<T> setPriority(int8_t priority) && {
+        logicAssert(this->_coro.operator bool(),
+                    "Lazy do not have a coroutine_handle");
+        this->_coro.promise()._priority = priority;
         return RescheduleLazy<T>(std::exchange(this->_coro, nullptr));
     }
 

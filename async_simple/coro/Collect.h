@@ -278,6 +278,7 @@ struct CollectAllAwaiter {
         auto executor = promise_type._executor;
         for (size_t i = 0; i < _input.size(); ++i) {
             auto& exec = _input[i]._coro.promise()._executor;
+            int8_t priority = _input[i]._coro.promise()._priority;
             if (exec == nullptr) {
                 exec = executor;
             }
@@ -293,7 +294,7 @@ struct CollectAllAwaiter {
             if (Para == true && _input.size() > 1) {
                 if (exec != nullptr)
                     AS_LIKELY {
-                        exec->schedule(func);
+                        exec->scheduleWithPriority(std::move(func), priority);
                         continue;
                     }
             }
@@ -420,6 +421,7 @@ struct CollectAllVariadicAwaiter {
         (
             [executor, this](auto& lazy, auto& result) {
                 auto& exec = lazy._coro.promise()._executor;
+                int8_t priority = lazy._coro.promise()._priority;
                 if (exec == nullptr) {
                     exec = executor;
                 }
@@ -434,7 +436,10 @@ struct CollectAllVariadicAwaiter {
 
                 if constexpr (Para == true && sizeof...(Ts) > 1) {
                     if (exec != nullptr)
-                        AS_LIKELY { exec->schedule(std::move(func)); }
+                        AS_LIKELY {
+                            exec->scheduleWithPriority(std::move(func),
+                                                       priority);
+                        }
                     else
                         AS_UNLIKELY { func(); }
                 } else {

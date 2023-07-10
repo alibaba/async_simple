@@ -86,6 +86,11 @@ public:
     // func will not be executed. In case schedule return true, the executor
     // should guarantee that the func would be executed.
     virtual bool schedule(Func func) = 0;
+
+    virtual bool scheduleWithPriority(Func func, int8_t priority) {
+        return schedule(std::move(func));
+    }
+
     // Return true if caller runs in the executor.
     virtual bool currentThreadInExecutor() const {
         throw std::logic_error("Not implemented");
