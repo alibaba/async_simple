@@ -54,6 +54,7 @@ set(CXX_FLAGS
     -fPIC
     -Wall
     -Werror
+    -Wno-read-modules-implicitly
     -D__STDC_LIMIT_MACROS
     -g
     )
