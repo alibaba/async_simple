@@ -291,7 +291,7 @@ RescheduleLazy和Lazy持有的LazyLocals为一个void*类型的指针，类型�
 # Yield
 
 有时我们可能希望主动让出一个 Lazy 协程的执行，将执行资源交给其他任务。（例如我们发现当前协程执行的时间太长了）
-我们可以通过在 Lazy 中 `co_await async_simple::coro::Yield();` 来做到这一点。
+我们可以通过在 Lazy 中 `co_await async_simple::coro::Yield{};` 来做到这一点。
 
 # 获取当前调度器
 

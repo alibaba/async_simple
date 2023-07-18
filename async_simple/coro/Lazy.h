@@ -42,7 +42,7 @@ class Lazy;
 // execute, we could write:
 //
 // ```C++
-//  co_await Yield();
+//  co_await Yield{};
 // ```
 //
 // This would suspend the executing coroutine.

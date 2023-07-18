@@ -380,7 +380,7 @@ inline auto collectAllWindowedImpl(size_t maxConcurrency,
             output.push_back(std::move(t));
         }
         if (yield) {
-            co_await Yield();
+            co_await Yield{};
         }
     }
     co_return std::move(output);

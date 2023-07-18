@@ -290,7 +290,7 @@ If the user starts Lazy through 'start (callback)' and needs to recycle LazyLoca
 # Yield
 
 Sometimes we may want the executing Lazy to yield out. (For example, we found the Lazy has been executed for a long time)
-We can yield it by `co_await async_simple::coro::Yield();` in the Lazy.
+We can yield it by `co_await async_simple::coro::Yield{};` in the Lazy.
 
 # Get the Current Executor
 
