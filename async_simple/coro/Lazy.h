@@ -145,11 +145,7 @@ public:
     LazyPromise() noexcept {}
     ~LazyPromise() noexcept {}
 
-    LazyPromise(std::exception_ptr ptr) { _value = ptr; }
-
     Lazy<T> get_return_object() noexcept;
-
-    static Lazy<T> get_return_object_on_allocation_failure() noexcept;
 
     template <typename V>
     void return_value(V&& value) noexcept(
@@ -194,13 +190,7 @@ public:
 template <>
 class LazyPromise<void> : public LazyPromiseBase {
 public:
-    LazyPromise() noexcept {}
-    ~LazyPromise() noexcept {}
-    LazyPromise(std::exception_ptr ptr) { _exception = ptr; }
-
     Lazy<void> get_return_object() noexcept;
-    static Lazy<void> get_return_object_on_allocation_failure() noexcept;
-
     void return_void() noexcept {}
     void unhandled_exception() noexcept {
         _exception = std::current_exception();
@@ -561,115 +551,6 @@ inline Lazy<void> detail::LazyPromise<void>::get_return_object() noexcept {
     return Lazy<void>(Lazy<void>::Handle::from_promise(*this));
 }
 
-namespace detail {
-
-/// A fake coroutine handle for Lazy which are failed to be allocated.
-/// Before we introduce `get_return_object_on_allocation_failure()` to Lazy,
-/// `::operator new` will throw the exception `std::bad_alloc` when the heap
-/// runs out.
-/// But after we introduce `get_return_object_on_allocation_failure()`, the
-/// `::operator new(size_t, nothrow_t)` form is used. But in this case, we need
-/// to return a Lazy representing an allocation failed Lazy. This is problematic
-/// since Lazy can only be constructed by a coroutine handle. So here we
-/// construct a fake coroutine handle manually to represent the state with full
-/// information.
-///
-/// Why do we want to introduce `get_return_object_on_allocation_failure()`?
-/// Since a coroutine will be roughly converted to:
-///
-/// ```C++
-/// void *frame_addr = ::operator new(required size);
-/// __promise_ = new (frame_addr) __promise_type(...);
-/// __return_object_ = __promise_.get_return_object();
-/// co_await __promise_.initial_suspend();
-/// try {
-///     function-body
-/// } catch (...) {
-///     __promise_.unhandled_exception();
-/// }
-/// co_await __promise_.final_suspend();
-/// ```
-///
-/// Then we can find that the coroutine should be nounwind (noexcept) naturally
-/// if the constructor of the promise_type, the get_return_object() function,
-/// the initial_suspend, the unhandled_exception(), the final_suspend and the
-/// allocation function is noexcept.
-///
-/// For the specific coroutine type, Lazy, all the above except the allocation
-/// function is noexcept. So that we can make every Lazy function noexcept
-/// naturally if we make the allocation function nothrow. This is the reason why
-/// we want to introduce `get_return_object_on_allocation_failure()` to Lazy.
-///
-/// Note that the optimization may not work in some platforms due the ABI
-/// limitations. Since they need to consider the case that the destructor of an
-/// exception can throw exceptions.
-template <typename T>
-struct alloc_failed_coroutine_handle {
-public:
-    template <typename U>
-    operator std::coroutine_handle<LazyPromise<U>>() {
-        return std::coroutine_handle<LazyPromise<U>>::from_address(__handle_);
-    }
-
-private:
-    template <typename U>
-    friend alloc_failed_coroutine_handle<U> allocation_failed_lazy() noexcept;
-
-    /// The standard coroutine frame layout is:
-    ///
-    /// struct frame {
-    ///     void *, // function pointer to resume function
-    ///     void *, // function pointer to destroy function
-    ///     __promise_type,
-    ///     other needed information
-    /// }
-    struct __allocation_failed_coroutine_frame_ty {
-        static void __dummy_destroy_func(void*) {}
-        static void __resume_func(
-            __allocation_failed_coroutine_frame_ty* frame) {
-            if (frame->__promise_._continuation)
-                frame->__promise_._continuation.resume();
-        }
-
-        void (*__resume_)(__allocation_failed_coroutine_frame_ty*) =
-            __resume_func;
-        void (*__destroy_)(void*) = __dummy_destroy_func;
-        class LazyPromise<T> __promise_;
-
-        __allocation_failed_coroutine_frame_ty() {
-            if constexpr (std::is_void_v<T>) {
-                __promise_._exception =
-                    std::make_exception_ptr(std::bad_alloc{});
-            } else {
-                __promise_._value = std::make_exception_ptr(std::bad_alloc{});
-            }
-        }
-    };
-
-    static inline __allocation_failed_coroutine_frame_ty
-        __allocation_failed_coroutine_frame;
-
-    void* __handle_ = &__allocation_failed_coroutine_frame;
-
-    alloc_failed_coroutine_handle() noexcept = default;
-};
-
-template <typename T>
-inline alloc_failed_coroutine_handle<T> allocation_failed_lazy() noexcept {
-    return alloc_failed_coroutine_handle<T>();
-}
-}  // namespace detail
-
-template <typename T>
-inline Lazy<T>
-detail::LazyPromise<T>::get_return_object_on_allocation_failure() noexcept {
-    return Lazy<T>(detail::allocation_failed_lazy<T>());
-}
-
-inline Lazy<void>
-detail::LazyPromise<void>::get_return_object_on_allocation_failure() noexcept {
-    return Lazy<void>(detail::allocation_failed_lazy<void>());
-}
 }  // namespace coro
 }  // namespace async_simple
 
