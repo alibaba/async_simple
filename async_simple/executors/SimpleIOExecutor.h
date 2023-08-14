@@ -18,7 +18,7 @@
 
 #include "async_simple/IOExecutor.h"
 
-#if not  __has_include(<libaio.h>)
+#if !__has_include(<libaio.h>) && !defined(ASYNC_SIMPLE_HAS_NOT_AIO)
 #define ASYNC_SIMPLE_HAS_NOT_AIO
 #endif
 
