@@ -1,3 +1,25 @@
+2023-8-17 Release Notes
+    * 1.2 Released
+    * Added a version number to libasync_simple.so in CMakeScripts.
+    * Added sharedMutex
+    * Added chore(bazel) async_simple_dependencies
+    * Added `dispatch(Executor*)` helper function to schedule the current
+      Lazy corotuine to another executor.
+    * Added a limit that we can only `co_await` a Lazy in a Lazy Function.
+    * Added an explicit requirement that the alignment of `T` in `Lazy<T>`
+      can't exceed `alignof(std::max_align_t)` (which 16 generally) due to
+      a language defect.
+    * Added lazy_local features so that the users can specify the LazyLocal
+      data across the Lazy Calling chain.
+    * Improved experimenting modules support.
+    * Improved cmake support for msvc
+    * Introduced xmake support for modules building.
+    * Optimized FutureAwaiter so that we can reduce the scheduling time when
+      we `co_await` a `async_simple::Future`. The semantics remains the same.
+    * Removed SimpleIOExecutor and SimpleExecutor from async_simple since they
+      are for testing only and we encourage people to use their own executors
+      for their own situations.
+
 2023-4-23  Release Notes
     * 1.1 Released
     * SimpleExecutor will execute all the scheduled task before destructing
