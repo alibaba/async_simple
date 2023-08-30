@@ -13,6 +13,10 @@
 
 async\_simple是阿里巴巴开源的轻量级C++异步框架。提供了基于C++20无栈协程（Lazy），有栈协程（Uthread）以及Future/Promise等异步组件。async\_simple诞生于阿里巴巴智能引擎事业部，目前广泛应用于图计算引擎、时序数据库、搜索引擎等在线系统。连续两年经历天猫双十一磨砺，承担了亿级别流量洪峰，具备非常强劲的性能和可靠的稳定性。
 
+# 快速体验
+
+我们可以在 [compiler-explorer](compiler-explorer.com) 中在线快速体验 async_simple: https://compiler-explorer.com/z/Tdaesqsqj . 注意 `Uthread` 在 compiler-explorer 中不能使用。
+
 # 准备环境
 
 async\_simple 涉及 C++20 协程，对编译器版本有较高要求。需要 clang10 或 gcc10 或 Apple-clang14 及其以上版本。编译运行测试需要 gtest，使用`bazel`可自动拉取gtest。需要 libaio 的功能的需要依赖 libaio。

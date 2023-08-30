@@ -16,6 +16,10 @@ components to write asynchronous codes. The components offered include the Lazy
 (based on C++20 stackless coroutine), the Uthread (based on stackful coroutine)
 and the traditional Future/Promise.
 
+# Quick Experience
+
+We can try async_simple online within [compiler-explorer](compiler-explorer.com): https://compiler-explorer.com/z/Tdaesqsqj . Note that the `Uthread` is not able to use in compiler-explorer since it requires installation.
+
 # Install Dependencies
 
 The build of async_simple need libaio, googletest and cmake.  Both libaio and googletest
