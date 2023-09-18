@@ -118,7 +118,7 @@ public:
     }
     std::exception_ptr getException() const {
         logicAssert(std::holds_alternative<std::exception_ptr>(_value),
-                    "Try object do not has on error");
+                    "Try object do not has an error");
         return std::get<std::exception_ptr>(_value);
     }
 
