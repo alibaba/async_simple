@@ -71,6 +71,20 @@ else()
         )
 endif()
 
+set(IS_ACC OFF CACHE INTERNAL "Whether the current compiler is ACC")
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+try_compile(IS_ACC ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/cmake/IsACC.cpp)
+if (${IS_ACC})
+    message("-- Using ACC")
+    # It is super rare that the destructor of an exception can be throwable.
+    # But such little probability prevents optimizations for coroutines
+    # significantly.
+    # Since the the body of coroutines are wrapped into a big try-catch.
+    # So the coroutines can be marked as noexcept automatically if all its
+    # promise functions and the allocation functions matches the behavior.
+    list(APPEND CXX_FLAGS "-fdisable-exception-with-may-throw-dtor")
+endif()
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     list(APPEND CXX_FLAGS "-fcoroutines")
 endif()
