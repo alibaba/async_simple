@@ -44,6 +44,20 @@
 #endif  // __SANITIZE_ADDRESS__
 #endif  // __GNUC__
 
+#if defined(__alibaba_clang__) && \
+    __has_cpp_attribute(ACC::coro_only_destroy_when_complete)
+#define CORO_ONLY_DESTROY_WHEN_DONE [[ACC::coro_only_destroy_when_complete]]
+#else
+#define CORO_ONLY_DESTROY_WHEN_DONE
+#endif
+
+#if defined(__alibaba_clang__) && \
+    __has_cpp_attribute(ACC::elideable_after_await)
+#define ELIDEABLE_AFTER_AWAIT [[ACC::elideable_after_await]]
+#else
+#define ELIDEABLE_AFTER_AWAIT
+#endif
+
 namespace async_simple {
 // Different from assert, logicAssert is meaningful in
 // release mode. logicAssert should be used in case that

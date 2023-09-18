@@ -474,7 +474,8 @@ protected:
 // should implement `coAwait(Executor*)` member method. Then the caller would
 // pass its executor instance to the awaitable.
 template <typename T = void>
-class [[nodiscard]] Lazy : public detail::LazyBase<T, /*reschedule=*/false> {
+class [[nodiscard]] CORO_ONLY_DESTROY_WHEN_DONE ELIDEABLE_AFTER_AWAIT Lazy
+    : public detail::LazyBase<T, /*reschedule=*/false> {
     using Base = detail::LazyBase<T, false>;
 
 public:
