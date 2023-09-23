@@ -11,21 +11,21 @@
 
 English | [中文](./README_CN.md)
 
-The async_simple is a library offering simple, light-weight and easy-to-use 
-components to write asynchronous codes. The components offered include the Lazy
-(based on C++20 stackless coroutine), the Uthread (based on stackful coroutine)
+async_simple is a library offering simple, light-weight and easy-to-use 
+components to write asynchronous code. The components offered include Lazy
+(based on C++20 stackless coroutine), Uthread (based on stackful coroutine)
 and the traditional Future/Promise.
 
 # Quick Experience
 
-We can try async_simple online within [compiler-explorer](compiler-explorer.com): https://compiler-explorer.com/z/Tdaesqsqj . Note that the `Uthread` is not able to use in compiler-explorer since it requires installation.
+We can try async_simple online in [compiler-explorer](compiler-explorer.com): https://compiler-explorer.com/z/Tdaesqsqj . Note that `Uthread` cannot be use in compiler-explorer since it requires installation.
 
 # Install Dependencies
 
-The build of async_simple need libaio, googletest and cmake.  Both libaio and googletest
+The build of async_simple requires libaio, googletest and cmake.  Both libaio and googletest
 are optional. (Testing before using is highly suggested.)
 
-## Using apt (ubuntu and debian's)
+## Using apt (Ubuntu and Debian)
 
 ```bash
 # Install libaio
@@ -34,7 +34,7 @@ sudo apt install libaio-dev -y
 sudo apt install cmake -y
 # Install bazel See: https://bazel.build/install/ubuntu
 ```
-- using `apt` to install gtest, gmock
+- Use `apt` to install gtest and gmock
 ```bash
 sudo apt install -y libgtest-dev libgmock-dev
 ```
@@ -61,7 +61,7 @@ cd .. && sudo rm -rf build
 # Install libaio
 sudo yum install libaio-devel -y
 ```
-- Using `yum` to install gtest, gmock
+- Use `yum` to install gtest, gmock
 ```
 sudo yum install gtest-devel gmock-devel
 ```
@@ -117,11 +117,11 @@ cmake .. && sudo make install
 
 Required Compiler: clang (>= 10.0.0) or gcc (>= 10.3) or Apple-clang (>= 14)
 
-Note that we need to add `-Wno-maybe-uninitialized` option when we use gcc12 due to a false positive diagnostic message by gcc12
+Note that we need to add the `-Wno-maybe-uninitialized` option when we use gcc 12 due to a false positive diagnostic message by gcc 12
 
-Note that when using clang15 it may be necessary to add the `-Wno-unsequenced` option, which is a false positive of clang15. See https://github.com/llvm/llvm-project/issues/56768 for details.
+Note that when using clang 15 it may be necessary to add the `-Wno-unsequenced` option, which is a false positive of clang 15. See https://github.com/llvm/llvm-project/issues/56768 for details.
 
-If you meet any problem about MSVC Compiler Error C4737. Try to add option /EHa to fix the problem.
+If you meet any problem about MSVC Compiler Error C4737. Try to add the /EHa option to fix the problem.
 
 ## Demo example dependency
 
@@ -204,8 +204,8 @@ After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with
 
 # Performance
 
-We also give a [Quantitative Analysis Report](docs/docs.en/QuantitativeAnalysisReportOfCoroutinePerformance.md) Of the
-Lazy (based on C++20 stackless coroutine) and the Uthread (based on stackful coroutine).
+We also give a [Quantitative Analysis Report](docs/docs.en/QuantitativeAnalysisReportOfCoroutinePerformance.md) of
+Lazy (based on C++20 stackless coroutine) and Uthread (based on stackful coroutine).
 
 # C++20 Modules Support
 
@@ -213,16 +213,16 @@ We have **experimental** support for C++20 Modules in `modules/async_simple.cppm
 We can build the `async_simple` module by `xmake` and `cmake`.
 We can find the related usage in `CountChar`, `ReadFiles`, `LazyTest.cpp` and `FutureTest.cpp`.
 
-We need clang (>= d18806e6733 or simply clang16) to build the `async_simple` module.
-It is only tested for libstdc++10.3. Due to the current support status for C++20, it won't be a surprise if the compilation fails in higher version (or other) STLs.
+We need clang (>= d18806e6733 or simply clang 16) to build the `async_simple` module.
+It is only tested for libstdc++10.3. Due to the current support status for C++20, it won't be a surprise if the compilation fails in higher versions of STL.
 
-We can build `async_simple` module with xmake (>= 0eccc6e) by the commands:
+We can build the `async_simple` module with xmake (>= 0eccc6e) using the commands:
 
 ```
 xmake
 ```
 
-We can build `async_simple` module with cmake (>= d18806e673 or cmake3.26) by the following commands:
+We can build the `async_simple` module with cmake (>= d18806e673 or cmake3.26) using the following commands:
 
 ```
 mkdir build_modules && cd build_modules
@@ -230,7 +230,7 @@ CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Release -DASYNC_SIMPLE_BUILD_MO
 ninja
 ```
 
-**Note that** the `async_simple` module in main branch is actually a named module's wrapper for headers for compatability. We can find the practical usage of C++20 Modules in https://github.com/alibaba/async_simple/tree/CXX20Modules, which contains the support for xmake and cmake as well.
+**Note** that the `async_simple` module in the main branch is actually a named module's wrapper for headers for compatability. We can find the practical usage of C++20 Modules in https://github.com/alibaba/async_simple/tree/CXX20Modules, which contains the support for xmake and cmake as well.
 
 # Questions
 
