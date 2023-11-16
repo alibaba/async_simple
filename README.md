@@ -174,26 +174,10 @@ bazel build --copt='-O0' --copt='-ggdb' ...
 
 # Docker Compile Environment
 ```
-# for centos-7
 git clone https://github.com/alibaba/async_simple.git
-cd async_simple/docker/centos7
-docker build . --no-cache -t async_simple:1.0 --network host
-docker run -it --name test-async-simple async_simple:1.0 /bin/bash
-// Has entered centos bash shell
-mkdir build && cd build
-cmake3 .. -DCMAKE_BUILD_TYPE=Release
-
-# for ubuntu 22.04
-git clone https://github.com/alibaba/async_simple.git
-cd async_simple/docker/ubuntu
-docker build . --no-cache -t async_simple:1.0 --network host
-docker run -it --name test-async-simple async_simple:1.0 /bin/bash
-// Has entered ubuntu bash shell
-mkdir build && cd build
-# use clang for compile
-CXX=clang++-13 CC=clang-13 cmake .. -DCMAKE_BUILD_TYPE=Release
-# use g++ for compile
-CXX=g++-11 CC=gcc-11 cmake .. -DCMAKE_BUILD_TYPE=Release
+cd async_simple/docker/(ubuntu|centos7|rockylinux)
+docker build . --no-cache -t async_simple:1.0
+docker run -it --name async_simple async_simple:1.0 /bin/bash
 ```
 
 # Get Started
