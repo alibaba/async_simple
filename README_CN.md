@@ -168,7 +168,7 @@ bazel build --copt='-O0' --copt='-ggdb' ...
 # Docker 编译环境
 ```
 git clone https://github.com/alibaba/async_simple.git
-cd async_simple/docker/(ubuntu|centos7)
+cd async_simple/docker/(ubuntu|centos7|rockylinux)
 docker build . --no-cache -t async_simple:1.0
 docker run -it --name async_simple async_simple:1.0 /bin/bash
 ```
