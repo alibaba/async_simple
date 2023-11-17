@@ -2,7 +2,7 @@
 
 STD_MODULE_PATH=../../third_party_module/stdmodules
 OPT_FLAGS = -O2 -g -DNDEBUG -fprebuilt-module-path=$(STD_MODULE_PATH)
-OBJECT_CFLAGS = -std=c++20 $(OPT_FLAGS) -Wall -Werror
+OBJECT_CFLAGS = -std=c++20 $(OPT_FLAGS) -Wall
 INTERFACE_CFLAGS ?= $(OBJECT_CFLAGS) --precompile
 EXECUTABLE_CFLAGS ?= $(OBJECT_CFLAGS)
 

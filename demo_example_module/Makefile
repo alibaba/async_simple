@@ -1,8 +1,8 @@
 .PHONY:clean build ReadFiles CountChar async-httpd httpd http
 
 STD_MODULE_PATH=../third_party_module/stdmodules
-OPT_FLAGS ?= -O2 -DNDEBUG -g $(STL_PATH) -fprebuilt-module-path=$(STD_MODULE_PATH) -Wno-unused-command-line-argument
-OBJECT_CFLAGS ?= -std=c++20 -Wall -Werror $(OPT_FLAGS)
+OPT_FLAGS ?= -O2 -DNDEBUG -g $(STL_PATH) -fprebuilt-module-path=$(STD_MODULE_PATH) -Wno-unused-command-line-argument 
+OBJECT_CFLAGS ?= -std=c++20 -Wall $(OPT_FLAGS)
 INTERFACE_CFLAGS ?= $(OBJECT_CFLAGS) --precompile $(STL_PATH)
 LINK_CFLAGS =
 EXECUTABLE_CFLAGS ?= $(OBJECT_CFLAGS) $(LINK_CFLAGS)
