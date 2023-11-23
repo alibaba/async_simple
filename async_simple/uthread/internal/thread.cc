@@ -41,22 +41,22 @@ void __sanitizer_finish_switch_fiber(void* fake_stack_save,
                                      size_t* stack_size_old);
 }
 
-inline void start_switch_fiber(jmp_buf_link* context) {
-    __sanitizer_start_switch_fiber(&context->asan_fake_stack,
+inline void start_switch_fiber(jmp_buf_link* context, void **stack) {
+    __sanitizer_start_switch_fiber(stack,
                                    context->asan_stack_bottom,
                                    context->asan_stack_size);
 }
 
-inline void finish_switch_fiber(jmp_buf_link* context) {
-    __sanitizer_finish_switch_fiber(context->asan_fake_stack,
+inline void finish_switch_fiber(jmp_buf_link* context, void *stack) {
+    __sanitizer_finish_switch_fiber(stack,
                                     &context->asan_stack_bottom,
                                     &context->asan_stack_size);
 }
 
 #else
 
-inline void start_switch_fiber(jmp_buf_link* context) {}
-inline void finish_switch_fiber(jmp_buf_link* context) {}
+inline void start_switch_fiber(jmp_buf_link* context, void *stack) {}
+inline void finish_switch_fiber(jmp_buf_link* context, void *stack) {}
 
 #endif  // AS_INTERNAL_USE_ASAN
 
@@ -85,17 +85,19 @@ inline void jmp_buf_link::switch_in() {
     link = std::exchange(g_current_context, this);
     if (!link)
         AS_UNLIKELY { link = &g_unthreaded_context; }
-    start_switch_fiber(this);
+    void *stack_addr = nullptr;
+    start_switch_fiber(this, &stack_addr);
     // `thread` is currently only used in `s_main`
     fcontext = _fl_jump_fcontext(fcontext, thread).fctx;
-    finish_switch_fiber(this);
+    finish_switch_fiber(link, stack_addr);
 }
 
 inline void jmp_buf_link::switch_out() {
     g_current_context = link;
-    start_switch_fiber(link);
+    void *stack_addr = nullptr;
+    start_switch_fiber(link, &stack_addr);
     link->fcontext = _fl_jump_fcontext(link->fcontext, thread).fctx;
-    finish_switch_fiber(link);
+    finish_switch_fiber(this, stack_addr);
 }
 
 inline void jmp_buf_link::initial_switch_in_completed() {
@@ -143,7 +145,7 @@ void thread_context::setup() {
                                           stack_size_, thread_context::s_main);
     context_.thread = this;
 #ifdef AS_INTERNAL_USE_ASAN
-    context_.asan_stack_bottom = stack_.get();
+    context_.asan_stack_bottom = stack_.get() + stack_size_;
     context_.asan_stack_size = stack_size_;
 #endif
     context_.switch_in();

@@ -49,7 +49,6 @@ struct jmp_buf_link {
 #ifdef AS_INTERNAL_USE_ASAN
     const void* asan_stack_bottom = nullptr;
     std::size_t asan_stack_size = 0;
-    void* asan_fake_stack = nullptr;
 #endif
 
 public:
