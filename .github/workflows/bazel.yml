@@ -20,9 +20,13 @@ jobs:
     - name: Build
       # Build your program with clang
       working-directory: ${{github.workspace}}
-      run: bazel build --action_env=CXX=clang++ --action_env=CC=clang ...
+      # Hacking due to there is a bug in either clang14 or libstdc++13 that the compiler is
+      # complaining a consteval function is not constant expression.
+      run: bazel build --action_env=CXX=clang++ --action_env=CC=clang --cxxopt="-Dconsteval=constexpr" ...
 
     - name: Test
       # Build and Execute tests
       working-directory: ${{github.workspace}}
-      run: bazel test --action_env=CXX=clang++ --action_env=CC=clang --test_output=errors ...
+      # Hacking due to there is a bug in either clang14 or libstdc++13 that the compiler is
+      # complaining a consteval function is not constant expression.
+      run: bazel test --action_env=CXX=clang++ --action_env=CC=clang --test_output=errors --cxxopt="-Dconsteval=constexpr" ...
