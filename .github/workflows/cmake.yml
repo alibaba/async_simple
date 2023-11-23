@@ -35,7 +35,8 @@ jobs:
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: CXX=clang++ CC=clang cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.mode}}
+      # Hacking due to there is a bug in either clang14 or libstdc++
+      run: CXX=clang++ CC=clang cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.mode}} -DCMAKE_CXX_FLAGS="-Dconsteval=constexpr"
 
     - name: Build
       # Build your program with the given configuration
