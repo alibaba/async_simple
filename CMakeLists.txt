@@ -1,11 +1,5 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.28)
 project(async_simple CXX C ASM)
-
-set(CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API "2182bf5c-ef0d-489a-91da-49dbc3090d2a")
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  include(cxx_modules_rules_clang.cmake)
-endif()
 
 enable_testing()
 
@@ -54,10 +48,10 @@ set(CXX_FLAGS
     -fPIC
     -Wall
     -Werror
-    -Wno-read-modules-implicitly
     -D__STDC_LIMIT_MACROS
     -g
     )
+
 add_link_options(
     -fuse-ld=lld 
 )
