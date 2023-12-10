@@ -69,6 +69,11 @@ else()
         -D__STDC_LIMIT_MACROS
         -g
         )
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        list(APPEND CXX_FLAGS -Wno-uninitialized)
+    else()
+        list(APPEND CXX_FLAGS -Wno-maybe-uninitialized)
+    endif()
 endif()
 
 set(IS_ACC OFF CACHE INTERNAL "Whether the current compiler is ACC")
