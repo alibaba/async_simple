@@ -27,8 +27,8 @@
 #include <thread>
 #include "async_simple/Common.h"
 #include "async_simple/Executor.h"
-#include "async_simple/MoveWrapper.h"
 #include "async_simple/Try.h"
+#include "async_simple/util/move_only_function.h"
 
 namespace async_simple {
 
@@ -62,7 +62,7 @@ constexpr State operator&(State lhs, State rhs) {
 template <typename T>
 class FutureState {
 private:
-    using Continuation = std::function<void(Try<T>&& value)>;
+    using Continuation = util::move_only_function<void(Try<T>&& value)>;
 
 private:
     // A helper to help FutureState to count the references to guarantee
@@ -228,11 +228,10 @@ public:
     void setContinuation(F&& func) {
         logicAssert(!hasContinuation(),
                     "FutureState already has a continuation");
-        MoveWrapper<F> lambdaFunc(std::move(func));
-        new (&_continuation) Continuation([lambdaFunc](Try<T>&& v) mutable {
-            auto& lambda = lambdaFunc.get();
-            lambda(std::forward<Try<T>>(v));
-        });
+        new (&_continuation)
+            Continuation([func = std::move(func)](Try<T>&& v) mutable {
+                func(std::forward<Try<T>>(v));
+            });
 
         auto state = _state.load(std::memory_order_acquire);
         switch (state) {
