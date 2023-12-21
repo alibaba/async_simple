@@ -62,6 +62,7 @@ else()
         -D_GLIBCXX_USE_CXX11_ABI=1
         -Wno-deprecated-register
         -Wno-mismatched-new-delete
+        -Wno-deprecated-declarations
         -D_FILE_OFFSET_BITS=64
         -fPIC
         -Wall
@@ -73,6 +74,7 @@ else()
         list(APPEND CXX_FLAGS -Wno-uninitialized)
     else()
         list(APPEND CXX_FLAGS -Wno-maybe-uninitialized)
+        list(APPEND CXX_FLAGS -Wno-uninitialized)
     endif()
 endif()
 

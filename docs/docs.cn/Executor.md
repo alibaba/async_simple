@@ -32,6 +32,7 @@ public:
     using Context = void *;
     
     virtual bool schedule(Func func) = 0;
+    bool schedule_move_only(util::move_only_function<void()> func);
     virtual bool currentThreadInExecutor() const = 0;
     virtual ExecutorStat stat() const = 0;
     virtual Context checkout();
@@ -40,6 +41,7 @@ public:
 ```
 
 - `virtual bool schedule(Func func) = 0;` 接口接收一个lambda函数进行调度执行。实现时将该lambda调度到任意一个线程执行即可。当 `schedule(Func)` 返回 `true` 时，该调度器实现需要保证 func 一定会被执行。否则被提交到调度器的 Lazy 任务可能会导致程序出现内存泄漏问题。
+- `bool schedule_move_only(util::move_only_function<void()> func);` 接口可以接受一个move_only/copyable functor进行调度执行，这个接口是为了弥补std::function不能接收move_only functor的缺陷。
 - `virtual bool currentThreadInExecutor() const = 0;` 接口用于检查调用者是否运行在当前Executor中。实现时判断当前线程是否隶属于Executor。
 - `virtual ExecutorStat stat() const = 0;` 接口获取当前Executor状态信息。实现时可以继承ExecutorStat，添加更多状态信息方便用户调试和监控Executor。
 - `virtual Context checkout();` 接口获取当前执行上下文信息。实现时一般可以直接返回当前线程在Executor中唯一标识id。
