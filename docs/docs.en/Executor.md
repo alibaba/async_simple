@@ -31,6 +31,7 @@ public:
     using Context = void *;
     
     virtual bool schedule(Func func) = 0;
+    bool schedule_move_only(util::move_only_function<void()> func);
     virtual bool currentThreadInExecutor() const = 0;
     virtual ExecutorStat stat() const = 0;
     virtual Context checkout();
@@ -39,6 +40,7 @@ public:
 ```
 
 - `Virtual bool schedule(Func func) = 0;`. It would schedule a lambda function to execute. When `scheudle(Func)` returns true, the implementation is required to schedule the lambda to any threads to execute. Otherwise, the unfinished Lazy tasks may result memory leaks.
+- `bool schedule_move_only(util::move_only_function<void()> func);`. It would schedule a move_only or copyable functor to execute, the interface is designed to compensate for the limitation that std:: function cannot receive move_only functor.
 - `virtual bool currentThreadInExecutor() const = 0;`. It would check if the current thread are in the executor.
 - `virtual ExecutorStat stat() const = 0;`. It would return the state information of the executor.
 - `virtual Context checkout();` It would be called in case the user (Lazy, Uthread and Future/Promise) want to leave the current thread. The return value of `checkout` is the identity of the current thread. User who want to schedule back to the original thread should use the identity returned from `checkout`.

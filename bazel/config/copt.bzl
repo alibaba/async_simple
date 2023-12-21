@@ -9,6 +9,7 @@ ASYNC_SIMPLE_COPTS = select({
         "-D_GLIBCXX_USE_CXX11_ABI=1",
         "-Wno-deprecated-register",
         "-Wno-mismatched-new-delete",
+        "-Wno-deprecated-declarations",
         "-fPIC",
         "-Wall",
         "-Werror",

@@ -20,7 +20,9 @@
 #include <functional>
 #include <string>
 #include <thread>
+#include "async_simple/MoveWrapper.h"
 #include "async_simple/experimental/coroutine.h"
+#include "async_simple/util/move_only_function.h"
 
 namespace async_simple {
 // Stat information for an executor.
@@ -86,6 +88,13 @@ public:
     // func will not be executed. In case schedule return true, the executor
     // should guarantee that the func would be executed.
     virtual bool schedule(Func func) = 0;
+
+    // Schedule a move only functor
+    bool schedule_move_only(util::move_only_function<void()> func) {
+        MoveWrapper<decltype(func)> tmp(std::move(func));
+        return schedule([func = tmp]() { func.get()(); });
+    }
+
     // Return true if caller runs in the executor.
     virtual bool currentThreadInExecutor() const {
         throw std::logic_error("Not implemented");
