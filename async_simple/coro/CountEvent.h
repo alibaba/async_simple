@@ -25,8 +25,6 @@ namespace async_simple {
 
 namespace coro {
 
-class CountEvent;
-
 namespace detail {
 
 // CountEvent is a count-down event.
