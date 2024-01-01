@@ -197,7 +197,7 @@ docker run -it --name async_simple async_simple:1.0 /bin/bash
 xmake
 ```
 
-我们可以用 cmake (>= d18806e673 或 cmake3.26)来构建 `async_simple` Module：
+我们可以用 cmake (>= d18806e673 或 cmake 3.26 及更高版本)来构建 `async_simple` Module：
 
 ```
 mkdir build_modules && cd build_modules
