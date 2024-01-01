@@ -206,7 +206,7 @@ We can build the `async_simple` module with xmake (>= 0eccc6e) using the command
 xmake
 ```
 
-We can build the `async_simple` module with cmake (>= d18806e673 or cmake3.26) using the following commands:
+We can build the `async_simple` module with cmake (>= d18806e673 or cmake 3.26 and up) using the following commands:
 
 ```
 mkdir build_modules && cd build_modules
