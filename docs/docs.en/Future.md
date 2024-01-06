@@ -150,8 +150,9 @@ std::this_thread::sleep_for(std::chrono::milliseconds(500));
 auto val = co_await std::move(fut);
 ```
 
-If the Future has set Executor already, the Executor would decide when will the Lazy to be resumed. Note that it wouldn't change the executor
-the Lazy lives in.
+If the Future has set Executor already, the Executor would decide when will the Lazy to be resumed. Note that it wouldn't change the executor the Lazy lives in.
+
+When binding Executor, `co_await` Future will resume Lazy through the `Executor.checkin` interface by default, and users can explicitly specify that Future resume Lazy through the `Executor.schedule` interface by `co_await ResumeBySchedule(std::move(future))`.
 
 If the Lazy has set Executor already and we want to set that executor for the Future, we can make it by `co_await CurrentExecutor{};`.
 
