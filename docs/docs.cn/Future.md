@@ -153,6 +153,8 @@ auto val = co_await std::move(fut);
 
 如果 Future 已经设置过 Executor，那么此时当前协程何时 Resumption 由该调度器控制。注意这不会更改当前协程的 Executor 环境。
 
+当绑定Executor时，默认情况下`co_await` Future会通过`Executor.checkin`接口恢复执行，用户可以通过`co_await ResumeBySchedule(std::move(future))`来显式指定future通过`Executor.schedule`接口恢复执行。
+
 如果当前协程已设置了调度器，Future 未设置调度器且我们希望由该调度器介入，我们可以通过 `co_await CurrentExecutor{};` 来做到：
 
 ```cpp
