@@ -98,7 +98,9 @@ public:
         logicAssert(valid(), "Promise is broken");
         _sharedState->setResult(Try<value_type>(error));
     }
-    void setValue(value_type&& v) requires(!std::is_void_v<T>) {
+    void setValue(value_type&& v)
+        requires(!std::is_void_v<T>)
+    {
         logicAssert(valid(), "Promise is broken");
         _sharedState->setResult(Try<value_type>(std::forward<T>(v)));
     }
@@ -107,7 +109,9 @@ public:
         _sharedState->setResult(std::move(t));
     }
 
-    void setValue() requires(std::is_void_v<T>) {
+    void setValue()
+        requires(std::is_void_v<T>)
+    {
         logicAssert(valid(), "Promise is broken");
         _sharedState->setResult(Try<value_type>(Unit()));
     }

@@ -20,7 +20,6 @@
 #include "async_simple/Executor.h"
 #include "async_simple/FutureState.h"
 #include "async_simple/LocalState.h"
-#include "async_simple/Promise.h"
 #include "async_simple/Traits.h"
 
 namespace async_simple {

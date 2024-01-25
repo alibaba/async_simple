@@ -23,6 +23,7 @@
 import async_simple;
 #else
 #include "async_simple/Future.h"
+#include "async_simple/Promise.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SyncAwait.h"
 #include "async_simple/executors/SimpleExecutor.h"
@@ -61,9 +62,9 @@ uint64_t CountCharInFiles(const std::vector<FileName> &Files, char c) {
 
 template <class T>
 concept Range = requires(T &t) {
-                    t.begin();
-                    t.end();
-                };
+    t.begin();
+    t.end();
+};
 
 // It is not travial to implement an asynchronous do_for_each.
 template <typename InputIt, typename Callable>

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "async_simple/Promise.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/ResumeBySchedule.h"
 #include "async_simple/executors/SimpleExecutor.h"

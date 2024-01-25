@@ -13,6 +13,7 @@ core.*
 !.github
 !.gitignore
 !.clang-format
+!.clangd
 *.so
 *.a
 vgcore.*
