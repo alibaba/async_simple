@@ -173,6 +173,24 @@ docker build . --no-cache -t async_simple:1.0
 docker run -it --name async_simple async_simple:1.0 /bin/bash
 ```
 
+## 导入
+
+当你安装完async_simple以后，你可以在你的项目里导入async_simple。
+
+async_simple 几乎是header-only的. 因此你只需要将安装的include路径传递给编译器即可。
+
+但是async_simple的uthread不是header-only的，我们在安装路径下生成了编译好的库文件，你需要手动链接它或者使用cmake find_package。
+
+## 通过cmake find_package
+请添加以下cmake代码：
+```cmake
+find_package(async_simple REQUIRED)
+target_link_libraries(<your-target-name> PRIVATE async_simple::async_simple) # dynamic_link
+                                 # async_simple::async_simple_header_only   
+                                 # async_simple::async_simple_static  
+```
+其中，`<your-target-name>` 是你需要使用async_simple的target名
+
 # 更多示例
 
 我们的文档托管在GitHub Pages上，[点击进入快速开始](https://alibaba.github.io/async_simple/docs.cn/GetStarted.html).

@@ -23,25 +23,23 @@ if(UTHREAD)
 endif()
 
 # If there is no Uthread, async_simple is a header only library 
-if(NOT UTHREAD) 
-  add_library(async_simple INTERFACE ${SRCS})
-  target_link_libraries(async_simple INTERFACE libasync_simple)
-  install(TARGETS async_simple DESTINATION lib/)
-elseif(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   add_library(async_simple_static STATIC ${SRCS})
   add_library(async_simple SHARED ${SRCS})
-  target_link_libraries(async_simple PUBLIC libasync_simple)
-  target_link_libraries(async_simple_static PUBLIC libasync_simple)
-
-  set_target_properties(async_simple_static PROPERTIES OUTPUT_NAME "async_simple")
-
-  install(TARGETS async_simple DESTINATION lib/)
-  install(TARGETS async_simple_static DESTINATION lib/)
+  target_link_libraries(async_simple PUBLIC async_simple_header_only)
+  target_link_libraries(async_simple_static PUBLIC async_simple_header_only)
+  install(TARGETS async_simple EXPORT async_simple_targets DESTINATION lib/)
+  install(TARGETS async_simple_static EXPORT async_simple_targets DESTINATION lib/)
 else()
-  add_library(async_simple STATIC ${SRCS})
-  target_link_libraries(async_simple PUBLIC libasync_simple)
-  install(TARGETS async_simple DESTINATION lib/)
+  add_library(async_simple_static STATIC ${SRCS})
+  target_link_libraries(async_simple_static PUBLIC async_simple_header_only)
+  install(TARGETS async_simple_static EXPORT async_simple_targets DESTINATION lib/)
+  add_library(async_simple INTERFACE)
+  target_link_libraries(async_simple PUBLIC async_simple_static)
+  install(TARGETS async_simple EXPORT async_simple_targets DESTINATION lib/)
 endif()
+
+install(TARGETS async_simple_header_only EXPORT async_simple_targets)
 
 set_target_properties(async_simple PROPERTIES 
                                    VERSION ${PROJECT_VERSION}
@@ -57,6 +55,23 @@ if(UTHREAD)
   install(FILES ${uthread_internal_header} DESTINATION include/async_simple/uthread/internal)
 endif()
 
+install(EXPORT async_simple_targets
+        FILE async_simple-targets.cmake
+        NAMESPACE async_simple::
+        DESTINATION share/async_simple)
+
+# Generate the config file in the current binary dir (this ensures it's not placed directly in source)
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/async_simple-config.cmake"
+"include(CMakeFindDependencyMacro)\n"
+"find_package(Threads REQUIRED)\n"
+"include(\"\${CMAKE_CURRENT_LIST_DIR}/async_simple-targets.cmake\")\n"
+)
+
+# Install the generated config file
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/async_simple-config.cmake"
+        DESTINATION share/async_simple)
+
+
 if (${ASYNC_SIMPLE_ENABLE_TESTS})
   add_subdirectory(test)
   add_subdirectory(util/test)
@@ -66,6 +81,3 @@ if (${ASYNC_SIMPLE_ENABLE_TESTS})
     add_subdirectory(uthread/test)
   endif()
 endif()
-if (NOT TARGET async_simple::async_simple_header_only)
-  add_library(async_simple::async_simple_header_only ALIAS libasync_simple)
-endif ()

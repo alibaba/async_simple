@@ -8,9 +8,9 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(libasync_simple INTERFACE)
-target_compile_features(libasync_simple INTERFACE cxx_std_20)
-target_include_directories(libasync_simple INTERFACE
+add_library(async_simple_header_only INTERFACE)
+target_compile_features(async_simple_header_only INTERFACE cxx_std_20)
+target_include_directories(async_simple_header_only INTERFACE
         $<BUILD_INTERFACE:${async_simple_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
         )
@@ -19,7 +19,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
 find_package(Threads REQUIRED)
-target_link_libraries(libasync_simple INTERFACE Threads::Threads)
+target_link_libraries(async_simple_header_only INTERFACE Threads::Threads)
 find_package(Aio QUIET)
 
 find_package(Benchmark)

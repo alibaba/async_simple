@@ -180,6 +180,27 @@ docker build . --no-cache -t async_simple:1.0
 docker run -it --name async_simple async_simple:1.0 /bin/bash
 ```
 
+# Import
+
+After install async_simple, you can import it to your project.
+
+async_simple is almost head-only. So you can just pass the include path of the install position to your compiler.
+
+But the uthread part of async_simple is not head-only. The library file is in the install path. You need link it manully or use cmake find_package.
+
+## By cmake find_package
+
+please add those cmake codes:
+
+```cmake
+find_package(async_simple REQUIRED)
+target_link_libraries(<your-target-name> PRIVATE async_simple::async_simple) # dynamic_link
+                                 # async_simple::async_simple_header_only   
+                                 # async_simple::async_simple_static  
+```
+`<your-target-name>` is the target name which want to use async_simple
+
+
 # Get Started
 
 Our documents are hosted by GitHub Pages, [go to Get Started](https://alibaba.github.io/async_simple/docs.en/GetStarted.html).
