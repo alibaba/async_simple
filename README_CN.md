@@ -177,9 +177,11 @@ docker run -it --name async_simple async_simple:1.0 /bin/bash
 
 当你安装完async_simple以后，你可以在你的项目里导入async_simple。
 
-async_simple 几乎是header-only的. 因此你只需要将安装的include路径传递给编译器即可。
+## 手动导入
 
-但是async_simple的uthread不是header-only的，我们在安装路径下生成了编译好的库文件，你需要手动链接它或者使用cmake find_package。
+async_simple几乎是header-only的. 因此你只需要将安装的include路径传递给编译器即可。
+
+但是async_simple的uthread模块不是header-only的，如果你要使用uthread，我们在安装路径下生成了编译好的库文件，你需要手动链接它。
 
 ## 通过cmake find_package
 请添加以下cmake代码：

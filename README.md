@@ -184,9 +184,11 @@ docker run -it --name async_simple async_simple:1.0 /bin/bash
 
 After install async_simple, you can import it to your project.
 
-async_simple is almost head-only. So you can just pass the include path of the install position to your compiler.
+## Manully
 
-But the uthread part of async_simple is not head-only. The library file is in the install path. You need link it manully or use cmake find_package.
+async_simple is almost header-only. So you can just pass the include path of the install position to your compiler.
+
+But the uthread part of async_simple is not head-only. If you want to use uthread, You need link it manully. The library file is in the install path. 
 
 ## By cmake find_package
 
