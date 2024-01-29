@@ -35,7 +35,7 @@ else()
   target_link_libraries(async_simple_static PUBLIC async_simple_header_only)
   install(TARGETS async_simple_static EXPORT async_simple_targets DESTINATION lib/)
   add_library(async_simple INTERFACE)
-  target_link_libraries(async_simple PUBLIC async_simple_static)
+  target_link_libraries(async_simple INTERFACE async_simple_static)
   install(TARGETS async_simple EXPORT async_simple_targets DESTINATION lib/)
 endif()
 
