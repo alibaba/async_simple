@@ -23,7 +23,7 @@ if(UTHREAD)
 endif()
 
 
-if (NOT (CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "11.0.0")
     target_compile_options(async_simple_header_only INTERFACE "-fcoroutines")
   endif()
