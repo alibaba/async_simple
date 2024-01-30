@@ -22,6 +22,12 @@ if(UTHREAD)
   list(APPEND SRCS ${uthread_asm_src})
 endif()
 
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "11.0.0")
+    target_compile_options(async_simple_header_only INTERFACE "-fcoroutines")
+  endif()
+endif()
 # If there is no Uthread, async_simple is a header only library 
 if(UTHREAD)
   add_library(async_simple_static STATIC ${SRCS})
