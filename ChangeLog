@@ -1,3 +1,11 @@
+2024-1-30 Release Notes
+    * 1.3 Released
+    * Avoid overwriting CMAKE_CXX_FLAGS.
+    * Added a `schedule_move_only` interface to Executor.
+    * Added support for CMake 3.27 and up for building C++20 module.
+    * Added `ResumeBySchedule` interface for `Future`.
+    * Added support for cmake find_package.
+
 2023-8-17 Release Notes
     * 1.2 Released
     * Added a version number to libasync_simple.so in CMakeScripts.
