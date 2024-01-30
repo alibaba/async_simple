@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 project(async_simple
-        VERSION 1.2
+        VERSION 1.3
         LANGUAGES CXX C ASM)
 
 enable_testing()
