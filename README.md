@@ -20,7 +20,67 @@ and the traditional Future/Promise.
 
 We can try async_simple online in [compiler-explorer](compiler-explorer.com): https://compiler-explorer.com/z/Tdaesqsqj . Note that `Uthread` cannot be use in compiler-explorer since it requires installation.
 
-# Install Dependencies
+# Get Started
+
+Our documents are hosted by GitHub Pages, [go to Get Started](https://alibaba.github.io/async_simple/docs.en/GetStarted.html).
+
+After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with API, here is a [demo](./docs/docs.en/GetStarted.md) use Lazy to count char in a file.
+
+# Install async_simple
+
+## By Vcpkg
+
+vcpkg is a [cross-platform package manager](https://vcpkg.io/en/getting-started). 
+
+```
+./vcpkg install async-simple
+```
+
+## By Cmake
+
+```
+git clone -b main --single-branch --depth 1 https://github.com/alibaba/async_simple.git
+cd async_simple
+mkdir build
+cd build
+cmake .. -DASYNC_SIMPLE_ENABLE_TESTS=OFF -DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF -DASYNC_SIMPLE_ENABLE_ASAN=OFF
+cmake --build .
+cmake --install . # --prefix ./user_defined_install_path 
+```
+
+# Import async_simple 
+
+After install async_simple, you can import it to your project.
+
+## By cmake find_package
+
+please add those cmake codes:
+
+```cmake
+find_package(async_simple REQUIRED)
+target_link_libraries(<your-target-name> PRIVATE async_simple::async_simple) # dynamic_link
+                                 # async_simple::async_simple_header_only   
+                                 # async_simple::async_simple_static  
+```
+`<your-target-name>` is the target name which want to use async_simple
+
+## Manully
+
+async_simple is almost header-only. So you can just pass the include path of the install position to your compiler.
+
+But the uthread part of async_simple is not head-only. If you want to use uthread, You need link it manully. The library file is in the install path. 
+
+# Compiler Requirement
+
+Required Compiler: clang (>= 10.0.0) or gcc (>= 10.3) or Apple-clang (>= 14)
+
+Note that we need to add the `-Wno-maybe-uninitialized` option when we use gcc 12 due to a false positive diagnostic message by gcc 12
+
+Note that when using clang 15 it may be necessary to add the `-Wno-unsequenced` option, which is a false positive of clang 15. See https://github.com/llvm/llvm-project/issues/56768 for details.
+
+If you meet any problem about MSVC Compiler Error C4737. Try to add the /EHa option to fix the problem.
+
+# Develop async_simple
 
 The build of async_simple requires libaio, googletest and cmake.  Both libaio and googletest
 are optional. (Testing before using is highly suggested.)
@@ -113,15 +173,6 @@ mkdir build && cd build
 cmake .. && sudo make install
 ```
 
-## Compiler Requirement
-
-Required Compiler: clang (>= 10.0.0) or gcc (>= 10.3) or Apple-clang (>= 14)
-
-Note that we need to add the `-Wno-maybe-uninitialized` option when we use gcc 12 due to a false positive diagnostic message by gcc 12
-
-Note that when using clang 15 it may be necessary to add the `-Wno-unsequenced` option, which is a false positive of clang 15. See https://github.com/llvm/llvm-project/issues/56768 for details.
-
-If you meet any problem about MSVC Compiler Error C4737. Try to add the /EHa option to fix the problem.
 
 ## Demo example dependency
 
@@ -179,35 +230,6 @@ cd async_simple/docker/(ubuntu|centos7|rockylinux)
 docker build . --no-cache -t async_simple:1.0
 docker run -it --name async_simple async_simple:1.0 /bin/bash
 ```
-
-# Import
-
-After install async_simple, you can import it to your project.
-
-## Manully
-
-async_simple is almost header-only. So you can just pass the include path of the install position to your compiler.
-
-But the uthread part of async_simple is not head-only. If you want to use uthread, You need link it manully. The library file is in the install path. 
-
-## By cmake find_package
-
-please add those cmake codes:
-
-```cmake
-find_package(async_simple REQUIRED)
-target_link_libraries(<your-target-name> PRIVATE async_simple::async_simple) # dynamic_link
-                                 # async_simple::async_simple_header_only   
-                                 # async_simple::async_simple_static  
-```
-`<your-target-name>` is the target name which want to use async_simple
-
-
-# Get Started
-
-Our documents are hosted by GitHub Pages, [go to Get Started](https://alibaba.github.io/async_simple/docs.en/GetStarted.html).
-
-After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with API, here is a [demo](./docs/docs.en/GetStarted.md) use Lazy to count char in a file.
 
 # Performance
 
