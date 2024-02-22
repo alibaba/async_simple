@@ -1,7 +1,13 @@
 .PHONY:clean test build build_all build_test
 
 STD_MODULE_PATH=../third_party_module/stdmodules
-export OPT_FLAGS = -O2 -g -DNDEBUG -fprebuilt-module-path=$(STD_MODULE_PATH)
+export OPT_FLAGS = -O2 -g -DNDEBUG -fprebuilt-module-path=$(STD_MODULE_PATH) \
+								   -fprebuilt-module-path=. \
+								   -fprebuilt-module-path=./coro \
+								   -fprebuilt-module-path=./executors \
+								   -fprebuilt-module-path=./util \
+								   -fprebuilt-module-path=./uthread \
+								   -fprebuilt-module-path=./uthread/internal
 export OBJECT_CFLAGS = -std=c++20 $(OPT_FLAGS) -Wno-unused-command-line-argument
 export SHARED_OBJECT_CFLAGS = $(OBJECT_CFLAGS) -fPIC
 export INTERFACE_CFLAGS = $(OBJECT_CFLAGS) --precompile
@@ -188,7 +194,6 @@ async_simple-IOExecutor.o: async_simple-IOExecutor.pcm
 ./coro/async_simple-coro.Traits.o: ./coro/async_simple-coro.Traits.pcm
 	clang++ $(OBJECT_CFLAGS)  -c ./coro/async_simple-coro.Traits.pcm -o ./coro/async_simple-coro.Traits.o
 
-
 ./uthread/async_simple-uthread.Latch-PIC.o: ./uthread/async_simple-uthread.Latch.pcm
 	clang++ $(SHARED_OBJECT_CFLAGS)  -c ./uthread/async_simple-uthread.Latch.pcm -o ./uthread/async_simple-uthread.Latch-PIC.o
 
@@ -253,46 +258,45 @@ async_simple.pcm: async_simple.cppm async_simple-Try.pcm async_simple-Future.pcm
 				 ./coro/async_simple-coro.Lazy.pcm ./coro/async_simple-coro.Collect.pcm ./coro/async_simple-coro.Sleep.pcm ./coro/async_simple-coro.Task.pcm\
 				 ./uthread/async_simple-uthread.Collect.pcm ./uthread/async_simple-uthread.Latch.pcm
 	clang++ $(INTERFACE_CFLAGS) \
-				-fprebuilt-module-path=. -fprebuilt-module-path=./util -fprebuilt-module-path=./coro -fprebuilt-module-path=./executors -fprebuilt-module-path=./uthread \
 				-c async_simple.cppm -o async_simple.pcm
 
 # Try
 async_simple-Try.pcm: Try.cppm async_simple-Unit.pcm async_simple-Invoke.pcm async_simple-Common.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -c Try.cppm -o async_simple-Try.pcm
+	clang++ $(INTERFACE_CFLAGS) -c Try.cppm -o async_simple-Try.pcm
 async_simple-Common.pcm: Common.cppm
-	clang++ $(INTERFACE_CFLAGS) -c Common.cppm -fprebuilt-module-path=. -o async_simple-Common.pcm
+	clang++ $(INTERFACE_CFLAGS) -c Common.cppm -o async_simple-Common.pcm
 async_simple-Invoke.pcm: Invoke.cppm
-	clang++ $(INTERFACE_CFLAGS) -c Invoke.cppm -fprebuilt-module-path=. -o async_simple-Invoke.pcm
+	clang++ $(INTERFACE_CFLAGS) -c Invoke.cppm -o async_simple-Invoke.pcm
 async_simple-Unit.pcm: Unit.cppm
 	clang++ $(INTERFACE_CFLAGS) -c Unit.cppm -o async_simple-Unit.pcm
 # Future
 async_simple-Future.pcm: Future.cppm async_simple-FutureState.pcm async_simple-LocalState.pcm async_simple-Traits.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./util -fprebuilt-module-path=./uthread/internal -c Future.cppm -o async_simple-Future.pcm
+	clang++ $(INTERFACE_CFLAGS) -c Future.cppm -o async_simple-Future.pcm
 async_simple-Traits.pcm: Traits.cppm async_simple-Try.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -c Traits.cppm -o async_simple-Traits.pcm
+	clang++ $(INTERFACE_CFLAGS) -c Traits.cppm -o async_simple-Traits.pcm
 async_simple-MoveWrapper.pcm: MoveWrapper.cppm ./util/async_simple-util.Condition.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -c MoveWrapper.cppm -o async_simple-MoveWrapper.pcm
+	clang++ $(INTERFACE_CFLAGS) -c MoveWrapper.cppm -o async_simple-MoveWrapper.pcm
 async_simple-FutureState.pcm: FutureState.cppm async_simple-Executor.pcm async_simple-MoveWrapper.pcm async_simple-Try.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./util -c FutureState.cppm -o async_simple-FutureState.pcm
+	clang++ $(INTERFACE_CFLAGS) -c FutureState.cppm -o async_simple-FutureState.pcm
 async_simple-LocalState.pcm: LocalState.cppm async_simple-Executor.pcm async_simple-MoveWrapper.pcm async_simple-Try.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./util -c LocalState.cppm -o async_simple-LocalState.pcm
+	clang++ $(INTERFACE_CFLAGS) -c LocalState.cppm -o async_simple-LocalState.pcm
 # Executors
 async_simple-IOExecutor.pcm: IOExecutor.cppm
-	clang++ $(INTERFACE_CFLAGS) -c IOExecutor.cppm -fprebuilt-module-path=. -o async_simple-IOExecutor.pcm
+	clang++ $(INTERFACE_CFLAGS) -c IOExecutor.cppm -o async_simple-IOExecutor.pcm
 async_simple-Executor.pcm: Executor.cppm ./util/async_simple-util.Condition.pcm async_simple-IOExecutor.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./util -fprebuilt-module-path=./experimental -c Executor.cppm -o async_simple-Executor.pcm
+	clang++ $(INTERFACE_CFLAGS) -c Executor.cppm -o async_simple-Executor.pcm
 # SimpleExecutors
 ./executors/async_simple-executors.SimpleExecutor.pcm: ./executors/SimpleExecutor.cppm ./executors/async_simple-executors.SimpleIOExecutor.pcm ./util/async_simple-util.ThreadPool.pcm async_simple-Executor.pcm async_simple-IOExecutor.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./executors -fprebuilt-module-path=./util -c ./executors/SimpleExecutor.cppm -o ./executors/async_simple-executors.SimpleExecutor.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./executors/SimpleExecutor.cppm -o ./executors/async_simple-executors.SimpleExecutor.pcm
 ./executors/async_simple-executors.SimpleIOExecutor.pcm: ./executors/SimpleIOExecutor.cppm async_simple-IOExecutor.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -c ./executors/SimpleIOExecutor.cppm -o ./executors/async_simple-executors.SimpleIOExecutor.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./executors/SimpleIOExecutor.cppm -o ./executors/async_simple-executors.SimpleIOExecutor.pcm
 # util
 ./util/async_simple-util.Condition.pcm: ./util/Condition.cppm async_simple-Common.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -c ./util/Condition.cppm -o ./util/async_simple-util.Condition.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./util/Condition.cppm -o ./util/async_simple-util.Condition.pcm
 ./util/async_simple-util.Queue.pcm: ./util/Queue.cppm
 	clang++ $(INTERFACE_CFLAGS) -c ./util/Queue.cppm -o ./util/async_simple-util.Queue.pcm
 ./util/async_simple-util.ThreadPool.pcm: ./util/ThreadPool.cppm ./util/async_simple-util.Queue.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=./util/ -c ./util/ThreadPool.cppm -o ./util/async_simple-util.ThreadPool.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./util/ThreadPool.cppm -o ./util/async_simple-util.ThreadPool.pcm
 # uthread
 ./uthread/internal/jump_x86_64_sysv_elf_gas.o: ./uthread/internal/jump_x86_64_sysv_elf_gas.S
 	clang++ $(OBJECT_CFLAGS)  -c ./uthread/internal/jump_x86_64_sysv_elf_gas.S  -Wno-unused-command-line-argument -o ./uthread/internal/jump_x86_64_sysv_elf_gas.o
@@ -303,31 +307,31 @@ async_simple-Executor.pcm: Executor.cppm ./util/async_simple-util.Condition.pcm 
 ./uthread/internal/make_x86_64_sysv_elf_gas-PIC.o: ./uthread/internal/make_x86_64_sysv_elf_gas.S
 	clang++ $(SHARED_OBJECT_CFLAGS)  -c ./uthread/internal/make_x86_64_sysv_elf_gas.S  -Wno-unused-command-line-argument -o ./uthread/internal/make_x86_64_sysv_elf_gas-PIC.o
 ./uthread/internal/async_simple-uthread.thread.pcm: ./uthread/internal/thread.cppm async_simple-Future.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=./uthread/internal/ -fprebuilt-module-path=.  -c ./uthread/internal/thread.cppm -o ./uthread/internal/async_simple-uthread.thread.pcm
+	clang++ $(INTERFACE_CFLAGS)  -c ./uthread/internal/thread.cppm -o ./uthread/internal/async_simple-uthread.thread.pcm
 ./uthread/async_simple-uthread.Uthread.pcm: ./uthread/Uthread.cppm ./uthread/internal/async_simple-uthread.thread.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=./uthread/internal/ -fprebuilt-module-path=. -c ./uthread/Uthread.cppm -o ./uthread/async_simple-uthread.Uthread.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./uthread/Uthread.cppm -o ./uthread/async_simple-uthread.Uthread.pcm
 ./uthread/async_simple-uthread.Latch.pcm: ./uthread/Latch.cppm async_simple-Future.pcm ./uthread/async_simple-uthread.Await.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./uthread/ -c ./uthread/Latch.cppm -o ./uthread/async_simple-uthread.Latch.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./uthread/Latch.cppm -o ./uthread/async_simple-uthread.Latch.pcm
 ./uthread/async_simple-uthread.Async.pcm: ./uthread/Async.cppm ./async_simple-Executor.pcm ./uthread/async_simple-uthread.Uthread.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./uthread/  -c ./uthread/Async.cppm -o ./uthread/async_simple-uthread.Async.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./uthread/Async.cppm -o ./uthread/async_simple-uthread.Async.pcm
 ./uthread/async_simple-uthread.Await.pcm: ./uthread/Await.cppm ./async_simple-Future.pcm ./coro/async_simple-coro.Lazy.pcm ./uthread/internal/async_simple-uthread.thread.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./coro/ -fprebuilt-module-path=./uthread/internal  -c ./uthread/Await.cppm -o ./uthread/async_simple-uthread.Await.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./uthread/Await.cppm -o ./uthread/async_simple-uthread.Await.pcm
 ./uthread/async_simple-uthread.Collect.pcm: ./uthread/Collect.cppm ./async_simple-Future.pcm ./uthread/async_simple-uthread.Async.pcm ./uthread/async_simple-uthread.Await.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./uthread/  -c ./uthread/Collect.cppm -o ./uthread/async_simple-uthread.Collect.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./uthread/Collect.cppm -o ./uthread/async_simple-uthread.Collect.pcm
 # coro
 ./coro/async_simple-coro.Util.pcm: ./coro/Util.cppm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=./experimental  -fprebuilt-module-path=. -c ./coro/Util.cppm -o ./coro/async_simple-coro.Util.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./coro/Util.cppm -o ./coro/async_simple-coro.Util.pcm
 ./coro/async_simple-coro.Traits.pcm: ./coro/Traits.cppm
-	clang++ $(INTERFACE_CFLAGS) -c ./coro/Traits.cppm  -fprebuilt-module-path=. -o ./coro/async_simple-coro.Traits.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./coro/Traits.cppm -o ./coro/async_simple-coro.Traits.pcm
 ./coro/async_simple-coro.Task.pcm: ./coro/Task.cppm ./coro/async_simple-coro.Util.pcm ./util/async_simple-util.Condition.pcm ./coro/async_simple-coro.Lazy.pcm ./async_simple-Executor.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=./util -fprebuilt-module-path=./coro -fprebuilt-module-path=./experimental -fprebuilt-module-path=./ -c ./coro/Task.cppm -o ./coro/async_simple-coro.Task.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./coro/Task.cppm -o ./coro/async_simple-coro.Task.pcm
 ./coro/async_simple-coro.CoAwait.pcm: ./coro/CoAwait.cppm ./coro/async_simple-coro.Traits.pcm ./async_simple-Executor.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./coro -fprebuilt-module-path=./experimental -c ./coro/CoAwait.cppm -o ./coro/async_simple-coro.CoAwait.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./coro/CoAwait.cppm -o ./coro/async_simple-coro.CoAwait.pcm
 ./coro/async_simple-coro.Event.pcm: ./coro/Event.cppm ./async_simple-Executor.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./experimental -c ./coro/Event.cppm -o ./coro/async_simple-coro.Event.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./coro/Event.cppm -o ./coro/async_simple-coro.Event.pcm
 ./coro/async_simple-coro.Lazy.pcm: ./coro/Lazy.cppm ./coro/async_simple-coro.Util.pcm ./coro/async_simple-coro.CoAwait.pcm async_simple-Try.pcm async_simple-Executor.pcm ./util/async_simple-util.Condition.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./experimental -fprebuilt-module-path=./coro/ -fprebuilt-module-path=./util/ -c ./coro/Lazy.cppm -o ./coro/async_simple-coro.Lazy.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./coro/Lazy.cppm -o ./coro/async_simple-coro.Lazy.pcm
 ./coro/async_simple-coro.Collect.pcm: ./coro/Collect.cppm ./coro/async_simple-coro.Event.pcm ./coro/async_simple-coro.Lazy.pcm async_simple-Try.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./experimental -fprebuilt-module-path=./coro/ -c ./coro/Collect.cppm -o ./coro/async_simple-coro.Collect.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./coro/Collect.cppm -o ./coro/async_simple-coro.Collect.pcm
 ./coro/async_simple-coro.Sleep.pcm: ./coro/Sleep.cppm ./coro/async_simple-coro.Lazy.pcm async_simple-Executor.pcm
-	clang++ $(INTERFACE_CFLAGS) -fprebuilt-module-path=. -fprebuilt-module-path=./coro/ -c ./coro/Sleep.cppm -o ./coro/async_simple-coro.Sleep.pcm
+	clang++ $(INTERFACE_CFLAGS) -c ./coro/Sleep.cppm -o ./coro/async_simple-coro.Sleep.pcm

@@ -13,7 +13,14 @@ DEPENDENCY = $(TEST_DEPENDENCY_DIR) $(TEST_DEPENDENCY_LIB) -Wl,-rpath=../async_s
 
 ASIO_PATH ?= ../third_party_module/asio
 
-PREBUILT_PATH = -fprebuilt-module-path=../async_simple_module -fprebuilt-module-path=../async_simple_module/experimental -fprebuilt-module-path=$(ASIO_PATH) -fprebuilt-module-path=./
+PREBUILT_PATH = -fprebuilt-module-path=../async_simple_module \
+				-fprebuilt-module-path=../async_simple_module/coro \
+				-fprebuilt-module-path=../async_simple_module/executors \
+				-fprebuilt-module-path=../async_simple_module/util \
+				-fprebuilt-module-path=../async_simple_module/uthread \
+				-fprebuilt-module-path=../async_simple_module/uthread/internal \
+				-fprebuilt-module-path=$(ASIO_PATH) \
+				-fprebuilt-module-path=./
 
 build: ReadFiles.out CountChar.out async_echo_client.out async_echo_server.out block_echo_client.out block_echo_server.out http_client.out http_server.out block_http_server.out
 
