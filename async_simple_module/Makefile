@@ -13,18 +13,18 @@ export SHARED_OBJECT_CFLAGS = $(OBJECT_CFLAGS) -fPIC
 export INTERFACE_CFLAGS = $(OBJECT_CFLAGS) --precompile
 
 test: build_all
-	+ cd ./test && make
+	+ cd ./test && $(MAKE)
 
 build_all: build build_test
 	
-build: async_simple.pcm libasync_simple.a # libasync_simple.so // We can't solve compile both .so file and .a file from the same .pcm now. Workaround it to make the test green.
+build: async_simple.pcm libasync_simple.a libasync_simple.so # We can't solve compile both .so file and .a file from the same .pcm now. Workaround it to make the test green.
 
 build_test: build
-	+ cd ./test && make build
+	+ cd ./test && $(MAKE) build
 
 clean:
 	find . -name "*.o" -o -name "*.out" -o -name "*.pcm" -o -name "*.a" -o -name "*.so" | xargs rm -f
-	+ cd ./test && make clean
+	+ cd ./test && $(MAKE) clean
 
 libasync_simple.so: ./uthread/internal/jump_x86_64_sysv_elf_gas-PIC.o ./uthread/internal/make_x86_64_sysv_elf_gas-PIC.o \
 async_simple-PIC.o ./util/async_simple-util.ThreadPool-PIC.o ./executors/async_simple-executors.SimpleExecutor-PIC.o \

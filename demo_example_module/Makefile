@@ -85,7 +85,7 @@ asio_util.pcm: asio_util.cppm ../async_simple_module/async_simple.pcm $(ASIO_PAT
 	clang++ $(INTERFACE_CFLAGS) asio_util.cppm $(PREBUILT_PATH) -c -o asio_util.pcm
 
 $(ASIO_PATH)/asio.pcm: 
-	+ cd $(ASIO_PATH) && make
+	+ cd $(ASIO_PATH) && $(MAKE)
 
 clean:
 	find . -name "*.o" -o -name "*.out" -o -name "*.pcm" | xargs rm -f
