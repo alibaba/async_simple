@@ -371,7 +371,7 @@ inline auto collectAllWindowedImpl(size_t maxConcurrency,
     }
     size_t start = 0;
     while (start < input_size) {
-        size_t end = std::min(input_size, start + maxConcurrency);
+        size_t end = (std::min)(input_size, start + maxConcurrency);
         std::vector<LazyType> tmp_group(
             std::make_move_iterator(input.begin() + start),
             std::make_move_iterator(input.begin() + end));

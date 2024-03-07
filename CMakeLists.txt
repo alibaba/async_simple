@@ -63,6 +63,7 @@ else()
         -Wno-deprecated-register
         -Wno-mismatched-new-delete
         -Wno-deprecated-declarations
+        -Wno-unused-value
         -D_FILE_OFFSET_BITS=64
         -fPIC
         -Wall
