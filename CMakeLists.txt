@@ -10,22 +10,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
-find_package(GMock REQUIRED)
 find_package(GTest REQUIRED)
-
-if(GTEST_INCLUDE_DIR AND GTEST_LIBRARIES)
-    message(STATUS "GTest found.")
-    message(STATUS "GTest: ${GTEST_INCLUDE_DIR}, ${GTEST_LIBRARIES}")
-else()
-    message(FATAL_ERROR "GTest NOT found.")
-endif()
-
-if(GMOCK_INCLUDE_DIR AND GMOCK_LIBRARIES)
-    message(STATUS "GMock found.")
-    message(STATUS "GMock: ${GMOCK_INCLUDE_DIR}, ${GMOCK_LIBRARIES}")
-else()
-    message(FATAL_ERROR "GMock NOT found.")
-endif()
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
