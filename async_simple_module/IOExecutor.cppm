@@ -13,10 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module;
-
-#include <libaio.h>
-
 export module async_simple:IOExecutor;
 import std;
 
@@ -37,6 +33,9 @@ export enum iocb_cmd {
     IOCB_CMD_PWRITEV = 8,
 };
 
+export struct io_event {
+
+};
 using AIOCallback = std::function<void(io_event&)>;
 
 // The IOExecutor would accept IO read/write requests.
@@ -53,10 +52,8 @@ public:
     IOExecutor& operator=(const IOExecutor&) = delete;
 
 public:
-    virtual void submitIO(int fd, iocb_cmd cmd, void* buffer, size_t length,
-                          off_t offset, AIOCallback cbfn) = 0;
-    virtual void submitIOV(int fd, iocb_cmd cmd, const iovec* iov, size_t count,
-                           off_t offset, AIOCallback cbfn) = 0;
+    virtual void submitIO(int fd, iocb_cmd cmd, void* buffer, std::size_t length,
+                          std::size_t offset, AIOCallback cbfn) = 0;
 };
 
 }  // namespace async_simple

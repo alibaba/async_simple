@@ -18,7 +18,7 @@ asio module.
 
 Compiler: clang15.x
 STL Libraries: libstdc++10.3
-Other dependencies: libaio, gtest, gmock
+Other dependencies: gtest, gmock
 
 # Build System
 

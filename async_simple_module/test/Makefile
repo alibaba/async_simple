@@ -15,7 +15,7 @@ INTERFACE_CFLAGS ?= $(OBJECT_CFLAGS) --precompile
 EXECUTABLE_CFLAGS ?= $(OBJECT_CFLAGS)
 
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-TEST_DEPENDENCY_LIB = -lasync_simple -laio -lgtest -lgmock -lpthread -lstd
+TEST_DEPENDENCY_LIB = -lasync_simple -lgtest -lgmock -lpthread -lstd
 TEST_DEPENDENCY_DIR = -L../ -L/usr/local/lib64 -L/usr/lib64 -L/usr/lib -L$(STD_MODULE_PATH)
 TEST_DEPENDENCY = $(TEST_DEPENDENCY_DIR) $(TEST_DEPENDENCY_LIB) -Wl,-rpath=$(ROOT_DIR)/..
 

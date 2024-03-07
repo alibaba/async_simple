@@ -46,8 +46,8 @@ public:
     };
 
 public:
-    SimpleExecutor(std::size_t threadNum) : _pool(threadNum) { _ioExecutor.init(); }
-    ~SimpleExecutor() { _ioExecutor.destroy(); }
+    SimpleExecutor(std::size_t threadNum) : _pool(threadNum) { }
+    ~SimpleExecutor() { }
 
 public:
     bool schedule(Func func) override {

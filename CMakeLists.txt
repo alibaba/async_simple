@@ -10,16 +10,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
-find_package(Aio REQUIRED)
 find_package(GMock REQUIRED)
 find_package(GTest REQUIRED)
-
-if(LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
-    message(STATUS "aio found")
-    message(STATUS "aio: ${LIBAIO_INCLUDE_DIR}, ${LIBAIO_LIBRARIES}.")
-else()
-    message(FATAL_ERROR "aio NOT found")
-endif()
 
 if(GTEST_INCLUDE_DIR AND GTEST_LIBRARIES)
     message(STATUS "GTest found.")
@@ -60,12 +52,10 @@ set(HEADERS_PATH
     ${PROJECT_SOURCE_DIR}
     ${GTEST_INCLUDE_DIR}
     ${GMOCK_INCLUDE_DIR}
-    ${AIO_INCLUDE_DIR}
     )
 include_directories(${HEADERS_PATH})
 
 set(deplibs)
-list(APPEND deplibs ${LIBAIO_LIBRARIES})
 list(APPEND deplibs pthread)
 set(testdeplibs)
 list(APPEND testdeplibs ${GTEST_LIBRARIES})

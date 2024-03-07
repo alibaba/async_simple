@@ -13,10 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module;
-
-#include <libaio.h>
-
 export module async_simple:executors.SimpleIOExecutor;
 import :IOExecutor;
 import std;
@@ -51,88 +47,13 @@ public:
     };
 
 public:
-    bool init() {
-        auto r = io_setup(kMaxAio, &_ioContext);
-        if (r < 0) {
-            return false;
-        }
-        _loopThread = std::thread([this]() mutable { this->loop(); });
-        return true;
-    }
-
-    void destroy() {
+    void submitIO(int fd, iocb_cmd cmd, void* buffer, std::size_t length,
+                  std::size_t offset, AIOCallback cbfn) override {
         _shutdown = true;
-        if (_loopThread.joinable()) {
-            _loopThread.join();
-        }
-        io_destroy(_ioContext);
-    }
-
-    void loop() {
-        while (!_shutdown) {
-            io_event events[kMaxAio];
-            // struct timespec timeout = {0, 1000 * 300};
-            // The following call to io_getevents would cause a deadlock.
-            // It should be a bug of aio.
-            auto n = 0; //io_getevents(_ioContext, 1, kMaxAio, events, &timeout);
-            if (n < 0) {
-                continue;
-            }
-            for (auto i = 0; i < n; ++i) {
-                auto task = reinterpret_cast<Task*>(events[i].data);
-                task->process(events[i]);
-                delete task;
-            }
-        }
-    }
-
-public:
-    void submitIO(int fd, iocb_cmd cmd, void* buffer, size_t length,
-                  off_t offset, AIOCallback cbfn) override {
-        iocb io;
-        memset(&io, 0, sizeof(iocb));
-        io.aio_fildes = fd;
-        io.aio_lio_opcode = cmd;
-        io.u.c.buf = buffer;
-        io.u.c.offset = offset;
-        io.u.c.nbytes = length;
-        io.data = new Task(cbfn);
-        struct iocb* iocbs[] = {&io};
-        auto r = io_submit(_ioContext, 1, iocbs);
-        if (r < 0) {
-            auto task = reinterpret_cast<Task*>(iocbs[0]->data);
-            io_event event;
-            event.res = r;
-            task->process(event);
-            delete task;
-            return;
-        }
-    }
-    void submitIOV(int fd, iocb_cmd cmd, const iovec* iov, size_t count,
-                   off_t offset, AIOCallback cbfn) override {
-        iocb io;
-        memset(&io, 0, sizeof(iocb));
-        io.aio_fildes = fd;
-        io.aio_lio_opcode = cmd;
-        io.u.c.buf = (void*)iov;
-        io.u.c.offset = offset;
-        io.u.c.nbytes = count;
-        io.data = new Task(cbfn);
-        struct iocb* iocbs[] = {&io};
-        auto r = io_submit(_ioContext, 1, iocbs);
-        if (r < 0) {
-            auto task = reinterpret_cast<Task*>(iocbs[0]->data);
-            io_event event;
-            event.res = r;
-            task->process(event);
-            delete task;
-            return;
-        }
     }
 
 private:
     volatile bool _shutdown = false;
-    io_context_t _ioContext = 0;
     std::thread _loopThread;
 };
 
