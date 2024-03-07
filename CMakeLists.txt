@@ -63,7 +63,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND CXX_FLAGS "-fsanitize=address")
 endif()
 
-string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
+string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS}")
+
 set(CMAKE_CXX_FLAGS_DEBUG "-O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 
