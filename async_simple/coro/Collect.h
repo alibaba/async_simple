@@ -66,9 +66,7 @@ struct CollectAnyResult {
     bool hasError() const { return _value.hasError(); }
     // Require hasError() == true. Otherwise it is UB to call
     // this method.
-    std::exception_ptr getException() const {
-        return _value.getException();
-    }
+    std::exception_ptr getException() const { return _value.getException(); }
 
     // Require hasError() == false. Otherwise it is UB to call
     // value() method.
@@ -371,7 +369,9 @@ inline auto collectAllWindowedImpl(size_t maxConcurrency,
     }
     size_t start = 0;
     while (start < input_size) {
-        size_t end = (std::min)(input_size, start + maxConcurrency);
+        size_t end = (std::min)(
+            input_size,
+            start + maxConcurrency);  // Avoid to conflict with Windows macros.
         std::vector<LazyType> tmp_group(
             std::make_move_iterator(input.begin() + start),
             std::make_move_iterator(input.begin() + end));

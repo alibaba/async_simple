@@ -63,7 +63,6 @@ else()
         -Wno-deprecated-register
         -Wno-mismatched-new-delete
         -Wno-deprecated-declarations
-        -Wno-unused-value
         -D_FILE_OFFSET_BITS=64
         -fPIC
         -Wall
@@ -71,6 +70,10 @@ else()
         -D__STDC_LIMIT_MACROS
         -g
         )
+    if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.3)
+        message(STATUS "append -unused-value when gcc version is less equal than 10.2.")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-value")
+    endif()
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         list(APPEND CXX_FLAGS -Wno-uninitialized)
     else()
