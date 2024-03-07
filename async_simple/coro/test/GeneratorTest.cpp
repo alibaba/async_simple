@@ -229,7 +229,9 @@ TEST_F(GeneratorTest, testIterator) {
 
 // FIXME: clang complile fail
 #ifndef __clang__
-
+#ifdef __GNUC__
+#include <features.h>
+#if __GNUC_PREREQ(10, 3)  // If  gcc_version >= 10.3
 TEST_F(GeneratorTest, testRange) {
     int j = 0;
     for (auto i : iota() | std::views::take(10)) {
@@ -237,6 +239,8 @@ TEST_F(GeneratorTest, testRange) {
     }
     EXPECT_EQ(j, 10);
 }
+#endif
+#endif
 #endif  // __clang__
 
 TEST_F(GeneratorTest, testExample) {
