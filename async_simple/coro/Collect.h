@@ -521,22 +521,11 @@ public:
     }
 
 private:
-    template <size_t Idx>
-    void callback(auto& fn, auto& result) {
-        using ValueType = std::remove_cvref_t<decltype(std::get<Idx>(result))>;
-        using Inner =
-            std::remove_cvref_t<decltype(std::declval<ValueType>().value())>;
-        if constexpr (std::is_void_v<Inner>) {
-            fn();
-        } else {
-            fn(std::move(std::get<Idx>(result).value()));
-        }
-    }
 
     template <class Result, std::size_t... Is>
     void tupleSwitchImpl(std::size_t i, Tuple& t, Result& result,
                            std::index_sequence<Is...>) {
-        ((void)(i == Is && (callback<Is>(std::get<Is>(t), result), false)),
+        ((void)(i == Is && (std::get<Is>(t)(std::move(std::get<Is>(result))), false)),
          ...);
     }
 
@@ -580,6 +569,13 @@ inline Lazy<size_t> collectAny(Ts... args){
     detail::Helper helper(std::move(callback_tuple));
     auto index = co_await std::apply(helper, lazy_tuple);
     co_return index;
+}
+
+template <typename T, template <typename> typename LazyType, typename Function,
+          typename IAlloc = std::allocator<LazyType<T>>>
+inline Lazy<void> collectAny(std::vector<LazyType<T>, IAlloc>&& input, Function func) {
+    auto result = co_await collectAny(std::move(input));
+    func(result.index(), std::move(result._value));
 }
 
 // The collectAll() function can be used to co_await on a vector of LazyType

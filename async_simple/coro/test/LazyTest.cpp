@@ -1104,33 +1104,34 @@ TEST_F(LazyTest, testCollectAllVariadic) {
     syncAwait(testCollectAllPara().via(&e1));
 }
 
-TEST_F(LazyTest, testLazyPair) {
-    auto test0 = []() -> Lazy<void> { co_return; };
+TEST_F(LazyTest, testCollectAnyWithCallbackVariadic) {
+    auto test0 = []() -> Lazy<Unit> { co_return Unit{}; };
     auto test1 = []() -> Lazy<int> { co_return 42; };
     auto test2 = [](int val) -> Lazy<std::string> {
         co_return std::to_string(val);
     };
 
-    size_t index = syncAwait(collectAny(std::pair{test0(), []() {}}));
-
-    index = syncAwait(
-        collectAny(std::pair{test1(), [](int val) { EXPECT_EQ(42, val); }}));
+    size_t index = syncAwait(collectAny(std::pair{test0(), [](auto val) {}}));
 
     index = syncAwait(collectAny(
-        std::pair{test2(42), [](std::string str) { EXPECT_EQ(str, "42"); }}));
+        std::pair{test1(), [](auto val) { EXPECT_EQ(42, val.value()); }}));
+
+    index = syncAwait(collectAny(
+        std::pair{test2(42), [](auto str) { EXPECT_EQ("42", str.value()); }}));
     EXPECT_EQ(index, 0);
 
     int call_count = 0;
-    index = syncAwait(collectAny(std::pair{test0(), [&]() { call_count++; }},
-                                 std::pair{test1(),
-                                           [&](int val) {
-                                               call_count++;
-                                               EXPECT_EQ(42, val);
-                                           }},
-                                 std::pair{test2(42), [&](std::string str) {
-                                               call_count++;
-                                               EXPECT_EQ(str, "42");
-                                           }}));
+    index =
+        syncAwait(collectAny(std::pair{test0(), [&](auto) { call_count++; }},
+                             std::pair{test1(),
+                                       [&](auto val) {
+                                           call_count++;
+                                           EXPECT_EQ(val.value(), 42);
+                                       }},
+                             std::pair{test2(42), [&](auto val) {
+                                           call_count++;
+                                           EXPECT_EQ("42", val.value());
+                                       }}));
     EXPECT_EQ(1, call_count);
 
     executors::SimpleExecutor e1(4);
@@ -1139,19 +1140,61 @@ TEST_F(LazyTest, testLazyPair) {
 
     int test_value = 0;
     index = syncAwait(collectAny(std::pair{test3().via(&e1),
-                                           [&](int val) {
-                                               test_value = val;
-                                               EXPECT_EQ(42, val);
+                                           [&](auto val) {
+                                               test_value = val.value();
+                                               EXPECT_EQ(42, test_value);
                                            }},
-                                 std::pair{test4(41).via(&e1), [&](int val) {
-                                               test_value = val;
-                                               EXPECT_EQ(41, val);
+                                 std::pair{test4(41).via(&e1), [&](auto val) {
+                                               test_value = val.value();
+                                               EXPECT_EQ(41, test_value);
                                            }}));
     if (index == 0) {
         EXPECT_EQ(42, test_value);
     } else {
         EXPECT_EQ(41, test_value);
     }
+}
+
+TEST_F(LazyTest, testCollectAnyWithCallbackVector) {
+    auto test0 = []() -> Lazy<int> { co_return 41; };
+    auto test1 = []() -> Lazy<int> { co_return 42; };
+
+    std::vector<Lazy<int>> input;
+    input.push_back(test0());
+    input.push_back(test1());
+
+    syncAwait(collectAny(std::move(input), [](size_t index, Try<int> val) {
+        std::cout << index << " " << val.value() << "\n";
+    }));
+
+    auto test2 = []() -> Lazy<Unit> { co_return Unit{}; };
+    auto test3 = []() -> Lazy<Unit> { co_return Unit{}; };
+
+    std::vector<Lazy<Unit>> input1;
+    input1.push_back(test2());
+    input1.push_back(test3());
+
+    syncAwait(collectAny(std::move(input1), [](size_t index, Try<Unit> unit) {
+        std::cout << index << "\n";
+    }));
+
+    auto test4 = []() -> Lazy<int> {
+        throw std::logic_error("exception in lazy");
+        co_return 41;
+    };
+
+    std::vector<Lazy<int>> input2;
+    input2.push_back(test4());
+    syncAwait(collectAny(std::move(input2), [](size_t index, Try<int> val) {
+        EXPECT_TRUE(val.hasError());
+
+        try {
+            std::rethrow_exception(val.getException());
+        } catch (std::exception& ex) {
+            std::string msg(ex.what());
+            EXPECT_EQ(msg, "exception in lazy");
+        }
+    }));
 }
 
 TEST_F(LazyTest, testCollectAny) {
