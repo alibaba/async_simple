@@ -1104,6 +1104,56 @@ TEST_F(LazyTest, testCollectAllVariadic) {
     syncAwait(testCollectAllPara().via(&e1));
 }
 
+TEST_F(LazyTest, testLazyPair) {
+    auto test0 = []() -> Lazy<void> { co_return; };
+    auto test1 = []() -> Lazy<int> { co_return 42; };
+    auto test2 = [](int val) -> Lazy<std::string> {
+        co_return std::to_string(val);
+    };
+
+    size_t index = syncAwait(collectAny(std::pair{test0(), []() {}}));
+
+    index = syncAwait(
+        collectAny(std::pair{test1(), [](int val) { EXPECT_EQ(42, val); }}));
+
+    index = syncAwait(collectAny(
+        std::pair{test2(42), [](std::string str) { EXPECT_EQ(str, "42"); }}));
+    EXPECT_EQ(index, 0);
+
+    int call_count = 0;
+    index = syncAwait(collectAny(std::pair{test0(), [&]() { call_count++; }},
+                                 std::pair{test1(),
+                                           [&](int val) {
+                                               call_count++;
+                                               EXPECT_EQ(42, val);
+                                           }},
+                                 std::pair{test2(42), [&](std::string str) {
+                                               call_count++;
+                                               EXPECT_EQ(str, "42");
+                                           }}));
+    EXPECT_EQ(1, call_count);
+
+    executors::SimpleExecutor e1(4);
+    auto test3 = []() -> Lazy<int> { co_return 42; };
+    auto test4 = [](int val) -> Lazy<int> { co_return val; };
+
+    int test_value = 0;
+    index = syncAwait(collectAny(std::pair{test3().via(&e1),
+                                           [&](int val) {
+                                               test_value = val;
+                                               EXPECT_EQ(42, val);
+                                           }},
+                                 std::pair{test4(41).via(&e1), [&](int val) {
+                                               test_value = val;
+                                               EXPECT_EQ(41, val);
+                                           }}));
+    if (index == 0) {
+        EXPECT_EQ(42, test_value);
+    } else {
+        EXPECT_EQ(41, test_value);
+    }
+}
+
 TEST_F(LazyTest, testCollectAny) {
     srand((unsigned)time(NULL));
     executors::SimpleExecutor e1(10);

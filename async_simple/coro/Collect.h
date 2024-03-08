@@ -507,6 +507,56 @@ inline auto CollectAnyVariadicImpl(LazyType<Ts>&&... inputs) {
     return AT(std::move(inputs)...);
 }
 
+// collectAny with std::pair<Lazy, CallbackFunction>
+template <typename Tuple>
+class Helper {
+public:
+    Helper(Tuple tuple) : _callback_tuple(std::move(tuple)) {}
+
+    async_simple::coro::Lazy<size_t> operator()(auto&&... lazy) {
+        auto result = co_await collectAny(std::move(lazy)...);
+
+        tupleSwitch(result.index(), _callback_tuple, result);
+        co_return result.index();
+    }
+
+private:
+    template <size_t Idx>
+    void callback(auto& fn, auto& result) {
+        using ValueType = std::remove_cvref_t<decltype(std::get<Idx>(result))>;
+        using Inner =
+            std::remove_cvref_t<decltype(std::declval<ValueType>().value())>;
+        if constexpr (std::is_void_v<Inner>) {
+            fn();
+        } else {
+            fn(std::move(std::get<Idx>(result).value()));
+        }
+    }
+
+    template <class Result, std::size_t... Is>
+    void tupleSwitchImpl(std::size_t i, Tuple& t, Result& result,
+                           std::index_sequence<Is...>) {
+        ((void)(i == Is && (callback<Is>(std::get<Is>(t), result), false)),
+         ...);
+    }
+
+    template <class Result>
+    void tupleSwitch(std::size_t i, Tuple& t, Result& result) {
+        tupleSwitchImpl(i, t, result,
+                          std::make_index_sequence<std::tuple_size_v<Tuple>>{});
+    }
+
+    Tuple _callback_tuple;
+};
+
+template <std::size_t N>
+inline constexpr auto splitPairTuple(auto&& t) noexcept {
+    return [&t]<auto... I>(std::index_sequence<I...>) {
+        return std::make_pair(
+            std::make_tuple(std::move(std::get<I>(t).first)...),
+            std::make_tuple(std::move(std::get<I>(t).second)...));
+    }(std::make_index_sequence<N>());
+}
 }  // namespace detail
 
 template <typename T, template <typename> typename LazyType,
@@ -519,6 +569,17 @@ template <template <typename> typename LazyType, typename... Ts>
 inline auto collectAny(LazyType<Ts>... awaitables) {
     static_assert(sizeof...(Ts), "collectAny need at least one param!");
     return detail::CollectAnyVariadicImpl(std::move(awaitables)...);
+}
+
+// collectAny with std::pair<Lazy, CallbackFunction>
+template <typename... Ts>
+inline Lazy<size_t> collectAny(Ts... args){
+    auto tuple = std::make_tuple(std::move(args)...);
+    auto [lazy_tuple, callback_tuple] =
+        detail::splitPairTuple<sizeof...(Ts)>(tuple);
+    detail::Helper helper(std::move(callback_tuple));
+    auto index = co_await std::apply(helper, lazy_tuple);
+    co_return index;
 }
 
 // The collectAll() function can be used to co_await on a vector of LazyType
