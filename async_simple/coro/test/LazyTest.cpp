@@ -1164,7 +1164,11 @@ TEST_F(LazyTest, testCollectAnyWithCallbackVector) {
     input.push_back(test1());
 
     syncAwait(collectAny(std::move(input), [](size_t index, Try<int> val) {
-        std::cout << index << " " << val.value() << "\n";
+        if (index == 0) {
+            EXPECT_EQ(val.value(), 41);
+        } else {
+            EXPECT_EQ(val.value(), 42);
+        }
     }));
 
     auto test2 = []() -> Lazy<Unit> { co_return Unit{}; };
@@ -1174,9 +1178,10 @@ TEST_F(LazyTest, testCollectAnyWithCallbackVector) {
     input1.push_back(test2());
     input1.push_back(test3());
 
-    syncAwait(collectAny(std::move(input1), [](size_t index, Try<Unit> unit) {
-        std::cout << index << "\n";
-    }));
+    int call_count = 0;
+    syncAwait(collectAny(std::move(input1),
+                         [&](size_t index, Try<Unit> unit) { call_count++; }));
+    EXPECT_EQ(call_count, 1);
 
     auto test4 = []() -> Lazy<int> {
         throw std::logic_error("exception in lazy");
