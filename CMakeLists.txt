@@ -24,7 +24,7 @@ set(CXX_FLAGS
     -D_FILE_OFFSET_BITS=64
     -fPIC
     -Wall
-    -Werror
+    -Wno-deprecated-declarations
     -D__STDC_LIMIT_MACROS
     -g
     )

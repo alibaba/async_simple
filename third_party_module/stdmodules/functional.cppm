@@ -20,6 +20,8 @@ export namespace std {
     operator==(const std::function<T>& __f, std::nullptr_t) noexcept {
         return __f == nullptr;
     }
+#else
+    using std::operator==;
 #endif
 }
 
