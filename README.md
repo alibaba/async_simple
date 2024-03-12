@@ -76,7 +76,7 @@ Required Compiler: clang (>= 10.0.0) or gcc (>= 10.3) or Apple-clang (>= 14)
 
 Note that we need to add the `-Wno-maybe-uninitialized` option when we use gcc 12 due to a false positive diagnostic message by gcc 12
 
-Note that when using clang 15 it may be necessary to add the `-Wno-unsequenced` option, which is a false positive of clang 15. See https://github.com/llvm/llvm-project/issues/56768 for details.
+Note that when using clang 15 it may be necessary to add the `-Wno-unsequenced` option, which is a false positive of clang 15. See https://github.com/llvm/llvm-project/issues/56768 for details. If you're using `async_simple::Generator`, there may be some compiler bugs in clang15. We suggest to use clang17 or higher for that.
 
 If you meet any problem about MSVC Compiler Error C4737. Try to add the /EHa option to fix the problem.
 
