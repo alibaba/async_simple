@@ -1111,18 +1111,22 @@ TEST_F(LazyTest, testCollectAnyWithCallbackVariadic) {
         co_return std::to_string(val);
     };
 
-    size_t index = syncAwait(collectAny(std::pair{test0(), [](auto val) {}}));
+    auto collectAnyLazy = [](auto&& ...args) -> Lazy<size_t> {
+        co_return co_await collectAny(std::move(args)...);
+    };
 
-    index = syncAwait(collectAny(
+    size_t index = syncAwait(collectAnyLazy(std::pair{test0(), [](auto val) {}}));
+
+    index = syncAwait(collectAnyLazy(
         std::pair{test1(), [](auto val) { EXPECT_EQ(42, val.value()); }}));
 
-    index = syncAwait(collectAny(
+    index = syncAwait(collectAnyLazy(
         std::pair{test2(42), [](auto str) { EXPECT_EQ("42", str.value()); }}));
     EXPECT_EQ(index, 0);
 
     int call_count = 0;
     index =
-        syncAwait(collectAny(std::pair{test0(), [&](auto) { call_count++; }},
+        syncAwait(collectAnyLazy(std::pair{test0(), [&](auto) { call_count++; }},
                              std::pair{test1(),
                                        [&](auto val) {
                                            call_count++;
@@ -1139,7 +1143,7 @@ TEST_F(LazyTest, testCollectAnyWithCallbackVariadic) {
     auto test4 = [](int val) -> Lazy<int> { co_return val; };
 
     int test_value = 0;
-    index = syncAwait(collectAny(std::pair{test3().via(&e1),
+    index = syncAwait(collectAnyLazy(std::pair{test3().via(&e1),
                                            [&](auto val) {
                                                test_value = val.value();
                                                EXPECT_EQ(42, test_value);

@@ -64,6 +64,9 @@ struct CollectAnyAwaiter;
 template <template <typename> typename LazyType, typename... Ts>
 struct CollectAnyVariadicAwaiter;
 
+template <typename... Ts>
+struct CollectAnyVariadicPairAwaiter;
+
 }  // namespace detail
 
 namespace detail {
@@ -392,6 +395,9 @@ protected:
 
     template <template <typename> typename LazyType, typename... Ts>
     friend struct detail::CollectAnyVariadicAwaiter;
+
+    template <typename... Ts>
+    friend struct detail::CollectAnyVariadicPairAwaiter;
 };
 
 }  // namespace detail

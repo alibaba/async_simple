@@ -144,6 +144,93 @@ struct CollectAnyAwaiter {
     std::shared_ptr<ResultType> _result;
 };
 
+template <typename... Ts>
+struct CollectAnyVariadicPairAwaiter {
+    using InputType = std::tuple<Ts...>;
+
+    CollectAnyVariadicPairAwaiter(Ts&&... inputs)
+        : _input(std::move(inputs)...), _result(nullptr) {}
+
+    CollectAnyVariadicPairAwaiter(InputType&& inputs)
+        : _input(std::move(inputs)), _result(nullptr) {}
+
+    CollectAnyVariadicPairAwaiter(const CollectAnyVariadicPairAwaiter&) =
+        delete;
+    CollectAnyVariadicPairAwaiter& operator=(
+        const CollectAnyVariadicPairAwaiter&) = delete;
+    CollectAnyVariadicPairAwaiter(CollectAnyVariadicPairAwaiter&& other)
+        : _input(std::move(other._input)), _result(std::move(other._result)) {}
+
+    bool await_ready() const noexcept {
+        return _result && _result->has_value();
+    }
+
+    void await_suspend(std::coroutine_handle<> continuation) {
+        auto promise_type =
+            std::coroutine_handle<LazyPromiseBase>::from_address(
+                continuation.address())
+                .promise();
+        auto executor = promise_type._executor;
+        auto event =
+            std::make_shared<detail::CountEvent>(std::tuple_size<InputType>());
+        auto result = std::make_shared<std::optional<size_t>>();
+        _result = result;
+
+        auto input = std::move(_input);
+
+        [&]<size_t... I>(std::index_sequence<I...>) {
+            (
+                [&]() {
+                    if (result->has_value()) {
+                        return;
+                    }
+
+                    auto& first = std::get<0>(std::get<I>(input));
+
+                    if (!first._coro.promise()._executor) {
+                        first._coro.promise()._executor =
+                            executor;
+                    }
+
+                    auto callback = std::move(std::get<1>(std::get<I>(_input)));
+                    first.start(
+                        [result, event, continuation,
+                         callback = std::move(callback)](auto&& res) mutable {
+                            auto count = event->downCount();
+                            if (count == std::tuple_size<InputType>() + 1) {
+                                callback(std::move(res));
+                                *result = I;
+                                continuation.resume();
+                            }
+                        });
+                }(),
+                ...);
+        }(std::make_index_sequence<sizeof...(Ts)>());
+    }
+
+    auto await_resume() {
+        assert(_result != nullptr);
+        return std::move(_result->value());
+    }
+
+    std::tuple<Ts...> _input;
+    std::shared_ptr<std::optional<size_t>> _result;
+};
+
+template <typename... Ts>
+struct SimpleCollectAnyVariadicPairAwaiter {
+    using InputType = std::tuple<Ts...>;
+
+    InputType _inputs;
+
+    SimpleCollectAnyVariadicPairAwaiter(Ts&&... inputs)
+        : _inputs(std::move(inputs)...) {}
+
+    auto coAwait(Executor* ex) {
+        return CollectAnyVariadicPairAwaiter(std::move(_inputs));
+    }
+};
+
 template <template <typename> typename LazyType, typename... Ts>
 struct CollectAnyVariadicAwaiter {
     using ResultType = std::variant<Try<Ts>...>;
@@ -506,6 +593,16 @@ inline auto CollectAnyVariadicImpl(LazyType<Ts>&&... inputs) {
                            CollectAnyVariadicAwaiter<LazyType, Ts...>>;
     return AT(std::move(inputs)...);
 }
+
+// collectAnyVariadicPair
+template <typename T, typename... Ts>
+inline auto CollectAnyVariadicPairImpl(T&& input, Ts&&... inputs) {
+    using U = std::tuple_element_t<0, std::remove_cvref_t<T>>;
+    using AT = std::conditional_t<is_lazy<U>::value,
+                                  SimpleCollectAnyVariadicPairAwaiter<T, Ts...>,
+                                  CollectAnyVariadicPairAwaiter<T, Ts...>>;
+    return AT(std::move(input), std::move(inputs)...);
+}
 }  // namespace detail
 
 template <typename T, template <typename> typename LazyType,
@@ -522,23 +619,9 @@ inline auto collectAny(LazyType<Ts>... awaitables) {
 
 // collectAny with std::pair<Lazy, CallbackFunction>
 template <typename... Ts>
-inline Lazy<size_t> collectAny(Ts... args) {
-    auto tuple = std::make_tuple(std::move(args)...);
-    auto lazy_pair = [&tuple]<size_t... I>(std::index_sequence<I...>) {
-        return std::make_pair(
-            collectAny(std::move(std::get<0>(std::get<I>(tuple)))...),
-            std::make_tuple(std::move(std::get<1>(std::get<I>(tuple)))...));
-    }(std::make_index_sequence<sizeof...(Ts)>());
-
-    auto result = co_await std::move(lazy_pair.first);
-
-    [&result, &t = lazy_pair.second]<size_t... I>(std::index_sequence<I...>) {
-        ((void)(result.index() == I &&
-                (std::get<I>(t)(std::move(std::get<I>(result))), false)),
-         ...);
-    }(std::make_index_sequence<sizeof...(Ts)>());
-
-    co_return result.index();
+inline auto collectAny(Ts&&... inputs) {
+    static_assert(sizeof...(Ts), "collectAny need at least one param!");
+    return detail::CollectAnyVariadicPairImpl(std::move(inputs)...);
 }
 
 template <typename T, template <typename> typename LazyType, typename Function,
