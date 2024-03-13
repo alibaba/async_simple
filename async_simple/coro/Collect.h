@@ -117,6 +117,7 @@ struct CollectAnyAwaiter {
         // if any coroutine finishes before this function.
         auto result = std::make_shared<ResultType>();
         auto event = std::make_shared<detail::CountEvent>(input.size());
+        auto callback = _callback;
 
         _result = result;
         for (size_t i = 0;
@@ -127,15 +128,15 @@ struct CollectAnyAwaiter {
             }
 
             input[i].start([i = i, size = input.size(), r = result,
-                            c = continuation, e = event, callback = _callback](
-                               Try<ValueType>&& result) mutable {
+                            c = continuation, e = event,
+                            callback](Try<ValueType>&& result) mutable {
                 assert(e != nullptr);
-                (void)callback;
                 auto count = e->downCount();
                 if (count == size + 1) {
                     if constexpr (sizeof...(Function) == 0) {
                         r->_idx = i;
                         r->_value = std::move(result);
+                        (void)callback;
                     } else {
                         std::get<0>(callback)(i, std::move(result));
                     }
