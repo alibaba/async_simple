@@ -193,29 +193,26 @@ struct CollectAnyVariadicPairAwaiter {
 
         [&]<size_t... I>(std::index_sequence<I...>) {
             (
-                [&]() {
+                [&](auto& lazy, auto& callback) {
                     if (result->has_value()) {
                         return;
                     }
 
-                    auto& first = std::get<0>(std::get<I>(input));
-
-                    if (!first._coro.promise()._executor) {
-                        first._coro.promise()._executor = executor;
+                    if (!lazy._coro.promise()._executor) {
+                        lazy._coro.promise()._executor = executor;
                     }
 
-                    auto callback = std::move(std::get<1>(std::get<I>(_input)));
-                    first.start(
-                        [result, event, continuation,
-                         callback = std::move(callback)](auto&& res) mutable {
-                            auto count = event->downCount();
-                            if (count == std::tuple_size<InputType>() + 1) {
-                                callback(std::move(res));
-                                *result = I;
-                                continuation.resume();
-                            }
-                        });
-                }(),
+                    lazy.start([result, event, continuation,
+                                callback](auto&& res) mutable {
+                        auto count = event->downCount();
+                        if (count == std::tuple_size<InputType>() + 1) {
+                            callback(std::move(res));
+                            *result = I;
+                            continuation.resume();
+                        }
+                    });
+                }(std::get<0>(std::get<I>(input)),
+                  std::get<1>(std::get<I>(input))),
                 ...);
         }
         (std::make_index_sequence<sizeof...(Ts)>());
