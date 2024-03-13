@@ -139,8 +139,6 @@ struct CollectAnyAwaiter {
                     } else {
                         std::get<0>(callback)(i, std::move(result));
                     }
-                    r->_idx = i;
-                    r->_value = std::move(result);
                     c.resume();
                 }
             });
