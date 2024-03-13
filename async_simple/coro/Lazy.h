@@ -58,7 +58,7 @@ struct CollectAllAwaiter;
 template <bool Para, template <typename> typename LazyType, typename... Ts>
 struct CollectAllVariadicAwaiter;
 
-template <typename LazyType, typename IAlloc>
+template <typename LazyType, typename IAlloc, typename... Function>
 struct CollectAnyAwaiter;
 
 template <template <typename> typename LazyType, typename... Ts>
@@ -390,7 +390,7 @@ protected:
     template <bool, template <typename> typename, typename...>
     friend struct detail::CollectAllVariadicAwaiter;
 
-    template <typename LazyType, typename IAlloc>
+    template <typename LazyType, typename IAlloc, typename... Function>
     friend struct detail::CollectAnyAwaiter;
 
     template <template <typename> typename LazyType, typename... Ts>
