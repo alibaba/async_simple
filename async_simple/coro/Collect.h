@@ -609,19 +609,9 @@ inline auto collectAllVariadicImpl(LazyType<Ts>&&... awaitables) {
 }
 
 // collectAny
-
 template <typename T, template <typename> typename LazyType,
-          typename IAlloc = std::allocator<LazyType<T>>>
-inline auto collectAnyImpl(std::vector<LazyType<T>, IAlloc> input) {
-    using AT =
-        std::conditional_t<std::is_same_v<LazyType<T>, Lazy<T>>,
-                           detail::SimpleCollectAnyAwaitable<T, IAlloc>,
-                           detail::CollectAnyAwaiter<LazyType<T>, IAlloc>>;
-    return AT(std::move(input));
-}
-
-template <typename T, template <typename> typename LazyType,
-          typename IAlloc = std::allocator<LazyType<T>>, typename Callback>
+          typename IAlloc = std::allocator<LazyType<T>>,
+          typename Callback = Unit>
 inline auto collectAnyImpl(std::vector<LazyType<T>, IAlloc> input,
                            Callback callback = {}) {
     using AT = std::conditional_t<
