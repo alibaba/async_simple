@@ -99,7 +99,3 @@ DisableFormat: true
 ---
 Language: Json
 DisableFormat: true
----
-Language: ObjC
-DisableFormat: true
-
