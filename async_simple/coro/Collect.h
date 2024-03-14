@@ -121,7 +121,7 @@ struct CollectAnyAwaiter {
         // if any coroutine finishes before this function.
         auto result = std::make_shared<ResultType>();
         auto event = std::make_shared<detail::CountEvent>(input.size());
-        auto callback = _callback;
+        auto callback = std::move(_callback);
 
         _result = result;
         for (size_t i = 0;
@@ -152,7 +152,7 @@ struct CollectAnyAwaiter {
                     auto count = e->downCount();
                     if (count == size + 1) {
                         r->_idx = i;
-                        callback(i, std::move(result));
+                        (*callback)(i, std::move(result));
                         c.resume();
                     }
                 });
@@ -651,8 +651,9 @@ inline auto collectAny(std::vector<LazyType<T>, IAlloc>&& input) {
 template <typename T, template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>, typename Callback>
 inline auto collectAny(std::vector<LazyType<T>, IAlloc>&& input,
-                       Callback func) {
-    return detail::collectAnyImpl(std::move(input), std::move(func));
+                       Callback callback) {
+    auto cb = std::make_shared<Callback>(std::move(callback));
+    return detail::collectAnyImpl(std::move(input), std::move(cb));
 }
 
 template <template <typename> typename LazyType, typename... Ts>
