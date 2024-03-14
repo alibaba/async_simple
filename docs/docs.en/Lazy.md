@@ -403,6 +403,8 @@ Sometimes we need only a result of a lot of tasks. We could use `collectAny` in 
 
 - Argument type: `std::vector<LazyType<T>>`. Return type:  `Lazy<CollectAnyResult<T>>`.
 - Argument type: `LazyType<T1>, LazyType<T2>, LazyType<T3>, ...`. Return type: `std::variant<Try<T1>, Try<T2>, Try<T3>, ...>`.
+- Argument type: `std::pair/std::tuple<LazyType<T1>, [](size_t, Try<T1>)>, std::pair/std::tuple<LazyType<T2>, [](size_t, Try<T2>)>, ...`. Return type: `size_t`.
+- Argument type: `std::vector<LazyType<T>>, [](Try<T>)`. Return type: `size_t`
 
 LazyType should be `Lazy<T>` or `RescheduleLazy<T>`.
 
@@ -454,6 +456,57 @@ Lazy<int> getAnyConditionalValue(Executor* e) {
 ```
 
 In this case, every task is heavier. And if we use `Lazy<T>`, it is possible that one of the task takes the resources for a long time and other tasks can't get started. So it may be better to use `RescheduleLazy<T>` in such cases.
+
+When pass callback function to collectAny, the result of executed coroutine will be handled in callback function, and return the index of the executed coroutine.
+
+```cpp
+void variadicCallback() {
+    auto test0 = []() -> Lazy<Unit> { co_return Unit{}; };
+    auto test1 = []() -> Lazy<int> { co_return 42; };
+    auto test2 = [](int val) -> Lazy<std::string> {
+        co_return std::to_string(val);
+    };
+
+    auto collectAnyLazy = [](auto&&... args) -> Lazy<size_t> {
+        co_return co_await collectAny(std::move(args)...);
+    };
+    
+    int call_count = 0;
+    size_t index = syncAwait(
+        collectAnyLazy(std::pair{test0(), [&](auto) { call_count++; }},
+                       std::pair{test1(),
+                                 [&](Try<int> val) {
+                                     call_count++;
+                                     EXPECT_EQ(val.value(), 42);
+                                 }},
+                       std::pair{test2(42), [&](Try<std::string> val) {
+                                     call_count++;
+                                     EXPECT_EQ("42", val.value());
+                                 }}));
+    EXPECT_EQ(1, call_count);
+}
+
+void vectorCallback() {
+    auto test0 = []() -> Lazy<int> { co_return 41; };
+    auto test1 = []() -> Lazy<int> { co_return 42; };
+
+    std::vector<Lazy<int>> input;
+    input.push_back(test0());
+    input.push_back(test1());
+
+    auto collectAnyLazy = [](auto input, auto func) -> Lazy<void> {
+        co_await collectAny(std::move(input), func);
+    };
+
+    size_t index = syncAwait(collectAnyLazy(std::move(input), [](size_t index, Try<int> val) {
+        if (index == 0) {
+            EXPECT_EQ(val.value(), 41);
+        } else {
+            EXPECT_EQ(val.value(), 42);
+        }
+    }));
+}
+```
 
 #### CollectAnyResult
 
