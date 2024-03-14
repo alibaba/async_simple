@@ -22,11 +22,7 @@ jobs:
 
       - name: deps
         run: |
-          sudo apt install libaio-dev libgtest-dev -y
-          cd /usr/src/gtest
-          sudo mkdir build && cd build
-          sudo cmake .. && sudo make
-          sudo apt install libgmock-dev -y
+          sudo apt install libaio-dev
 
       - name: Install newer Clang
         run: |
