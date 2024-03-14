@@ -79,6 +79,9 @@ async\_simple 涉及 C++20 协程，对编译器版本有较高要求。需要 c
 
 本项目编译运行测试需要 gtest和gmock，需要 libaio 的示例代码则依赖 libaio。
 
+默认情况下，async_simple 会尝试从 git 拉取 gtest 源码以保证版本一致性。在用户存在网络的情况下，
+建议用户按照以下指令安装对应版本的 gtest 并使用 CMake 变量 ('GMOCK_INCLUDE_DIR', 'GTEST_LIBRARIES', 'GMOCK_INCLUDE_DIR', 'GMOCK_LIBRARIES') 指定安装的 gtest 所在的位置。
+
 ## Debian/Ubuntu系列
 
 - 安装clang11及其以上版本。安装方法见：[APT Packages](https://apt.llvm.org/)
@@ -181,7 +184,7 @@ mkdir build && cd build
 # Specify [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] to skip tests.
 # Specify [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] to skip build demo example.
 # Specify [-DASYNC_SIMPLE_DISABLE_AIO=ON] to skip the build libaio
-CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug] [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] [-DASYNC_SIMPLE_DISABLE_AIO=ON]
+CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug] [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] [-DASYNC_SIMPLE_DISABLE_AIO=ON] [-DGMOCK_INCLUDE_DIR=<path-to-headers of gtest> -DGTEST_INCLUDE_DIR=<path-to-headers of mock> -DGTEST_LIBRARIES=<path-to-library-of-gtest>  -DGMOCK_LIBRARIES=<path-to-library-of-gmock> ]
 make -j4
 make test
 make install

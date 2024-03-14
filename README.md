@@ -83,7 +83,9 @@ If you meet any problem about MSVC Compiler Error C4737. Try to add the /EHa opt
 # Develop async_simple
 
 The build of async_simple requires libaio, googletest and cmake.  Both libaio and googletest
-are optional. (Testing before using is highly suggested.)
+are optional. (Testing before using is highly suggested.) By default, async_simple would try
+to clone the googletest from git to make sure the version used is correct. But in case the
+users have problems with networks, users can try to install the gtest libraries by the following instructions and use the CMake variables ('GMOCK_INCLUDE_DIR', 'GTEST_LIBRARIES', 'GMOCK_INCLUDE_DIR', 'GMOCK_LIBRARIES') to specify the location.
 
 ## Using apt (Ubuntu and Debian)
 
@@ -186,7 +188,7 @@ $ mkdir build && cd build
 # Specify [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] to skip tests.
 # Specify [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] to skip build demo example.
 # Specify [-DASYNC_SIMPLE_DISABLE_AIO=ON] to skip the build libaio
-CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug] [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] [-DASYNC_SIMPLE_DISABLE_AIO=ON]
+CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug] [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] [-DASYNC_SIMPLE_DISABLE_AIO=ON] [-DGMOCK_INCLUDE_DIR=<path-to-headers of gtest> -DGTEST_INCLUDE_DIR=<path-to-headers of mock> -DGTEST_LIBRARIES=<path-to-library-of-gtest>  -DGMOCK_LIBRARIES=<path-to-library-of-gmock> ]
 # for gcc, use CXX=g++ CC=gcc
 make -j4
 make test # optional
