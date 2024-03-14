@@ -26,6 +26,7 @@
 #include <vector>
 #include "async_simple/Common.h"
 #include "async_simple/Try.h"
+#include "async_simple/Unit.h"
 #include "async_simple/coro/CountEvent.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/experimental/coroutine.h"
@@ -83,15 +84,18 @@ struct CollectAnyResult {
 #endif
 };
 
-template <typename LazyType, typename InAlloc, typename... Function>
+template <typename LazyType, typename InAlloc, typename Callback = Unit>
 struct CollectAnyAwaiter {
     using ValueType = typename LazyType::ValueType;
     using ResultType = CollectAnyResult<ValueType>;
 
-    CollectAnyAwaiter(std::vector<LazyType, InAlloc>&& input, Function... func)
+    CollectAnyAwaiter(std::vector<LazyType, InAlloc>&& input)
+        : _input(std::move(input)), _result(nullptr) {}
+
+    CollectAnyAwaiter(std::vector<LazyType, InAlloc>&& input, Callback callback)
         : _input(std::move(input)),
           _result(nullptr),
-          _callback(std::move(func)...) {}
+          _callback(std::move(callback)) {}
 
     CollectAnyAwaiter(const CollectAnyAwaiter&) = delete;
     CollectAnyAwaiter& operator=(const CollectAnyAwaiter&) = delete;
@@ -127,7 +131,7 @@ struct CollectAnyAwaiter {
                 input[i]._coro.promise()._executor = executor;
             }
 
-            if constexpr (sizeof...(Function) == 0) {
+            if constexpr (std::is_same_v<Callback, Unit>) {
                 (void)callback;
                 input[i].start([i, size = input.size(), r = result,
                                 c = continuation,
@@ -148,7 +152,7 @@ struct CollectAnyAwaiter {
                     auto count = e->downCount();
                     if (count == size + 1) {
                         r->_idx = i;
-                        std::get<0>(callback)(i, std::move(result));
+                        callback(i, std::move(result));
                         c.resume();
                     }
                 });
@@ -156,7 +160,7 @@ struct CollectAnyAwaiter {
         }  // end for
     }
     auto await_resume() {
-        if constexpr (sizeof...(Function) == 0) {
+        if constexpr (std::is_same_v<Callback, Unit>) {
             assert(_result != nullptr);
             return std::move(*_result);
         } else {
@@ -166,7 +170,7 @@ struct CollectAnyAwaiter {
 
     std::vector<LazyType, InAlloc> _input;
     std::shared_ptr<ResultType> _result;
-    std::tuple<Function...> _callback;
+    [[no_unique_address]] Callback _callback;
 };
 
 template <typename... Ts>
@@ -333,25 +337,28 @@ struct CollectAnyVariadicAwaiter {
     std::shared_ptr<std::optional<ResultType>> _result;
 };
 
-template <typename T, typename InAlloc, typename... Callback>
+template <typename T, typename InAlloc, typename Callback = Unit>
 struct SimpleCollectAnyAwaitable {
     using ValueType = T;
     using LazyType = Lazy<T>;
     using VectorType = std::vector<LazyType, InAlloc>;
 
     VectorType _input;
-    std::tuple<Callback...> _callback;
+    [[no_unique_address]] Callback _callback;
+
+    SimpleCollectAnyAwaitable(std::vector<LazyType, InAlloc>&& input)
+        : _input(std::move(input)) {}
 
     SimpleCollectAnyAwaitable(std::vector<LazyType, InAlloc>&& input,
-                              Callback... func)
-        : _input(std::move(input)), _callback(std::move(func)...) {}
+                              Callback callback)
+        : _input(std::move(input)), _callback(std::move(callback)) {}
 
     auto coAwait(Executor* ex) {
-        if constexpr (sizeof...(Callback) == 0) {
+        if constexpr (std::is_same_v<Callback, Unit>) {
             return CollectAnyAwaiter<LazyType, InAlloc>(std::move(_input));
         } else {
-            return CollectAnyAwaiter<LazyType, InAlloc, Callback...>(
-                std::move(_input), std::move(std::get<0>(_callback)));
+            return CollectAnyAwaiter<LazyType, InAlloc, Callback>(
+                std::move(_input), std::move(_callback));
         }
     }
 };
@@ -604,14 +611,24 @@ inline auto collectAllVariadicImpl(LazyType<Ts>&&... awaitables) {
 // collectAny
 
 template <typename T, template <typename> typename LazyType,
-          typename IAlloc = std::allocator<LazyType<T>>, typename... Callback>
+          typename IAlloc = std::allocator<LazyType<T>>>
+inline auto collectAnyImpl(std::vector<LazyType<T>, IAlloc> input) {
+    using AT =
+        std::conditional_t<std::is_same_v<LazyType<T>, Lazy<T>>,
+                           detail::SimpleCollectAnyAwaitable<T, IAlloc>,
+                           detail::CollectAnyAwaiter<LazyType<T>, IAlloc>>;
+    return AT(std::move(input));
+}
+
+template <typename T, template <typename> typename LazyType,
+          typename IAlloc = std::allocator<LazyType<T>>, typename Callback>
 inline auto collectAnyImpl(std::vector<LazyType<T>, IAlloc> input,
-                           Callback... func) {
+                           Callback callback = {}) {
     using AT = std::conditional_t<
         std::is_same_v<LazyType<T>, Lazy<T>>,
-        detail::SimpleCollectAnyAwaitable<T, IAlloc, Callback...>,
-        detail::CollectAnyAwaiter<LazyType<T>, IAlloc, Callback...>>;
-    return AT(std::move(input), std::move(func)...);
+        detail::SimpleCollectAnyAwaitable<T, IAlloc, Callback>,
+        detail::CollectAnyAwaiter<LazyType<T>, IAlloc, Callback>>;
+    return AT(std::move(input), std::move(callback));
 }
 
 // collectAnyVariadic
