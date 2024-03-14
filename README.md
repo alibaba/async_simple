@@ -47,3 +47,6 @@ cmake .. -GNinja
 ninja
 ninja test
 ```
+
+This method will download gtest automatically. In case it is problematic to download gtest, we can specify the location
+of gtest by cmake variables: `-DGMOCK_INCLUDE_DIR=<path-to-headers of gtest> -DGTEST_INCLUDE_DIR=<path-to-headers of mock> -DGTEST_LIBRARIES=<path-to-library-of-gtest>  -DGMOCK_LIBRARIES=<path-to-library-of-gmock>`.
