@@ -127,28 +127,40 @@ struct CollectAnyAwaiter {
                 input[i]._coro.promise()._executor = executor;
             }
 
-            input[i].start([i = i, size = input.size(), r = result,
-                            c = continuation, e = event,
-                            callback](Try<ValueType>&& result) mutable {
-                assert(e != nullptr);
-                auto count = e->downCount();
-                if (count == size + 1) {
-                    if constexpr (sizeof...(Function) == 0) {
+            if constexpr (sizeof...(Function) == 0) {
+                (void)callback;
+                input[i].start([i, size = input.size(), r = result,
+                                c = continuation,
+                                e = event](Try<ValueType>&& result) mutable {
+                    assert(e != nullptr);
+                    auto count = e->downCount();
+                    if (count == size + 1) {
                         r->_idx = i;
                         r->_value = std::move(result);
-                        (void)callback;
-                    } else {
-                        std::get<0>(callback)(i, std::move(result));
+                        c.resume();
                     }
-                    c.resume();
-                }
-            });
+                });
+            } else {
+                input[i].start([i, size = input.size(), r = result,
+                                c = continuation, e = event,
+                                callback](Try<ValueType>&& result) mutable {
+                    assert(e != nullptr);
+                    auto count = e->downCount();
+                    if (count == size + 1) {
+                        r->_idx = i;
+                        std::get<0>(callback)(i, std::move(result));
+                        c.resume();
+                    }
+                });
+            }
         }  // end for
     }
     auto await_resume() {
         if constexpr (sizeof...(Function) == 0) {
             assert(_result != nullptr);
             return std::move(*_result);
+        } else {
+            return _result->index();
         }
     }
 
