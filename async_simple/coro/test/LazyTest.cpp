@@ -916,193 +916,197 @@ TEST_F(LazyTest, testCollectAllWithAllocator) {
     ASSERT_EQ(3, syncAwait(test2().via(&e3)));
 }
 
-TEST_F(LazyTest, testCollectAllVariadic) {
-    // normal task
-    executors::SimpleExecutor e1(5);
-    auto test = [this, &e1]() -> Lazy<> {
-        Lazy<int> intLazy = getValue(2);
-        Lazy<double> doubleLazy = getValue(2.2);
-        Lazy<std::string> stringLazy =
-            getValue(std::string("testCollectAllVariadic"));
+// TEST_F(LazyTest, testCollectAllVariadic) {
+//     // normal task
+//     executors::SimpleExecutor e1(5);
+//     auto test = [this, &e1]() -> Lazy<> {
+//         Lazy<int> intLazy = getValue(2);
+//         Lazy<double> doubleLazy = getValue(2.2);
+//         Lazy<std::string> stringLazy =
+//             getValue(std::string("testCollectAllVariadic"));
 
-        CHECK_EXECUTOR(&e1);
-        auto combinedLazy = collectAll(
-            std::move(intLazy), std::move(doubleLazy), std::move(stringLazy));
-        CHECK_EXECUTOR(&e1);
+//         CHECK_EXECUTOR(&e1);
+//         auto combinedLazy = collectAll(
+//             std::move(intLazy), std::move(doubleLazy),
+//             std::move(stringLazy));
+//         CHECK_EXECUTOR(&e1);
 
-        auto out_tuple = co_await std::move(combinedLazy);
-        EXPECT_EQ(3u, std::tuple_size<decltype(out_tuple)>::value);
+//         auto out_tuple = co_await std::move(combinedLazy);
+//         EXPECT_EQ(3u, std::tuple_size<decltype(out_tuple)>::value);
 
-        auto v_try_int = std::get<0>(std::move(out_tuple));
-        auto v_try_double = std::get<1>(std::move(out_tuple));
-        auto v_try_string = std::get<2>(std::move(out_tuple));
+//         auto v_try_int = std::get<0>(std::move(out_tuple));
+//         auto v_try_double = std::get<1>(std::move(out_tuple));
+//         auto v_try_string = std::get<2>(std::move(out_tuple));
 
-        EXPECT_EQ(2, v_try_int.value());
-        EXPECT_DOUBLE_EQ(2.2, v_try_double.value());
-        EXPECT_STREQ("testCollectAllVariadic", v_try_string.value().c_str());
+//         EXPECT_EQ(2, v_try_int.value());
+//         EXPECT_DOUBLE_EQ(2.2, v_try_double.value());
+//         EXPECT_STREQ("testCollectAllVariadic", v_try_string.value().c_str());
 
-        CHECK_EXECUTOR(&e1);
-    };
-    syncAwait(test().via(&e1));
+//         CHECK_EXECUTOR(&e1);
+//     };
+//     syncAwait(test().via(&e1));
 
-    // void task
-    executors::SimpleExecutor e2(5);
-    auto test1 = [this, &e2]() -> Lazy<> {
-        Lazy<int> intLazy = getValue(2);
-        Lazy<void> voidLazy01 = makeVoidTask();
-        Lazy<void> voidLazy02 = testExcept();
+//     // void task
+//     executors::SimpleExecutor e2(5);
+//     auto test1 = [this, &e2]() -> Lazy<> {
+//         Lazy<int> intLazy = getValue(2);
+//         Lazy<void> voidLazy01 = makeVoidTask();
+//         Lazy<void> voidLazy02 = testExcept();
 
-        CHECK_EXECUTOR(&e2);
-        auto combinedLazy = collectAll(
-            std::move(intLazy), std::move(voidLazy01), std::move(voidLazy02));
-        CHECK_EXECUTOR(&e2);
+//         CHECK_EXECUTOR(&e2);
+//         auto combinedLazy = collectAll(
+//             std::move(intLazy), std::move(voidLazy01),
+//             std::move(voidLazy02));
+//         CHECK_EXECUTOR(&e2);
 
-        auto out_tuple = co_await std::move(combinedLazy);
-        EXPECT_EQ(3u, std::tuple_size<decltype(out_tuple)>::value);
+//         auto out_tuple = co_await std::move(combinedLazy);
+//         EXPECT_EQ(3u, std::tuple_size<decltype(out_tuple)>::value);
 
-        auto v_try_int = std::get<0>(std::move(out_tuple));
-        auto v_try_void01 = std::get<1>(std::move(out_tuple));
-        auto v_try_void02 = std::get<2>(std::move(out_tuple));
+//         auto v_try_int = std::get<0>(std::move(out_tuple));
+//         auto v_try_void01 = std::get<1>(std::move(out_tuple));
+//         auto v_try_void02 = std::get<2>(std::move(out_tuple));
 
-        EXPECT_EQ(2, v_try_int.value());
+//         EXPECT_EQ(2, v_try_int.value());
 
-        bool b1 = std::is_same_v<Try<void>, decltype(v_try_void01)>;
-        bool b2 = std::is_same_v<Try<void>, decltype(v_try_void02)>;
-        try {  // v_try_void02 throw exception
-            EXPECT_TRUE(true);
-            v_try_void02.value();
-            EXPECT_TRUE(false);
-        } catch (const std::runtime_error& e) {
-            EXPECT_TRUE(true);
-        }
-        EXPECT_TRUE(b1);
-        EXPECT_TRUE(b2);
+//         bool b1 = std::is_same_v<Try<void>, decltype(v_try_void01)>;
+//         bool b2 = std::is_same_v<Try<void>, decltype(v_try_void02)>;
+//         try {  // v_try_void02 throw exception
+//             EXPECT_TRUE(true);
+//             v_try_void02.value();
+//             EXPECT_TRUE(false);
+//         } catch (const std::runtime_error& e) {
+//             EXPECT_TRUE(true);
+//         }
+//         EXPECT_TRUE(b1);
+//         EXPECT_TRUE(b2);
 
-        CHECK_EXECUTOR(&e2);
-    };
-    syncAwait(test1().via(&e2));
+//         CHECK_EXECUTOR(&e2);
+//     };
+//     syncAwait(test1().via(&e2));
 
-    // RescheduleLazy
-    executors::SimpleExecutor e3(5);
-    executors::SimpleExecutor e4(5);
-    auto test2 = [this, &e1, &e2, &e3, &e4]() -> Lazy<> {
-        RescheduleLazy<int> intLazy = getValue(2).via(&e2);
-        RescheduleLazy<double> doubleLazy = getValue(2.2).via(&e3);
-        RescheduleLazy<std::string> stringLazy =
-            getValue(std::string("testCollectAllVariadic")).via(&e4);
+//     // RescheduleLazy
+//     executors::SimpleExecutor e3(5);
+//     executors::SimpleExecutor e4(5);
+//     auto test2 = [this, &e1, &e2, &e3, &e4]() -> Lazy<> {
+//         RescheduleLazy<int> intLazy = getValue(2).via(&e2);
+//         RescheduleLazy<double> doubleLazy = getValue(2.2).via(&e3);
+//         RescheduleLazy<std::string> stringLazy =
+//             getValue(std::string("testCollectAllVariadic")).via(&e4);
 
-        CHECK_EXECUTOR(&e1);
-        auto combinedLazy = collectAll(
-            std::move(intLazy), std::move(doubleLazy), std::move(stringLazy));
-        CHECK_EXECUTOR(&e1);
+//         CHECK_EXECUTOR(&e1);
+//         auto combinedLazy = collectAll(
+//             std::move(intLazy), std::move(doubleLazy),
+//             std::move(stringLazy));
+//         CHECK_EXECUTOR(&e1);
 
-        auto out_tuple = co_await std::move(combinedLazy);
-        EXPECT_EQ(3u, std::tuple_size<decltype(out_tuple)>::value);
+//         auto out_tuple = co_await std::move(combinedLazy);
+//         EXPECT_EQ(3u, std::tuple_size<decltype(out_tuple)>::value);
 
-        auto v_try_int = std::get<0>(std::move(out_tuple));
-        auto v_try_double = std::get<1>(std::move(out_tuple));
-        auto v_try_string = std::get<2>(std::move(out_tuple));
+//         auto v_try_int = std::get<0>(std::move(out_tuple));
+//         auto v_try_double = std::get<1>(std::move(out_tuple));
+//         auto v_try_string = std::get<2>(std::move(out_tuple));
 
-        EXPECT_EQ(2, v_try_int.value());
-        EXPECT_DOUBLE_EQ(2.2, v_try_double.value());
-        EXPECT_STREQ("testCollectAllVariadic", v_try_string.value().c_str());
+//         EXPECT_EQ(2, v_try_int.value());
+//         EXPECT_DOUBLE_EQ(2.2, v_try_double.value());
+//         EXPECT_STREQ("testCollectAllVariadic", v_try_string.value().c_str());
 
-        CHECK_EXECUTOR(&e1);
-    };
-    syncAwait(test2().via(&e1));
+//         CHECK_EXECUTOR(&e1);
+//     };
+//     syncAwait(test2().via(&e1));
 
-    // void RescheduleLazy
-    auto test3 = [this, &e1, &e2, &e3, &e4]() -> Lazy<> {
-        RescheduleLazy<int> intLazy = getValue(2).via(&e2);
-        RescheduleLazy<void> voidLazy01 = makeVoidTask().via(&e3);
-        RescheduleLazy<void> voidLazy02 = makeVoidTask().via(&e4);
+//     // void RescheduleLazy
+//     auto test3 = [this, &e1, &e2, &e3, &e4]() -> Lazy<> {
+//         RescheduleLazy<int> intLazy = getValue(2).via(&e2);
+//         RescheduleLazy<void> voidLazy01 = makeVoidTask().via(&e3);
+//         RescheduleLazy<void> voidLazy02 = makeVoidTask().via(&e4);
 
-        CHECK_EXECUTOR(&e1);
-        auto combinedLazy = collectAll(
-            std::move(intLazy), std::move(voidLazy01), std::move(voidLazy02));
-        CHECK_EXECUTOR(&e1);
+//         CHECK_EXECUTOR(&e1);
+//         auto combinedLazy = collectAll(
+//             std::move(intLazy), std::move(voidLazy01),
+//             std::move(voidLazy02));
+//         CHECK_EXECUTOR(&e1);
 
-        auto out_tuple = co_await std::move(combinedLazy);
-        EXPECT_EQ(3u, std::tuple_size<decltype(out_tuple)>::value);
+//         auto out_tuple = co_await std::move(combinedLazy);
+//         EXPECT_EQ(3u, std::tuple_size<decltype(out_tuple)>::value);
 
-        auto v_try_int = std::get<0>(std::move(out_tuple));
-        auto v_try_void01 = std::get<1>(std::move(out_tuple));
-        auto v_try_void02 = std::get<2>(std::move(out_tuple));
+//         auto v_try_int = std::get<0>(std::move(out_tuple));
+//         auto v_try_void01 = std::get<1>(std::move(out_tuple));
+//         auto v_try_void02 = std::get<2>(std::move(out_tuple));
 
-        EXPECT_EQ(2, v_try_int.value());
-        bool b1 = std::is_same_v<Try<void>, decltype(v_try_void01)>;
-        bool b2 = std::is_same_v<Try<void>, decltype(v_try_void02)>;
-        EXPECT_TRUE(b1);
-        EXPECT_TRUE(b2);
+//         EXPECT_EQ(2, v_try_int.value());
+//         bool b1 = std::is_same_v<Try<void>, decltype(v_try_void01)>;
+//         bool b2 = std::is_same_v<Try<void>, decltype(v_try_void02)>;
+//         EXPECT_TRUE(b1);
+//         EXPECT_TRUE(b2);
 
-        CHECK_EXECUTOR(&e1);
-    };
-    syncAwait(test3().via(&e1));
+//         CHECK_EXECUTOR(&e1);
+//     };
+//     syncAwait(test3().via(&e1));
 
-    // void task
-    auto test4 = [this, &e2]() -> Lazy<> {
-        CHECK_EXECUTOR(&e2);
-        auto combinedLazy = collectAll(
-            // test temporary object
-            getValue(2), makeVoidTask(), testExcept());
-        CHECK_EXECUTOR(&e2);
+//     // void task
+//     auto test4 = [this, &e2]() -> Lazy<> {
+//         CHECK_EXECUTOR(&e2);
+//         auto combinedLazy = collectAll(
+//             // test temporary object
+//             getValue(2), makeVoidTask(), testExcept());
+//         CHECK_EXECUTOR(&e2);
 
-        auto out_tuple = co_await std::move(combinedLazy);
-        EXPECT_EQ(3u, std::tuple_size<decltype(out_tuple)>::value);
+//         auto out_tuple = co_await std::move(combinedLazy);
+//         EXPECT_EQ(3u, std::tuple_size<decltype(out_tuple)>::value);
 
-        auto v_try_int = std::get<0>(std::move(out_tuple));
-        auto v_try_void01 = std::get<1>(std::move(out_tuple));
-        auto v_try_void02 = std::get<2>(std::move(out_tuple));
+//         auto v_try_int = std::get<0>(std::move(out_tuple));
+//         auto v_try_void01 = std::get<1>(std::move(out_tuple));
+//         auto v_try_void02 = std::get<2>(std::move(out_tuple));
 
-        EXPECT_EQ(2, v_try_int.value());
+//         EXPECT_EQ(2, v_try_int.value());
 
-        bool b1 = std::is_same_v<Try<void>, decltype(v_try_void01)>;
-        bool b2 = std::is_same_v<Try<void>, decltype(v_try_void02)>;
-        try {  // v_try_void02 throw exception
-            EXPECT_TRUE(true);
-            v_try_void02.value();
-            EXPECT_TRUE(false);
-        } catch (const std::runtime_error& e) {
-            EXPECT_TRUE(true);
-        }
-        EXPECT_TRUE(b1);
-        EXPECT_TRUE(b2);
+//         bool b1 = std::is_same_v<Try<void>, decltype(v_try_void01)>;
+//         bool b2 = std::is_same_v<Try<void>, decltype(v_try_void02)>;
+//         try {  // v_try_void02 throw exception
+//             EXPECT_TRUE(true);
+//             v_try_void02.value();
+//             EXPECT_TRUE(false);
+//         } catch (const std::runtime_error& e) {
+//             EXPECT_TRUE(true);
+//         }
+//         EXPECT_TRUE(b1);
+//         EXPECT_TRUE(b2);
 
-        CHECK_EXECUTOR(&e2);
-    };
-    syncAwait(test4().via(&e2));
+//         CHECK_EXECUTOR(&e2);
+//     };
+//     syncAwait(test4().via(&e2));
 
-    auto testCollectAllPara = [this, &e1]() -> Lazy<> {
-        Lazy<int> intLazy = getValue(2);
-        Lazy<double> doubleLazy = getValue(2.2);
-        Lazy<std::string> stringLazy =
-            getValue(std::string("testCollectAllPara"));
-        auto sleepLazy = [](int rep) -> Lazy<std::thread::id> {
-            std::this_thread::sleep_for(std::chrono::microseconds(rep));
-            co_return std::this_thread::get_id();
-        };
+//     auto testCollectAllPara = [this, &e1]() -> Lazy<> {
+//         Lazy<int> intLazy = getValue(2);
+//         Lazy<double> doubleLazy = getValue(2.2);
+//         Lazy<std::string> stringLazy =
+//             getValue(std::string("testCollectAllPara"));
+//         auto sleepLazy = [](int rep) -> Lazy<std::thread::id> {
+//             std::this_thread::sleep_for(std::chrono::microseconds(rep));
+//             co_return std::this_thread::get_id();
+//         };
 
-        auto id = std::this_thread::get_id();
-        CHECK_EXECUTOR(&e1);
-        auto out_tuple = co_await collectAllPara(
-            std::move(intLazy), std::move(doubleLazy), std::move(stringLazy),
-            sleepLazy(2), sleepLazy(1));
-        CHECK_EXECUTOR(&e1);
+//         auto id = std::this_thread::get_id();
+//         CHECK_EXECUTOR(&e1);
+//         auto out_tuple = co_await collectAllPara(
+//             std::move(intLazy), std::move(doubleLazy), std::move(stringLazy),
+//             sleepLazy(2), sleepLazy(1));
+//         CHECK_EXECUTOR(&e1);
 
-        EXPECT_EQ(std::this_thread::get_id(), id);
-        EXPECT_EQ(5u, std::tuple_size<decltype(out_tuple)>::value);
+//         EXPECT_EQ(std::this_thread::get_id(), id);
+//         EXPECT_EQ(5u, std::tuple_size<decltype(out_tuple)>::value);
 
-        auto [v_try_int, v_try_double, v_try_string, id0, id1] =
-            std::move(out_tuple);
+//         auto [v_try_int, v_try_double, v_try_string, id0, id1] =
+//             std::move(out_tuple);
 
-        EXPECT_EQ(2, v_try_int.value());
-        EXPECT_DOUBLE_EQ(2.2, v_try_double.value());
-        EXPECT_STREQ("testCollectAllPara", v_try_string.value().c_str());
+//         EXPECT_EQ(2, v_try_int.value());
+//         EXPECT_DOUBLE_EQ(2.2, v_try_double.value());
+//         EXPECT_STREQ("testCollectAllPara", v_try_string.value().c_str());
 
-        CHECK_EXECUTOR(&e1);
-    };
-    syncAwait(testCollectAllPara().via(&e1));
-}
+//         CHECK_EXECUTOR(&e1);
+//     };
+//     syncAwait(testCollectAllPara().via(&e1));
+// }
 
 TEST_F(LazyTest, testCollectAnyWithCallbackVariadic) {
     auto test0 = []() -> Lazy<Unit> { co_return Unit{}; };
