@@ -71,7 +71,7 @@ async\_simple 涉及 C++20 协程，对编译器版本有较高要求。需要 c
 
 注意当使用 gcc12 时需要加上 `-Wno-maybe-uninitialized` 选项因为 gcc12 的一个误报。详情可见 https://github.com/alibaba/async_simple/issues/234。
 
-注意当使用 clang15 时可能需要加上 `-Wno-unsequenced` 选项，这是clang15的一个误报。详情可见 https://github.com/llvm/llvm-project/issues/56768。若你需要使用 `async_simple::Generator`，我们推荐使用 clang17 或更高的版本因为在低版本 clang 上存在一些关于 Generator 的 bug report。
+若你需要使用 `async_simple::Generator`，我们推荐使用 clang17 或更高的版本因为在低版本 clang 上存在一些关于 Generator 的 bug report。
 
 注意，如果使用msvc时遇到了C4737错误，请加上选项/EHa。
 
