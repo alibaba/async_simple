@@ -17,6 +17,11 @@
 #ifndef ASYNC_SIMPLE_CORO_GENERATOR_H
 #define ASYNC_SIMPLE_CORO_GENERATOR_H
 
+#if defined(__clang__) && __clang_major__ == 15
+// See: https://github.com/alibaba/async_simple/issues/372
+#warning "Clang 15 is not supported for Generator due to some issues."
+#endif
+
 #if __has_include(<generator>)
 
 #include <generator>

@@ -14,6 +14,13 @@
  * limitations under the License.
  */
 
+#if defined(__clang__) && __clang_major__ == 15
+// See: https://github.com/alibaba/async_simple/issues/372
+#define SKIP_GENERATOR_TEST
+#endif
+
+#ifndef SKIP_GENERATOR_TEST
+
 #include <algorithm>
 #include <array>
 #include <iostream>
@@ -398,3 +405,5 @@ TEST_F(GeneratorTest, testNoCopyClass) {
 }
 
 }  // namespace async_simple::coro
+
+#endif  // SKIP_GENERATOR_TEST
