@@ -333,24 +333,24 @@ struct CollectAnyVariadicAwaiter {
     std::shared_ptr<std::optional<ResultType>> _result;
 };
 
-template <typename T, typename InAlloc, typename... Function>
+template <typename T, typename InAlloc, typename... Callback>
 struct SimpleCollectAnyAwaitable {
     using ValueType = T;
     using LazyType = Lazy<T>;
     using VectorType = std::vector<LazyType, InAlloc>;
 
     VectorType _input;
-    std::tuple<Function...> _callback;
+    std::tuple<Callback...> _callback;
 
     SimpleCollectAnyAwaitable(std::vector<LazyType, InAlloc>&& input,
-                              Function... func)
+                              Callback... func)
         : _input(std::move(input)), _callback(std::move(func)...) {}
 
     auto coAwait(Executor* ex) {
-        if constexpr (sizeof...(Function) == 0) {
+        if constexpr (sizeof...(Callback) == 0) {
             return CollectAnyAwaiter<LazyType, InAlloc>(std::move(_input));
         } else {
-            return CollectAnyAwaiter<LazyType, InAlloc, Function...>(
+            return CollectAnyAwaiter<LazyType, InAlloc, Callback...>(
                 std::move(_input), std::move(std::get<0>(_callback)));
         }
     }
@@ -604,13 +604,13 @@ inline auto collectAllVariadicImpl(LazyType<Ts>&&... awaitables) {
 // collectAny
 
 template <typename T, template <typename> typename LazyType,
-          typename IAlloc = std::allocator<LazyType<T>>, typename... Function>
+          typename IAlloc = std::allocator<LazyType<T>>, typename... Callback>
 inline auto collectAnyImpl(std::vector<LazyType<T>, IAlloc> input,
-                           Function... func) {
+                           Callback... func) {
     using AT = std::conditional_t<
         std::is_same_v<LazyType<T>, Lazy<T>>,
-        detail::SimpleCollectAnyAwaitable<T, IAlloc, Function...>,
-        detail::CollectAnyAwaiter<LazyType<T>, IAlloc, Function...>>;
+        detail::SimpleCollectAnyAwaitable<T, IAlloc, Callback...>,
+        detail::CollectAnyAwaiter<LazyType<T>, IAlloc, Callback...>>;
     return AT(std::move(input), std::move(func)...);
 }
 
@@ -636,10 +636,16 @@ inline auto CollectAnyVariadicPairImpl(T&& input, Ts&&... inputs) {
 }  // namespace detail
 
 template <typename T, template <typename> typename LazyType,
-          typename IAlloc = std::allocator<LazyType<T>>, typename... Function>
+          typename IAlloc = std::allocator<LazyType<T>>>
+inline auto collectAny(std::vector<LazyType<T>, IAlloc>&& input) {
+    return detail::collectAnyImpl(std::move(input));
+}
+
+template <typename T, template <typename> typename LazyType,
+          typename IAlloc = std::allocator<LazyType<T>>, typename Callback>
 inline auto collectAny(std::vector<LazyType<T>, IAlloc>&& input,
-                       Function... func) {
-    return detail::collectAnyImpl(std::move(input), std::move(func)...);
+                       Callback func) {
+    return detail::collectAnyImpl(std::move(input), std::move(func));
 }
 
 template <template <typename> typename LazyType, typename... Ts>
