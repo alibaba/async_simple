@@ -58,11 +58,14 @@ struct CollectAllAwaiter;
 template <bool Para, template <typename> typename LazyType, typename... Ts>
 struct CollectAllVariadicAwaiter;
 
-template <typename LazyType, typename IAlloc>
+template <typename LazyType, typename IAlloc, typename Callback>
 struct CollectAnyAwaiter;
 
 template <template <typename> typename LazyType, typename... Ts>
 struct CollectAnyVariadicAwaiter;
+
+template <typename... Ts>
+struct CollectAnyVariadicPairAwaiter;
 
 }  // namespace detail
 
@@ -151,8 +154,8 @@ public:
 
     template <typename V>
     void return_value(V&& value) noexcept(
-        std::is_nothrow_constructible_v<
-            T, V&&>) requires std::is_convertible_v<V&&, T> {
+        std::is_nothrow_constructible_v<T, V&&>) requires
+        std::is_convertible_v<V&&, T> {
         _value.template emplace<T>(std::forward<V>(value));
     }
     void unhandled_exception() noexcept {
@@ -387,11 +390,14 @@ protected:
     template <bool, template <typename> typename, typename...>
     friend struct detail::CollectAllVariadicAwaiter;
 
-    template <typename LazyType, typename IAlloc>
+    template <typename LazyType, typename IAlloc, typename Callback>
     friend struct detail::CollectAnyAwaiter;
 
     template <template <typename> typename LazyType, typename... Ts>
     friend struct detail::CollectAnyVariadicAwaiter;
+
+    template <typename... Ts>
+    friend struct detail::CollectAnyVariadicPairAwaiter;
 };
 
 }  // namespace detail

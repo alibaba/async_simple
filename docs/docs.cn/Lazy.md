@@ -403,9 +403,11 @@ Lazy<int> batch_sum(size_t total_number, size_t batch_size)  {
 
 #### 参数类型与行为
 
-collectAny 接受两种类型的参数：
+collectAny 接受四种类型的参数：
 - 参数类型：`std::vector<LazyType<T>>`。 返回类型： `Lazy<CollectAnyResult<T>>`。
 - 参数类型: `LazyType<T1>, LazyType<T2>, LazyType<T3>, ...`。 返回类型： `std::variant<Try<T1>, Try<T2>, Try<T3>, ...>`。
+- 参数类型: `std::pair/std::tuple<LazyType<T1>, [](size_t, Try<T1>)>, std::pair/std::tuple<LazyType<T2>, [](size_t, Try<T2>)>, ...`。返回类型：`size_t`。
+- 参数类型: `std::vector<LazyType<T>>, [](Try<T>)`。返回类型：`size_t`
 
 其中 LazyType 应为 `Lazy<T>` 或 `RescheduleLazy<T>`。
 
@@ -455,6 +457,56 @@ Lazy<int> getAnyConditionalValue(Executor* e) {
 ```
 
 在这个 case 中，每一个任务可能都比较重。此时用 `Lazy<T>` 的话就有可能导致某个任务执行时间过长而迟迟不让出资源导致其他有可能有机会更早获得结果的任务无法开启。在这个情况下，用 `RescheduleLazy<T>` 可能就会更好一些。
+
+当传入回调函数的时候，被执行协程的结果将会在回调函数中处理，collectAny返回执行协程的索引。
+```cpp
+void variadicCallback() {
+    auto test0 = []() -> Lazy<Unit> { co_return Unit{}; };
+    auto test1 = []() -> Lazy<int> { co_return 42; };
+    auto test2 = [](int val) -> Lazy<std::string> {
+        co_return std::to_string(val);
+    };
+
+    auto collectAnyLazy = [](auto&&... args) -> Lazy<size_t> {
+        co_return co_await collectAny(std::move(args)...);
+    };
+
+    int call_count = 0;
+    size_t index = syncAwait(
+        collectAnyLazy(std::pair{test0(), [&](auto) { call_count++; }},
+                       std::pair{test1(),
+                                 [&](Try<int> val) {
+                                     call_count++;
+                                     EXPECT_EQ(val.value(), 42);
+                                 }},
+                       std::pair{test2(42), [&](Try<std::string> val) {
+                                     call_count++;
+                                     EXPECT_EQ("42", val.value());
+                                 }}));
+    EXPECT_EQ(1, call_count);
+}
+
+void vectorCallback() {
+    auto test0 = []() -> Lazy<int> { co_return 41; };
+    auto test1 = []() -> Lazy<int> { co_return 42; };
+
+    std::vector<Lazy<int>> input;
+    input.push_back(test0());
+    input.push_back(test1());
+
+    auto collectAnyLazy = [](auto input, auto func) -> Lazy<void> {
+        co_await collectAny(std::move(input), func);
+    };
+
+    size_t index = syncAwait(collectAnyLazy(std::move(input), [](size_t index, Try<int> val) {
+        if (index == 0) {
+            EXPECT_EQ(val.value(), 41);
+        } else {
+            EXPECT_EQ(val.value(), 42);
+        }
+    }));
+}
+```
 
 #### CollectAnyResult
 

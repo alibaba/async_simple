@@ -1104,6 +1104,115 @@ TEST_F(LazyTest, testCollectAllVariadic) {
     syncAwait(testCollectAllPara().via(&e1));
 }
 
+TEST_F(LazyTest, testCollectAnyWithCallbackVariadic) {
+    auto test0 = []() -> Lazy<Unit> { co_return Unit{}; };
+    auto test1 = []() -> Lazy<int> { co_return 42; };
+    auto test2 = [](int val) -> Lazy<std::string> {
+        co_return std::to_string(val);
+    };
+
+    auto collectAnyLazy = [](auto&&... args) -> Lazy<size_t> {
+        co_return co_await collectAny(std::move(args)...);
+    };
+
+    size_t index =
+        syncAwait(collectAnyLazy(std::pair{test0(), [](auto val) {}}));
+
+    index = syncAwait(collectAnyLazy(
+        std::pair{test1(), [](auto val) { EXPECT_EQ(42, val.value()); }}));
+
+    index = syncAwait(collectAnyLazy(
+        std::pair{test2(42), [](auto str) { EXPECT_EQ("42", str.value()); }}));
+    EXPECT_EQ(index, 0);
+
+    int call_count = 0;
+    index = syncAwait(
+        collectAnyLazy(std::pair{test0(), [&](auto) { call_count++; }},
+                       std::pair{test1(),
+                                 [&](auto val) {
+                                     call_count++;
+                                     EXPECT_EQ(val.value(), 42);
+                                 }},
+                       std::pair{test2(42), [&](auto val) {
+                                     call_count++;
+                                     EXPECT_EQ("42", val.value());
+                                 }}));
+    EXPECT_EQ(1, call_count);
+
+    executors::SimpleExecutor e1(4);
+    auto test3 = []() -> Lazy<int> { co_return 42; };
+    auto test4 = [](int val) -> Lazy<int> { co_return val; };
+
+    int test_value = 0;
+    index =
+        syncAwait(collectAnyLazy(std::pair{test3().via(&e1),
+                                           [&](auto val) {
+                                               test_value = val.value();
+                                               EXPECT_EQ(42, test_value);
+                                           }},
+                                 std::pair{test4(41).via(&e1), [&](auto val) {
+                                               test_value = val.value();
+                                               EXPECT_EQ(41, test_value);
+                                           }}));
+    if (index == 0) {
+        EXPECT_EQ(42, test_value);
+    } else {
+        EXPECT_EQ(41, test_value);
+    }
+}
+
+TEST_F(LazyTest, testCollectAnyWithCallbackVector) {
+    auto test0 = []() -> Lazy<int> { co_return 41; };
+    auto test1 = []() -> Lazy<int> { co_return 42; };
+
+    std::vector<Lazy<int>> input;
+    input.push_back(test0());
+    input.push_back(test1());
+
+    auto collectAnyLazy = [](auto input, auto func) -> Lazy<void> {
+        co_await collectAny(std::move(input), func);
+    };
+
+    syncAwait(collectAnyLazy(std::move(input), [](size_t index, Try<int> val) {
+        if (index == 0) {
+            EXPECT_EQ(val.value(), 41);
+        } else {
+            EXPECT_EQ(val.value(), 42);
+        }
+    }));
+
+    auto test2 = []() -> Lazy<Unit> { co_return Unit{}; };
+    auto test3 = []() -> Lazy<Unit> { co_return Unit{}; };
+
+    std::vector<Lazy<Unit>> input1;
+    input1.push_back(test2());
+    input1.push_back(test3());
+
+    int call_count = 0;
+    syncAwait(
+        collectAnyLazy(std::move(input1),
+                       [&](size_t index, Try<Unit> unit) { call_count++; }));
+    EXPECT_EQ(call_count, 1);
+
+    auto test4 = []() -> Lazy<int> {
+        throw std::logic_error("exception in lazy");
+        co_return 41;
+    };
+
+    std::vector<Lazy<int>> input2;
+    input2.push_back(test4());
+    syncAwait(collectAnyLazy(std::move(input2), [](size_t index, Try<int> val) {
+        EXPECT_TRUE(val.hasError());
+
+        try {
+            std::rethrow_exception(val.getException());
+        } catch (std::exception& ex) {
+            std::string msg(ex.what());
+            EXPECT_EQ(msg, "exception in lazy");
+        }
+    }));
+}
+
 TEST_F(LazyTest, testCollectAny) {
     srand((unsigned)time(NULL));
     executors::SimpleExecutor e1(10);
