@@ -367,7 +367,12 @@ public:
         // suspend point.
         auto launchCoro = [](LazyBase lazy,
                              std::decay_t<F> cb) -> detail::DetachedCoroutine {
-            cb(co_await lazy.coAwaitTry());
+            using U = std::invoke_result_t<F, Try<T>>;
+            if constexpr (HasMemberCoAwaitOperator<U>) {
+                cb(co_await lazy.coAwaitTry()).start([](auto&&) {});
+            } else {
+                cb(co_await lazy.coAwaitTry());
+            }
         };
         [[maybe_unused]] auto detached =
             launchCoro(std::move(*this), std::forward<F>(callback));

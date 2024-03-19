@@ -1213,6 +1213,45 @@ TEST_F(LazyTest, testCollectAnyWithCallbackVector) {
     }));
 }
 
+TEST_F(LazyTest, testStartWithLazy) {
+    auto test0 = []() mutable -> Lazy<int> { co_return 41; };
+
+    auto test1 = []() mutable -> Lazy<int> { co_return 42; };
+
+    executors::SimpleExecutor e1(2);
+    test1().start([&](auto val) -> Lazy<void> {
+        int r = co_await test0();
+        int result = r + val.value();
+        EXPECT_EQ(result, 83);
+        co_return;
+    });
+
+    auto collectAnyLazy = [](auto&&... args) mutable -> Lazy<size_t> {
+        co_return co_await collectAny(std::move(args)...);
+    };
+
+    syncAwait(collectAnyLazy(
+        std::pair{test1(), [&](auto&& val) mutable -> Lazy<void> {
+                      EXPECT_EQ(val.value(), 42);
+                      int r = co_await test0();
+                      int result = r + val.value();
+                      EXPECT_EQ(result, 83);
+                  }}));
+
+    std::vector<Lazy<int>> input;
+    input.push_back(test1());
+
+    auto index = syncAwait(
+        collectAnyLazy(std::move(input),
+                       [&test0](size_t index, auto val) mutable -> Lazy<void> {
+                           EXPECT_EQ(val.value(), 42);
+                           int r = co_await test0();
+                           int result = r + val.value();
+                           EXPECT_EQ(result, 83);
+                       }));
+    EXPECT_EQ(index, 0);
+}
+
 TEST_F(LazyTest, testCollectAny) {
     srand((unsigned)time(NULL));
     executors::SimpleExecutor e1(10);

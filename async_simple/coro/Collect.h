@@ -152,7 +152,16 @@ struct CollectAnyAwaiter {
                     auto count = e->downCount();
                     if (count == size + 1) {
                         r->_idx = i;
-                        (*callback)(i, std::move(result));
+                        using U = std::invoke_result_t<
+                            std::remove_cvref_t<decltype(*callback)>, size_t,
+                            std::remove_cvref_t<decltype(result)>>;
+                        if constexpr (HasMemberCoAwaitOperator<U>) {
+                            (*callback)(i, std::move(result)).start([](auto&&) {
+                            });
+                        } else {
+                            (*callback)(i, std::move(result));
+                        }
+
                         c.resume();
                     }
                 });
@@ -222,7 +231,15 @@ struct CollectAnyVariadicPairAwaiter {
                                 callback](auto&& res) mutable {
                         auto count = event->downCount();
                         if (count == std::tuple_size<InputType>() + 1) {
-                            callback(std::move(res));
+                            using U = std::invoke_result_t<
+                                std::remove_cvref_t<decltype(callback)>,
+                                std::remove_cvref_t<decltype(res)>>;
+                            if constexpr (HasMemberCoAwaitOperator<U>) {
+                                callback(std::move(res)).start([](auto&&) {});
+                            } else {
+                                callback(std::move(res));
+                            }
+
                             *result = I;
                             continuation.resume();
                         }
