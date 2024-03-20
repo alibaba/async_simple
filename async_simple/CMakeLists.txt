@@ -8,6 +8,7 @@ endif()
 
 file(GLOB headers "*.h")
 file(GLOB coro_header "coro/*.h")
+file(GLOB executors_header "executors/*.h")
 file(GLOB experimental_header "experimental/*.h")
 file(GLOB util_header "util/*.h")
 if(UTHREAD)
