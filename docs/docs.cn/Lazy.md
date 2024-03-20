@@ -88,6 +88,22 @@ void func() {
 `Lazy<T>::start(callback)` 方法被调用后会立即开始执行 Lazy，并在 Lazy 执行完成后将 Lazy 的执行结果传入 `callback` 中进行执行。
 在设计上，`start` 是非阻塞异步调用接口。语义上，用户可以认为 `start` 在被调用后立即返回。用户不应该假设 `start`  在被调用后何时返回。这是由 Lazy 的执行情况决定的。
 
+`callback` 可以是一个普通函数也可以是一个Lazy，这可以让用户在回调函数里调用其它Lazy：
+```cpp
+void lazy_callback() {
+    auto test0 = []() mutable -> Lazy<int> { co_return 41; };
+
+    auto test1 = []() mutable -> Lazy<int> { co_return 42; };
+
+    test1().start([&](auto val) -> Lazy<void> {
+        int r = co_await test0();
+        int result = r + val.value();
+        EXPECT_EQ(result, 83);
+        co_return;
+    });
+}
+```
+
 对于不需要 `callback` 的情况，用户可以写:
 ```cpp
 task().start([](auto&&){});
@@ -505,6 +521,40 @@ void vectorCallback() {
             EXPECT_EQ(val.value(), 42);
         }
     }));
+}
+```
+
+collectAny 的回调函数也可以是一个Lazy，用户可以在Lazy 回调函数里继续去co_await 其它Lazy:
+```cpp
+void callback_lazy() {
+    auto test0 = []() mutable -> Lazy<int> { co_return 41; };
+
+    auto test1 = []() mutable -> Lazy<int> { co_return 42; };
+
+    auto collectAnyLazy = [](auto&&... args) mutable -> Lazy<size_t> {
+        co_return co_await collectAny(std::move(args)...);
+    };
+
+    syncAwait(collectAnyLazy(
+        std::pair{test1(), [&](auto&& val) mutable -> Lazy<void> {
+                      EXPECT_EQ(val.value(), 42);
+                      int r = co_await test0();
+                      int result = r + val.value();
+                      EXPECT_EQ(result, 83);
+                  }}));
+
+    std::vector<Lazy<int>> input;
+    input.push_back(test1());
+
+    auto index = syncAwait(
+        collectAnyLazy(std::move(input),
+                       [&test0](size_t index, auto val) mutable -> Lazy<void> {
+                           EXPECT_EQ(val.value(), 42);
+                           int r = co_await test0();
+                           int result = r + val.value();
+                           EXPECT_EQ(result, 83);
+                       }));
+    EXPECT_EQ(index, 0);    
 }
 ```
 

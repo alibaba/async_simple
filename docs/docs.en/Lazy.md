@@ -88,6 +88,23 @@ The `callback` in `Lazy<T>::start(callback)` need to be a [callable](https://en.
 `Lazy<T>::start(callback)` would execute the corresponding Lazy immediately. After the Lazy is completed, its result would be forwarded to the `callback`.
 By design, `start` should be a non-blocking asynchronous interface. Semantically, user could image `start` would return immediately. User shouldn't assume when `start` would return. It depends on how the Lazy would execute actually.
 
+`callback` can be also a Lazy, so that the user can co_await another Lazy in the callback:
+
+```cpp
+void lazy_callback() {
+    auto test0 = []() mutable -> Lazy<int> { co_return 41; };
+
+    auto test1 = []() mutable -> Lazy<int> { co_return 42; };
+
+    test1().start([&](auto val) -> Lazy<void> {
+        int r = co_await test0();
+        int result = r + val.value();
+        EXPECT_EQ(result, 83);
+        co_return;
+    });
+}
+```
+
 In case the `callback` isn't needed, we could write:
 ```cpp
 task().start([](auto&&){});
@@ -505,6 +522,41 @@ void vectorCallback() {
             EXPECT_EQ(val.value(), 42);
         }
     }));
+}
+```
+
+The callback of collectAny can be a Lazy, so that the user can co_await another Lazy in the callback:
+
+```c++
+void callback_lazy() {
+    auto test0 = []() mutable -> Lazy<int> { co_return 41; };
+
+    auto test1 = []() mutable -> Lazy<int> { co_return 42; };
+
+    auto collectAnyLazy = [](auto&&... args) mutable -> Lazy<size_t> {
+        co_return co_await collectAny(std::move(args)...);
+    };
+
+    syncAwait(collectAnyLazy(
+        std::pair{test1(), [&](auto&& val) mutable -> Lazy<void> {
+                      EXPECT_EQ(val.value(), 42);
+                      int r = co_await test0();
+                      int result = r + val.value();
+                      EXPECT_EQ(result, 83);
+                  }}));
+
+    std::vector<Lazy<int>> input;
+    input.push_back(test1());
+
+    auto index = syncAwait(
+        collectAnyLazy(std::move(input),
+                       [&test0](size_t index, auto val) mutable -> Lazy<void> {
+                           EXPECT_EQ(val.value(), 42);
+                           int r = co_await test0();
+                           int result = r + val.value();
+                           EXPECT_EQ(result, 83);
+                       }));
+    EXPECT_EQ(index, 0);    
 }
 ```
 
