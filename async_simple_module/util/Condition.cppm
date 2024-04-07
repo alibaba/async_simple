@@ -18,22 +18,21 @@ module;
 #include <linux/futex.h>
 #include <unistd.h>
 #include <asm/unistd_64.h>
-#include <atomic>
-#include <limits>
 #include <errno.h>
 
 export module async_simple:util.Condition;
 
 import :Common;
+import std;
 
 namespace async_simple {
 namespace util {
 
-inline int32_t futexWake(int32_t* uaddr, int32_t n) {
+inline std::int32_t futexWake(std::int32_t* uaddr, std::int32_t n) {
     return syscall(__NR_futex, uaddr, FUTEX_WAKE, n, nullptr, nullptr, 0);
 }
 
-inline int32_t futexWait(int32_t* uaddr, int32_t val) {
+inline std::int32_t futexWait(std::int32_t* uaddr, std::int32_t val) {
     return syscall(__NR_futex, uaddr, FUTEX_WAIT, val, nullptr, nullptr, 0);
 }
 
@@ -46,19 +45,19 @@ public:
     void wait();
 
 private:
-    std::atomic<int32_t> _value;
+    std::atomic<std::int32_t> _value;
 };
 
 inline void Condition::set() {
     _value.store(1, std::memory_order_release);
-    [[maybe_unused]] auto ret = futexWake(reinterpret_cast<int32_t*>(&_value),
-                                          std::numeric_limits<int32_t>::max());
+    [[maybe_unused]] auto ret = futexWake(reinterpret_cast<std::int32_t*>(&_value),
+                                          std::numeric_limits<std::int32_t>::max());
 }
 
 inline void Condition::wait() {
     auto oldValue = _value.load(std::memory_order_acquire);
     while (oldValue == 0) {
-        auto ret = futexWait(reinterpret_cast<int32_t*>(&_value), 0);
+        auto ret = futexWait(reinterpret_cast<std::int32_t*>(&_value), 0);
         if (ret != 0) {
             logicAssert(errno == EAGAIN || errno == EINTR ||
                             errno == ETIMEDOUT || errno == EWOULDBLOCK,
