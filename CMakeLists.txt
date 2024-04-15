@@ -33,6 +33,10 @@ add_link_options(
     -fuse-ld=lld 
 )
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "19.0")
+    set(CXX_FLAGS "${CXX_FLAGS} -fexperimental-modules-reduced-bmi")
+endif()
+
 set(HEADERS_PATH
     ${PROJECT_SOURCE_DIR}
     ${GTEST_INCLUDE_DIR}
