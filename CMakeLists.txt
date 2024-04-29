@@ -33,7 +33,8 @@ add_link_options(
     -fuse-ld=lld 
 )
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "19.0")
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.0")
+    message(STATUS "-fexperimental-modules-reduced-bmi enabled")
     set(CXX_FLAGS "${CXX_FLAGS} -fexperimental-modules-reduced-bmi")
 endif()
 
