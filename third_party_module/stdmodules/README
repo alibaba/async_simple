@@ -2,6 +2,6 @@ This is a toy example to explore possible methods to implement std modules.
 
 It requries clang compiler and libcxx with commit ID higher than 2f1555fb11d74376347ee94.
 
-Not tested with libstdc++.
+Built with libstdc++ 10.3 but not run the tests.
 
 Most of the examples are extracted from cppreference.

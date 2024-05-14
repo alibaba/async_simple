@@ -16,8 +16,8 @@ asio module.
 
 # ToolChain requirement
 
-Compiler: clang15.x
-STL Libraries: libstdc++10.3
+Compiler: clang15.x or higher versions
+STL Libraries: libstdc++10.3, libc++15.x or higher versions.
 Other dependencies: gtest, gmock
 
 # Build System
