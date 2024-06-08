@@ -1115,11 +1115,16 @@ TEST_F(LazyTest, testCollectAnyWithCallbackVariadic) {
         co_return co_await collectAny(std::move(args)...);
     };
 
+    auto move_only_v = std::make_unique<int>(0);
+    auto move_only_cb = [mv = std::move(move_only_v)](Try<int> v) {
+        EXPECT_EQ(42, v.value());
+    };
+
     size_t index =
         syncAwait(collectAnyLazy(std::pair{test0(), [](auto val) {}}));
 
-    index = syncAwait(collectAnyLazy(
-        std::pair{test1(), [](auto val) { EXPECT_EQ(42, val.value()); }}));
+    index =
+        syncAwait(collectAnyLazy(std::pair{test1(), std::move(move_only_cb)}));
 
     index = syncAwait(collectAnyLazy(
         std::pair{test2(42), [](auto str) { EXPECT_EQ("42", str.value()); }}));
