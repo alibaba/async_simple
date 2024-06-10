@@ -218,15 +218,16 @@ struct CollectAnyVariadicPairAwaiter {
                         lazy._coro.promise()._executor = executor;
                     }
 
-                    lazy.start([result, event, continuation,
-                                callback](auto&& res) mutable {
-                        auto count = event->downCount();
-                        if (count == std::tuple_size<InputType>() + 1) {
-                            callback(std::move(res));
-                            *result = I;
-                            continuation.resume();
-                        }
-                    });
+                    lazy.start(
+                        [result, event, continuation,
+                         callback = std::move(callback)](auto&& res) mutable {
+                            auto count = event->downCount();
+                            if (count == std::tuple_size<InputType>() + 1) {
+                                callback(std::move(res));
+                                *result = I;
+                                continuation.resume();
+                            }
+                        });
                 }(std::get<0>(std::get<I>(input)),
                   std::get<1>(std::get<I>(input))),
                 ...);
