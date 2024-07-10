@@ -187,7 +187,7 @@ public:
   /// Construct a basic_socket_iostream without establishing a connection.
   basic_socket_iostream()
     : std::basic_iostream<char>(
-        &this->detail::socket_iostream_base<
+        &this->detail::template socket_iostream_base<
           Protocol, Clock, WaitTraits>::streambuf_)
   {
     this->setf(std::ios_base::unitbuf);
@@ -199,7 +199,7 @@ public:
     : detail::socket_iostream_base<
         Protocol, Clock, WaitTraits>(std::move(s)),
       std::basic_iostream<char>(
-        &this->detail::socket_iostream_base<
+        &this->detail::template socket_iostream_base<
           Protocol, Clock, WaitTraits>::streambuf_)
   {
     this->setf(std::ios_base::unitbuf);
@@ -242,7 +242,7 @@ public:
   template <typename... T>
   explicit basic_socket_iostream(T... x)
     : std::basic_iostream<char>(
-        &this->detail::socket_iostream_base<
+        &this->detail::template socket_iostream_base<
           Protocol, Clock, WaitTraits>::streambuf_)
   {
     this->setf(std::ios_base::unitbuf);
@@ -284,7 +284,7 @@ public:
   basic_socket_streambuf<Protocol, Clock, WaitTraits>* rdbuf() const
   {
     return const_cast<basic_socket_streambuf<Protocol, Clock, WaitTraits>*>(
-        &this->detail::socket_iostream_base<
+        &this->detail::template socket_iostream_base<
           Protocol, Clock, WaitTraits>::streambuf_);
   }
 
