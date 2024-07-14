@@ -33,3 +33,6 @@ cmake-build-debug
 docs/.vitepress/cache
 docs/public
 node_modules
+
+# Ignore Bzlmod lock file until it is more stable
+MODULE.bazel.lock
