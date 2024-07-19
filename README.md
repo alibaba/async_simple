@@ -220,6 +220,10 @@ bazel test async_simple/coro/test:async_simple_coro_test
 bazel build --action_env=CXX=clang++ --action_env=CC=clang ...
 # Add compile option 
 bazel build --copt='-O0' --copt='-ggdb' ...
+# Extracts compile_commands.json
+# If you want to specify additional flags for targets, please refer to:
+# https://github.com/hedronvision/bazel-compile-commands-extractor
+bazel run @hedron_compile_commands//:refresh_all
 ```
 - See [this](https://bazel.build/run/build) get more infomation
 - ` ...` Indicates recursively scan all targets, recognized as `../..` in `oh-my-zsh`, can be replaced by other `shell` or `bash -c 'commond'` to run, such as `bash -c 'bazel build' ...` or use `bazel build ...:all`
