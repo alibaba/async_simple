@@ -15,6 +15,8 @@
  */
 #include <chrono>
 #include <thread>
+
+#include "async_simple/Promise.h"
 #include "async_simple/coro/FutureAwaiter.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SyncAwait.h"

@@ -19,7 +19,6 @@
 #include <cassert>
 #include <exception>
 #include <functional>
-#include <new>
 #include <utility>
 #include <variant>
 #include "async_simple/Common.h"

@@ -16,9 +16,7 @@
 #ifndef ASYNC_SIMPLE_CORO_SEMAHORE_H
 #define ASYNC_SIMPLE_CORO_SEMAHORE_H
 
-#include <chrono>
 #include <cstddef>
-#include "async_simple/Common.h"
 #include "async_simple/coro/ConditionVariable.h"
 #include "async_simple/coro/SpinLock.h"
 

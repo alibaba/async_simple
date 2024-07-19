@@ -39,7 +39,8 @@ Lazy<Texts> ReadFile(const std::string &filename) {
 }
 
 Lazy<int> CountLineChar(const std::string &line, char c) {
-    co_return std::count(line.begin(), line.end(), c);
+    auto ret = std::count(line.begin(), line.end(), c);
+    co_return static_cast<int>(ret);
 }
 
 Lazy<int> CountTextChar(const Texts &Content, char c) {

@@ -16,8 +16,8 @@
 #ifndef ASYNC_SIMPLE_IO_EXECUTOR_H
 #define ASYNC_SIMPLE_IO_EXECUTOR_H
 
+#include <cstdint>
 #include <functional>
-#include <string>
 
 namespace async_simple {
 

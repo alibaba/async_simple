@@ -16,10 +16,10 @@
 #ifndef ASYNC_SIMPLE_CORO_EVENT_H
 #define ASYNC_SIMPLE_CORO_EVENT_H
 
-#include <exception>
-#include "async_simple/Common.h"
-#include "async_simple/Executor.h"
-#include "async_simple/coro/Lazy.h"
+#include <atomic>
+#include <cstddef>
+#include <utility>
+#include "async_simple/experimental/coroutine.h"
 
 namespace async_simple {
 

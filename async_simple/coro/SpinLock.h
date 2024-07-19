@@ -16,6 +16,7 @@
 #ifndef ASYNC_SIMPLE_CORO_SPIN_LOCK_H
 #define ASYNC_SIMPLE_CORO_SPIN_LOCK_H
 
+#include <mutex>
 #include <thread>
 #include "async_simple/coro/Lazy.h"
 

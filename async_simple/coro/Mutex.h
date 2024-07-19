@@ -157,7 +157,7 @@ private:
     private:
         friend Mutex;
 
-        std::coroutine_handle<> _awaitingCoroutine;
+        CoroHandle<> _awaitingCoroutine;
         LockAwaiter* _next;
     };
 

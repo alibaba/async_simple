@@ -24,9 +24,9 @@
 #define ASYNC_SIMPLE_UTHREAD_INTERNAL_THREAD_H
 
 #include <memory>
-#include <type_traits>
 
 #include "async_simple/Future.h"
+#include "async_simple/Promise.h"
 #include "async_simple/uthread/internal/thread_impl.h"
 
 namespace async_simple {

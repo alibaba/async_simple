@@ -27,7 +27,6 @@
 #include <tuple>
 #include <vector>
 #include "async_simple/coro/Generator.h"
-#include "async_simple/coro/Lazy.h"
 #include "async_simple/test/unittest.h"
 
 namespace async_simple::coro {

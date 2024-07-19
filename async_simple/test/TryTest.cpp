@@ -15,7 +15,6 @@
  */
 #include <exception>
 
-#include <functional>
 #include "async_simple/Try.h"
 #include "async_simple/test/unittest.h"
 

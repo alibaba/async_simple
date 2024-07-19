@@ -32,7 +32,7 @@ struct FutureAwaiter {
     bool await_ready() { return future_.hasResult(); }
 
     template <typename PromiseType>
-    void await_suspend(std::coroutine_handle<PromiseType> continuation) {
+    void await_suspend(CoroHandle<PromiseType> continuation) {
         static_assert(std::is_base_of_v<LazyPromiseBase, PromiseType>,
                       "FutureAwaiter is only allowed to be called by Lazy");
         Executor* ex = continuation.promise()._executor;
