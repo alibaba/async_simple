@@ -16,8 +16,6 @@
 #ifndef ASYNC_SIMPLE_CORO_LAZY_H
 #define ASYNC_SIMPLE_CORO_LAZY_H
 
-#include <atomic>
-#include <concepts>
 #include <cstddef>
 #include <cstdio>
 #include <exception>

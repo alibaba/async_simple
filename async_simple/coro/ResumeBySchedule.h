@@ -36,7 +36,7 @@ public:
     bool await_ready() { return _future.hasResult(); }
 
     template <typename PromiseType>
-    void await_suspend(std::coroutine_handle<PromiseType> continuation) {
+    void await_suspend(CoroHandle<PromiseType> continuation) {
         static_assert(std::is_base_of_v<LazyPromiseBase, PromiseType>,
                       "FutureResumeByScheduleAwaiter is only allowed to be "
                       "called by Lazy");

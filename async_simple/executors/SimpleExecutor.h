@@ -22,8 +22,6 @@
 #include "async_simple/executors/SimpleIOExecutor.h"
 #include "async_simple/util/ThreadPool.h"
 
-#include <thread>
-
 namespace async_simple {
 
 namespace executors {

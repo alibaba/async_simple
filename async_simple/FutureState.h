@@ -17,14 +17,10 @@
 #define ASYNC_SIMPLE_FUTURESTATE_H
 
 #include <atomic>
-#include <iostream>
-
 #include <cassert>
-#include <condition_variable>
-#include <functional>
-#include <mutex>
+#include <iostream>
 #include <stdexcept>
-#include <thread>
+
 #include "async_simple/Common.h"
 #include "async_simple/Executor.h"
 #include "async_simple/Try.h"

@@ -16,9 +16,7 @@
 #ifndef ASYNC_SIMPLE_CORO_TRAITS_H
 #define ASYNC_SIMPLE_CORO_TRAITS_H
 
-#include <exception>
 #include <utility>
-#include "async_simple/Common.h"
 
 namespace async_simple {
 

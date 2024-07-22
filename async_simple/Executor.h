@@ -151,7 +151,7 @@ public:
     bool await_ready() const noexcept { return false; }
 
     template <typename PromiseType>
-    void await_suspend(std::coroutine_handle<PromiseType> continuation) {
+    void await_suspend(coro::CoroHandle<PromiseType> continuation) {
         _ex->schedule(std::move(continuation), _dur);
     }
     void await_resume() const noexcept {}

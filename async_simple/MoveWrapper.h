@@ -17,8 +17,7 @@
 #ifndef ASYNC_SIMPLE_MOVEWRAPPER_H
 #define ASYNC_SIMPLE_MOVEWRAPPER_H
 
-#include <exception>
-#include "async_simple/Common.h"
+#include <utility>
 
 namespace async_simple {
 
