@@ -22,14 +22,14 @@
 #warning "Clang 15 is not supported for Generator due to some issues."
 #endif
 
-#if __has_include(<generator>)
+#if defined(__cpp_lib_generator) && __has_include(<generator>)
 
 #include <generator>
 
 namespace async_simple::coro {
 
 template <class Ref, class V = void, class Allocator = void>
-using Generator = std::generator<Ref, V, AlloAllocator>;
+using Generator = std::generator<Ref, V, Allocator>;
 
 }  // namespace async_simple::coro
 
