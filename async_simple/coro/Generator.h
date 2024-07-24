@@ -22,7 +22,7 @@
 #warning "Clang 15 is not supported for Generator due to some issues."
 #endif
 
-#if __has_include(<generator>)
+#if defined(__cpp_lib_generator) && __has_include(<generator>)
 
 #include <generator>
 
