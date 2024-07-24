@@ -29,7 +29,7 @@
 namespace async_simple::coro {
 
 template <class Ref, class V = void, class Allocator = void>
-using Generator = std::generator<Ref, V, AlloAllocator>;
+using Generator = std::generator<Ref, V, Allocator>;
 
 }  // namespace async_simple::coro
 
