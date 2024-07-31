@@ -11,7 +11,7 @@
 
 English | [中文](./README_CN.md)
 
-async_simple is a library offering simple, light-weight and easy-to-use 
+async_simple is a library offering simple, light-weight and easy-to-use
 components to write asynchronous code. The components offered include Lazy
 (based on C++20 stackless coroutine), Uthread (based on stackful coroutine)
 and the traditional Future/Promise.
@@ -30,7 +30,7 @@ After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with
 
 ## By Vcpkg
 
-vcpkg is a [cross-platform package manager](https://vcpkg.io/en/getting-started). 
+vcpkg is a [cross-platform package manager](https://vcpkg.io/en/getting-started).
 
 ```
 ./vcpkg install async-simple
@@ -45,30 +45,30 @@ mkdir build
 cd build
 cmake .. -DASYNC_SIMPLE_ENABLE_TESTS=OFF -DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF -DASYNC_SIMPLE_ENABLE_ASAN=OFF
 cmake --build .
-cmake --install . # --prefix ./user_defined_install_path 
+cmake --install . # --prefix ./user_defined_install_path
 ```
 
-# Import async_simple 
+# Import async_simple
 
 After install async_simple, you can import it to your project.
 
 ## By cmake find_package
 
-please add those cmake codes:
+Please add those cmake code:
 
 ```cmake
 find_package(async_simple REQUIRED)
 target_link_libraries(<your-target-name> PRIVATE async_simple::async_simple) # dynamic_link
-                                 # async_simple::async_simple_header_only   
-                                 # async_simple::async_simple_static  
+                                 # async_simple::async_simple_header_only
+                                 # async_simple::async_simple_static
 ```
 `<your-target-name>` is the target name which want to use async_simple
 
-## Manully
+## Manually
 
 async_simple is almost header-only. So you can just pass the include path of the install position to your compiler.
 
-But the uthread part of async_simple is not head-only. If you want to use uthread, You need link it manully. The library file is in the install path. 
+But the uthread part of async_simple is not head-only. If you want to use uthread, You need link it manually. The library file is in the install path.
 
 # Compiler Requirement
 
@@ -218,14 +218,14 @@ bazel run benchmarks:benchmarking   # compile and run benchmark
 bazel test async_simple/coro/test:async_simple_coro_test
 # Use clang toolchain
 bazel build --action_env=CXX=clang++ --action_env=CC=clang ...
-# Add compile option 
+# Add compile option
 bazel build --copt='-O0' --copt='-ggdb' ...
 # Extracts compile_commands.json
 # If you want to specify additional flags for targets, please refer to:
 # https://github.com/hedronvision/bazel-compile-commands-extractor
 bazel run @hedron_compile_commands//:refresh_all
 ```
-- See [this](https://bazel.build/run/build) get more infomation
+- See [this](https://bazel.build/run/build) to get more information
 - ` ...` Indicates recursively scan all targets, recognized as `../..` in `oh-my-zsh`, can be replaced by other `shell` or `bash -c 'commond'` to run, such as `bash -c 'bazel build' ...` or use `bazel build ...:all`
 - Use `async_simple` as a dependency, see also [bazel support](bazel/support/README.md)
 
@@ -244,7 +244,7 @@ Lazy (based on C++20 stackless coroutine) and Uthread (based on stackful corouti
 
 # C++20 Modules Support
 
-We have **experimental** support for C++20 Modules in `modules/async_simple.cppm`. 
+We have **experimental** support for C++20 Modules in `modules/async_simple.cppm`.
 We can build the `async_simple` module by `xmake` and `cmake`.
 We can find the related usage in `CountChar`, `ReadFiles`, `LazyTest.cpp` and `FutureTest.cpp`.
 
@@ -265,7 +265,7 @@ CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Release -DASYNC_SIMPLE_BUILD_MO
 ninja
 ```
 
-**Note** that the `async_simple` module in the main branch is actually a named module's wrapper for headers for compatability. We can find the practical usage of C++20 Modules in https://github.com/alibaba/async_simple/tree/CXX20Modules, which contains the support for xmake and cmake as well.
+**Note** that the `async_simple` module in the main branch is actually a named module's wrapper for headers for compatibility. We can find the practical usage of C++20 Modules in https://github.com/alibaba/async_simple/tree/CXX20Modules, which contains the support for xmake and cmake as well.
 
 # Questions
 
@@ -277,7 +277,7 @@ Specifically, for defect report or feature enhancement, it'd be better to file a
 
 # How to Contribute
 1. Read the [How to fix issue](./docs/docs.en/HowToFixIssue.md) document firstly.
-2. Run tests and `git-clang-format HEAD^` locally for the change. Note that the  version of clang-format in CI is clang-format 14. So that it is possible your local 
+2. Run tests and `git-clang-format HEAD^` locally for the change. Note that the  version of clang-format in CI is clang-format 14. So that it is possible your local
 format result is inconsistency with the format result in the CI. In the case, you need to install the new clang-format or adopt the suggested change by hand. In case the format result is not good, it is OK to accept the PR temporarily and file an issue for the clang-formt.
 3. Create a PR, fill in the PR template.
 4. Choose one or more reviewers from contributors: (e.g., ChuanqiXu9, RainMark, foreverhy, qicosmos).
