@@ -3,6 +3,8 @@ project(async_simple
         VERSION 1.3
         LANGUAGES CXX C ASM)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 enable_testing()
 
 set(CMAKE_CXX_STANDARD 20)
