@@ -16,6 +16,7 @@
 #ifndef ASYNC_SIMPLE_FUTURE_H
 #define ASYNC_SIMPLE_FUTURE_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <condition_variable>
 #include <mutex>
 #include <type_traits>
@@ -24,6 +25,8 @@
 #include "async_simple/FutureState.h"
 #include "async_simple/LocalState.h"
 #include "async_simple/Traits.h"
+
+#endif // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

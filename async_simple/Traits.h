@@ -16,7 +16,10 @@
 #ifndef ASYNC_SIMPLE_TRAITS_H
 #define ASYNC_SIMPLE_TRAITS_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include "async_simple/Try.h"
+
+#endif // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

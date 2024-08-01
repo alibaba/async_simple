@@ -13,13 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <algorithm>
-#include <fstream>
-#include <iostream>
-#include <string>
-#include <vector>
-#include "async_simple/coro/Lazy.h"
-#include "async_simple/coro/SyncAwait.h"
+
+import std;
+import async_simple;
 
 using namespace async_simple::coro;
 

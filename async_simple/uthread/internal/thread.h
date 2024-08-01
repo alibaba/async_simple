@@ -23,11 +23,14 @@
 #ifndef ASYNC_SIMPLE_UTHREAD_INTERNAL_THREAD_H
 #define ASYNC_SIMPLE_UTHREAD_INTERNAL_THREAD_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <memory>
 
 #include "async_simple/Future.h"
 #include "async_simple/Promise.h"
 #include "async_simple/uthread/internal/thread_impl.h"
+
+#endif // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace uthread {

@@ -16,6 +16,7 @@
 #ifndef ASYNC_SIMPLE_CORO_LAZY_H
 #define ASYNC_SIMPLE_CORO_LAZY_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <cstddef>
 #include <cstdio>
 #include <exception>
@@ -25,6 +26,8 @@
 #include "async_simple/coro/DetachedCoroutine.h"
 #include "async_simple/coro/ViaCoroutine.h"
 #include "async_simple/experimental/coroutine.h"
+
+#endif // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

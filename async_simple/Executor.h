@@ -16,6 +16,7 @@
 #ifndef ASYNC_SIMPLE_EXECUTOR_H
 #define ASYNC_SIMPLE_EXECUTOR_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <chrono>
 #include <functional>
 #include <string>
@@ -24,6 +25,8 @@
 #include "async_simple/MoveWrapper.h"
 #include "async_simple/experimental/coroutine.h"
 #include "async_simple/util/move_only_function.h"
+
+#endif // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 // Stat information for an executor.

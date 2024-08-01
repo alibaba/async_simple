@@ -16,10 +16,13 @@
 #ifndef ASYNC_SIMPLE_CORO_SYNC_AWAIT_H
 #define ASYNC_SIMPLE_CORO_SYNC_AWAIT_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include "async_simple/Common.h"
 #include "async_simple/Executor.h"
 #include "async_simple/Try.h"
 #include "async_simple/util/Condition.h"
+
+#endif // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace coro {

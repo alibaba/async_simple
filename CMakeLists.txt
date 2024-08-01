@@ -140,6 +140,7 @@ if (ASYNC_SIMPLE_ENABLE_ASAN)
 endif()
 
 # Start Detecing Uthread
+set(UTHREAD OFF)
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux") # uname -s
   if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64|aarch64|ppc64le") # uname -m
     set(UTHREAD ON)
@@ -164,7 +165,7 @@ else()
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 endif()
 
-add_subdirectory(async_simple)
+option(STD_MODULE_AVAILABLE "if the std module is available by default" OFF)
 
 option(ASYNC_SIMPLE_BUILD_MODULES "Build async_simple library in C++20 Modules form" OFF)
 if(${ASYNC_SIMPLE_BUILD_MODULES})
@@ -184,10 +185,9 @@ if(${ASYNC_SIMPLE_BUILD_MODULES})
 
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_EXTENSIONS OFF)
-
-    add_subdirectory(modules)
 endif()
+
+add_subdirectory(async_simple)
 
 option(ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE "Build the demo example" ON)
 if (ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE)

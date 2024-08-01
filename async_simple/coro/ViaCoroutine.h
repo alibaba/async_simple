@@ -25,11 +25,14 @@
 #ifndef ASYNC_SIMPLE_CORO_VIA_COROUTINE_H
 #define ASYNC_SIMPLE_CORO_VIA_COROUTINE_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include "async_simple/Executor.h"
 #include "async_simple/coro/Traits.h"
 
 #include <cassert>
 #include <utility>
+
+#endif // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace coro {

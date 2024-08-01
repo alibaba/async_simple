@@ -24,13 +24,6 @@
 #include <iostream>
 
 #include <chrono>
-#ifdef USE_MODULES
-#include <variant>
-#include "async_simple/experimental/coroutine.h"
-#include "async_simple/coro/test/Time.h"
-#include "async_simple/test/unittest.h"
-import async_simple;
-#else
 #include "async_simple/coro/Collect.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SyncAwait.h"
@@ -39,7 +32,6 @@ import async_simple;
 #include "async_simple/experimental/coroutine.h"
 #include "async_simple/test/unittest.h"
 #include "async_simple/util/Condition.h"
-#endif
 
 using namespace std;
 using namespace std::chrono_literals;

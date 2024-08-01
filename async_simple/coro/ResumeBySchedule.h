@@ -16,6 +16,7 @@
 #ifndef ASYNC_RESUME_BY_SCHEDULE_H
 #define ASYNC_RESUME_BY_SCHEDULE_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include "async_simple/Executor.h"
 #include "async_simple/Future.h"
 #include "async_simple/coro/Lazy.h"
@@ -23,6 +24,8 @@
 
 #include <type_traits>
 #include <utility>
+
+#endif // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple::coro {
 
