@@ -17,6 +17,7 @@
 #define ASYNC_SIMPLE_CORO_SEMAHORE_H
 
 #include <cstddef>
+#include <limits>
 #include "async_simple/coro/ConditionVariable.h"
 #include "async_simple/coro/SpinLock.h"
 

@@ -19,6 +19,7 @@
 #include <chrono>
 #include <functional>
 #include <string>
+#include <ratio>
 #include <thread>
 #include "async_simple/MoveWrapper.h"
 #include "async_simple/experimental/coroutine.h"

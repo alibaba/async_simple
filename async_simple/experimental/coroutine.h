@@ -57,7 +57,8 @@ template <class P> struct hash<coroutine_handle<P>>;
 // And the outdated <experimental/coroutine> is available for clang only(need to
 // exclude msvc).
 #if (__cplusplus <= 201703L && !defined(_MSC_VER)) || \
-    (defined(__clang__) && defined(__GLIBCXX__))
+    (defined(__clang__) && defined(__GLIBCXX__) && \
+     (__GLIBCXX__ < 20210408))
 #define USE_SELF_DEFINED_COROUTINE
 #endif
 

@@ -140,8 +140,12 @@ public:
 template <typename T>
 class LazyPromise : public LazyPromiseBase {
 public:
-    static_assert(alignof(T) <= alignof(::max_align_t),
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-alignof-expression"
+    static_assert(alignof(T) <= alignof(std::max_align_t),
                   "async_simple doesn't allow Lazy with over aligned object");
+#endif
 
     LazyPromise() noexcept {}
     ~LazyPromise() noexcept {}

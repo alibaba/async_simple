@@ -30,8 +30,10 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <cstdlib>
 
 #include "async_simple/util/Queue.h"
+
 namespace async_simple::util {
 class ThreadPool {
 public:
@@ -186,7 +188,7 @@ inline ThreadPool::ERROR_TYPE ThreadPool::scheduleById(std::function<void()> fn,
             }
         }
 
-        id = rand() % _threadNum;
+        id = std::rand() % _threadNum;
         _queues[id].push(
             WorkItem{/*canSteal = */ _enableWorkSteal, std::move(fn)});
     } else {
