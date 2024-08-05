@@ -18,6 +18,8 @@
 
 #include <type_traits>
 #include "async_simple/Future.h"
+#include "async_simple/Promise.h"
+#include "async_simple/uthread/Await.h"
 
 namespace async_simple {
 namespace uthread {
