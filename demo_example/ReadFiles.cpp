@@ -19,15 +19,11 @@
 #include <memory>
 #include <string>
 #include <vector>
-#ifdef USE_MODULES
-import async_simple;
-#else
 #include "async_simple/Future.h"
 #include "async_simple/Promise.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SyncAwait.h"
 #include "async_simple/executors/SimpleExecutor.h"
-#endif
 
 using namespace async_simple;
 using namespace async_simple::coro;

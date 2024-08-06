@@ -16,9 +16,12 @@
 #ifndef ASYNC_SIMPLE_CORO_SPIN_LOCK_H
 #define ASYNC_SIMPLE_CORO_SPIN_LOCK_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <mutex>
 #include <thread>
 #include "async_simple/coro/Lazy.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace coro {

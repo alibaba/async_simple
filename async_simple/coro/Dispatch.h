@@ -17,6 +17,7 @@
 #ifndef ASYNC_SIMPLE_CORO_DISPATCH_H
 #define ASYNC_SIMPLE_CORO_DISPATCH_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include "async_simple/Common.h"
 #include "async_simple/Executor.h"
 #include "async_simple/coro/Lazy.h"
@@ -24,6 +25,8 @@
 
 #include <cassert>
 #include <type_traits>
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace coro {

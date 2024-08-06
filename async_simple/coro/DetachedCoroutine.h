@@ -16,9 +16,12 @@
 #ifndef ASYNC_SIMPLE_CORO_DETACHED_COROUTINE_H
 #define ASYNC_SIMPLE_CORO_DETACHED_COROUTINE_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <stdio.h>
 #include <exception>
 #include "async_simple/experimental/coroutine.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

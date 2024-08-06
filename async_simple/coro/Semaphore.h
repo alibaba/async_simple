@@ -16,10 +16,13 @@
 #ifndef ASYNC_SIMPLE_CORO_SEMAHORE_H
 #define ASYNC_SIMPLE_CORO_SEMAHORE_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <cstddef>
 #include <limits>
 #include "async_simple/coro/ConditionVariable.h"
 #include "async_simple/coro/SpinLock.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple::coro {
 

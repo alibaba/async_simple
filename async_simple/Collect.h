@@ -16,10 +16,13 @@
 #ifndef ASYNC_SIMPLE_COLLECT_H
 #define ASYNC_SIMPLE_COLLECT_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <iterator>
 #include <vector>
 #include "async_simple/Future.h"
 #include "async_simple/Try.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

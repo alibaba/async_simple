@@ -24,10 +24,13 @@
 #ifndef ASYNC_SIMPLE_UTHREAD_AWAIT_H
 #define ASYNC_SIMPLE_UTHREAD_AWAIT_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <type_traits>
 #include "async_simple/Future.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/uthread/internal/thread_impl.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace uthread {

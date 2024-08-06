@@ -24,7 +24,9 @@
 
 #if defined(__cpp_lib_generator) && __has_include(<generator>)
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <generator>
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple::coro {
 
@@ -42,6 +44,7 @@ using elements_of = std::ranges::elements_of<R, Alloc>;
 
 #else
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <cassert>
 #include <concepts>
 #include <cstddef>
@@ -53,6 +56,7 @@ using elements_of = std::ranges::elements_of<R, Alloc>;
 #include "async_simple/Common.h"
 #include "async_simple/coro/PromiseAllocator.h"
 #include "async_simple/experimental/coroutine.h"
+#endif
 
 namespace async_simple::ranges {
 

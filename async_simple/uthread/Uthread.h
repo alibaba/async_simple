@@ -16,8 +16,11 @@
 #ifndef ASYNC_SIMPLE_UTHREAD_UTHREAD_H
 #define ASYNC_SIMPLE_UTHREAD_UTHREAD_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <memory>
 #include "async_simple/uthread/internal/thread.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace uthread {

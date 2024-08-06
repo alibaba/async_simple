@@ -252,6 +252,8 @@ CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Release -DASYNC_SIMPLE_BUILD_MO
 ninja
 ```
 
+若 std module 在环境中可用，我们可以在配置 cmake 时定义 `-DSTD_MODULE_AVAILABLE=ON` 以使用官方的 std module。
+
 **需要注意:** 出于兼容性考虑，目前 main 分支中的 `async_simple` Module 本质上只是将 `async_simple` 的头文件封装为了 `Named Modules` 而已。我们可以在  https://github.com/alibaba/async_simple/tree/CXX20Modules 中找到更完整的 `Named Modules` 使用方式。该分支中同样包含 xmake 和 cmake 的支持。
 
 # 存在问题？

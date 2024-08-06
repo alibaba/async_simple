@@ -16,6 +16,7 @@
 #ifndef ASYNC_SIMPLE_FUTURESTATE_H
 #define ASYNC_SIMPLE_FUTURESTATE_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <atomic>
 #include <cassert>
 #include <iostream>
@@ -25,6 +26,8 @@
 #include "async_simple/Executor.h"
 #include "async_simple/Try.h"
 #include "async_simple/util/move_only_function.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

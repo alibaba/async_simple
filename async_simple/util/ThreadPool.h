@@ -24,6 +24,7 @@
 #ifndef FUTURE_THREAD_POOL_H
 #define FUTURE_THREAD_POOL_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <atomic>
 #include <cassert>
 #include <functional>
@@ -33,6 +34,8 @@
 #include <cstdlib>
 
 #include "async_simple/util/Queue.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple::util {
 class ThreadPool {

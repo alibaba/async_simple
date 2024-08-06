@@ -265,6 +265,8 @@ CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Release -DASYNC_SIMPLE_BUILD_MO
 ninja
 ```
 
+If std module is available, we can define `-DSTD_MODULE_AVAILABLE=ON` when configuring cmake to use std modules provided by vendors.
+
 **Note** that the `async_simple` module in the main branch is actually a named module's wrapper for headers for compatibility. We can find the practical usage of C++20 Modules in https://github.com/alibaba/async_simple/tree/CXX20Modules, which contains the support for xmake and cmake as well.
 
 # Questions

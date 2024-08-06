@@ -23,9 +23,12 @@
 #ifndef ASYNC_SIMPLE_CORO__MUTEXH
 #define ASYNC_SIMPLE_CORO__MUTEXH
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <atomic>
 #include <mutex>
 #include "async_simple/experimental/coroutine.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace coro {

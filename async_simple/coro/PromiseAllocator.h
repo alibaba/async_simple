@@ -17,6 +17,7 @@
 #ifndef ASYNC_SIMPLE_CORO_PROMISEALLOCATOR_H
 #define ASYNC_SIMPLE_CORO_PROMISEALLOCATOR_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <concepts>
 #include <cstring>
 #include <memory>
@@ -28,6 +29,8 @@
 // The reason why `__cpp_sized_deallocation` is not enabled is that it will
 // cause ABI breaking
 #if defined(__clang__) && defined(__GLIBCXX__)
+#endif  // ASYNC_SIMPLE_USE_MODULES
+
 void operator delete[](void* p, std::size_t sz) noexcept;
 #endif
 

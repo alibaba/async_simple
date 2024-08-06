@@ -16,10 +16,13 @@
 #ifndef ASYNC_SIMPLE_CORO_EVENT_H
 #define ASYNC_SIMPLE_CORO_EVENT_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <atomic>
 #include <cstddef>
 #include <utility>
 #include "async_simple/experimental/coroutine.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

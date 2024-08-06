@@ -17,11 +17,14 @@
 #ifndef ASYNC_SIMPLE_LOCALSTATE_H
 #define ASYNC_SIMPLE_LOCALSTATE_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <functional>
 #include <utility>
 
 #include "async_simple/Executor.h"
 #include "async_simple/Try.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

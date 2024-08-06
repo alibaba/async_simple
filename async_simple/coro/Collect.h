@@ -16,6 +16,7 @@
 #ifndef ASYNC_SIMPLE_CORO_COLLECT_H
 #define ASYNC_SIMPLE_CORO_COLLECT_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <array>
 #include <exception>
 #include <memory>
@@ -30,6 +31,8 @@
 #include "async_simple/coro/CountEvent.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/experimental/coroutine.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace coro {

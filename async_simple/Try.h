@@ -16,6 +16,7 @@
 #ifndef ASYNC_SIMPLE_TRY_H
 #define ASYNC_SIMPLE_TRY_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <cassert>
 #include <exception>
 #include <functional>
@@ -23,6 +24,8 @@
 #include <variant>
 #include "async_simple/Common.h"
 #include "async_simple/Unit.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 
