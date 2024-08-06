@@ -25,7 +25,7 @@
 #include "async_simple/Common.h"
 #include "async_simple/Unit.h"
 
-#endif // ASYNC_SIMPLE_USE_MODULES
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

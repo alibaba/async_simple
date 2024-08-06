@@ -20,7 +20,7 @@
 #include <memory>
 #include "async_simple/uthread/internal/thread.h"
 
-#endif // ASYNC_SIMPLE_USE_MODULES
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace uthread {

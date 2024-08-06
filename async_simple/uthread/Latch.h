@@ -22,7 +22,7 @@
 #include "async_simple/Promise.h"
 #include "async_simple/uthread/Await.h"
 
-#endif // ASYNC_SIMPLE_USE_MODULES
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace uthread {

@@ -23,7 +23,7 @@
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SpinLock.h"
 
-#endif // ASYNC_SIMPLE_USE_MODULES
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple::coro {
 

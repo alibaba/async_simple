@@ -28,7 +28,7 @@
 #include <mutex>
 #include "async_simple/experimental/coroutine.h"
 
-#endif // ASYNC_SIMPLE_USE_MODULES
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace coro {

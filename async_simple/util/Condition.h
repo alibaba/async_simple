@@ -28,7 +28,7 @@
 #include <mutex>
 #endif
 
-#endif // ASYNC_SIMPLE_USE_MODULES
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace util {

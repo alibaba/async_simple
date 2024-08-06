@@ -23,7 +23,7 @@
 #include "async_simple/executors/SimpleIOExecutor.h"
 #include "async_simple/util/ThreadPool.h"
 
-#endif // ASYNC_SIMPLE_USE_MODULES
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

@@ -20,7 +20,7 @@
 #include <stdexcept>
 #include "async_simple/CommonMacros.h"
 
-#endif // ASYNC_SIMPLE_USE_MODULES
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 // Different from assert, logicAssert is meaningful in

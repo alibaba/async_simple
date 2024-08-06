@@ -26,7 +26,7 @@
 #include "async_simple/LocalState.h"
 #include "async_simple/Traits.h"
 
-#endif // ASYNC_SIMPLE_USE_MODULES
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

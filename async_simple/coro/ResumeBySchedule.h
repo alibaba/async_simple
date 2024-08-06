@@ -25,7 +25,7 @@
 #include <type_traits>
 #include <utility>
 
-#endif // ASYNC_SIMPLE_USE_MODULES
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple::coro {
 

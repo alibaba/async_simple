@@ -26,7 +26,7 @@
 #include "async_simple/experimental/coroutine.h"
 #include "async_simple/util/move_only_function.h"
 
-#endif // ASYNC_SIMPLE_USE_MODULES
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 // Stat information for an executor.

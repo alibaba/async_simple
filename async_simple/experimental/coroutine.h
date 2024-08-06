@@ -404,7 +404,7 @@ using std::experimental::suspend_never;
 }  // namespace std
 
 #endif /* HAS_NON_EXPERIMENTAL_COROUTINE */
-#endif // ASYNC_SIMPLE_USE_MODULES
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace coro {

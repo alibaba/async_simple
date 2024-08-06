@@ -20,7 +20,7 @@
 #include <mutex>
 #include "async_simple/coro/Lazy.h"
 
-#endif // ASYNC_SIMPLE_USE_MODULES
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace coro {
