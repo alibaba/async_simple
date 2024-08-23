@@ -38,6 +38,7 @@ module;
 #include <vector>
 #if defined(__clang__)
 #pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-warning-option"
 #pragma clang diagnostic ignored "-Wreserved-module-identifier"
 #endif
 
@@ -416,7 +417,6 @@ using std::ranges::destroy_n;
 }  // namespace ranges
 using std::default_delete;
 using std::make_unique;
-using std::make_unique_for_overwrite;
 using std::unique_ptr;
 using std::operator<;
 using std::operator>;
@@ -425,7 +425,6 @@ using std::operator>=;
 using std::operator<=>;
 using std::operator<<;
 using std::allocate_shared;
-using std::allocate_shared_for_overwrite;
 using std::atomic_compare_exchange_strong;
 using std::atomic_compare_exchange_strong_explicit;
 using std::atomic_compare_exchange_weak;
@@ -444,7 +443,6 @@ using std::enable_shared_from_this;
 using std::get_deleter;
 using std::hash;
 using std::make_shared;
-using std::make_shared_for_overwrite;
 using std::owner_less;
 using std::reinterpret_pointer_cast;
 using std::shared_ptr;
@@ -892,14 +890,8 @@ using std::atomic_fetch_xor_explicit;
 using std::atomic_flag;
 using std::atomic_flag_clear;
 using std::atomic_flag_clear_explicit;
-using std::atomic_flag_notify_all;
-using std::atomic_flag_notify_one;
-using std::atomic_flag_test;
 using std::atomic_flag_test_and_set;
 using std::atomic_flag_test_and_set_explicit;
-using std::atomic_flag_test_explicit;
-using std::atomic_flag_wait;
-using std::atomic_flag_wait_explicit;
 using std::atomic_init;
 using std::atomic_int;
 using std::atomic_int16_t;
@@ -928,7 +920,6 @@ using std::atomic_ref;
 using std::atomic_schar;
 using std::atomic_short;
 using std::atomic_signal_fence;
-using std::atomic_signed_lock_free;
 using std::atomic_size_t;
 using std::atomic_store;
 using std::atomic_store_explicit;
@@ -951,7 +942,6 @@ using std::atomic_uintmax_t;
 using std::atomic_uintptr_t;
 using std::atomic_ullong;
 using std::atomic_ulong;
-using std::atomic_unsigned_lock_free;
 using std::atomic_ushort;
 using std::atomic_wait;
 using std::atomic_wait_explicit;
@@ -1091,7 +1081,6 @@ using std::ranges::iterator_t;
 using std::ranges::output_range;
 using std::ranges::random_access_range;
 using std::ranges::range;
-using std::ranges::range_common_reference_t;
 using std::ranges::range_difference_t;
 using std::ranges::range_reference_t;
 using std::ranges::range_rvalue_reference_t;
@@ -1129,16 +1118,11 @@ using std::ranges::views::iota;
 }
 using std::ranges::basic_istream_view;
 using std::ranges::istream_view;
-using std::ranges::wistream_view;
-namespace views {
-using std::ranges::views::istream;
-}
 namespace views {
 using std::ranges::views::all;
 using std::ranges::views::all_t;
 }  // namespace views
 using std::ranges::filter_view;
-using std::ranges::owning_view;
 using std::ranges::ref_view;
 namespace views {
 using std::ranges::views::filter;
@@ -1328,7 +1312,6 @@ using std::chrono::ceil;
 using std::chrono::duration_cast;
 using std::chrono::floor;
 using std::chrono::round;
-using std::chrono::operator<<;
 using std::chrono::abs;
 using std::chrono::day;
 using std::chrono::days;
@@ -1375,7 +1358,6 @@ using std::chrono::year_month_weekday;
 using std::chrono::year_month_weekday_last;
 using std::chrono::years;
 }  // namespace chrono
-using std::formatter;
 namespace chrono {
 using std::chrono::April;
 using std::chrono::August;

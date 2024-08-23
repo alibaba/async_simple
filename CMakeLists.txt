@@ -183,6 +183,30 @@ if(${ASYNC_SIMPLE_BUILD_MODULES})
         endif()
     endif()
 
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "16.0.0")
+            string(CONCAT CMAKE_CXX_SCANDEP_SOURCE
+            "\"${CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS}\""
+            " -format=p1689"
+            " --"
+            " <CMAKE_CXX_COMPILER> <DEFINES> <INCLUDES> <FLAGS>"
+            " -x c++ <SOURCE> -c -o <OBJECT>"
+            " -MT <DYNDEP_FILE>"
+            " -MD -MF <DEP_FILE>"
+            # Write to a temporary file. If the scan fails, we do not want to update
+            # the actual output file as `ninja` (at least) assumes that failed
+            # commands either delete or leave output files alone. See Issue#25419.
+            " > <DYNDEP_FILE>.tmp"
+            # We cannot use `copy_if_different` as the rule does not have a feature
+            # analogous to `ninja`'s `restat = 1`. It would also leave behind the
+            # `.tmp` file.
+            " && mv <DYNDEP_FILE>.tmp <DYNDEP_FILE>")
+            set(CMAKE_CXX_MODULE_MAP_FORMAT "clang")
+            set(CMAKE_CXX_MODULE_MAP_FLAG "@<MODULE_MAP_FILE>")
+            set(CMAKE_CXX_MODULE_BMI_ONLY_FLAG "--precompile")
+        endif()
+    endif()
+
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()

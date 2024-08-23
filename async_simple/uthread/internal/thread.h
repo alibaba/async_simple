@@ -36,7 +36,7 @@ namespace async_simple {
 namespace uthread {
 namespace internal {
 
-static constexpr size_t default_base_stack_size = 512 * 1024;
+inline constexpr size_t default_base_stack_size = 512 * 1024;
 size_t get_base_stack_size();
 
 class thread_context {

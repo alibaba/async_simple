@@ -179,7 +179,7 @@ private:
 
 Executor::TimeAwaitable inline Executor::after(Executor::Duration dur) {
     return Executor::TimeAwaitable(this, dur);
-};
+}
 
 }  // namespace async_simple
 

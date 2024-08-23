@@ -81,7 +81,7 @@ private:
 };
 
 #ifdef __linux__
-static void getCurrentCpus(std::vector<uint32_t> &ids) {
+inline void getCurrentCpus(std::vector<uint32_t> &ids) {
     cpu_set_t set;
     ids.clear();
     if (sched_getaffinity(0, sizeof(set), &set) == 0)

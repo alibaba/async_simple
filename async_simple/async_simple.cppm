@@ -56,7 +56,6 @@ export extern "C++" {
   #include "IOExecutor.h"
   #include "coro/SharedMutex.h"
   #include "uthread/Collect.h"
-  #include "coro/PromiseAllocator.h"
   #include "executors/SimpleIOExecutor.h"
   #include "coro/Mutex.h"
   #include "Collect.h"
@@ -70,5 +69,9 @@ export extern "C++" {
   #include "coro/SyncAwait.h"
   #include "executors/SimpleExecutor.h"
   #include "coro/Semaphore.h"
+  // There are some bugs in clang lower versions.
+#if defined(__clang_major__)  && __clang_major__ >= 17
+  #include "coro/PromiseAllocator.h"
   #include "coro/Generator.h"
+#endif
 }
