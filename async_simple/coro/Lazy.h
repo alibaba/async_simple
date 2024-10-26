@@ -20,7 +20,6 @@
 #include <cstddef>
 #include <cstdio>
 #include <exception>
-#include <new>
 #include <variant>
 #include "async_simple/Common.h"
 #include "async_simple/Try.h"
@@ -30,6 +29,13 @@
 
 #if __has_include(<memory_resource>)
 #include <memory_resource>
+#else
+namespace std {
+// align_val_t is a C++17 feature, add it to compatible with older stdlib
+enum class align_val_t : size_t {};
+};  // namespace std
+void* operator new(std::size_t count, std::align_val_t al);
+void operator delete(void* ptr, std::align_val_t al) noexcept;
 #endif
 
 #endif  // ASYNC_SIMPLE_USE_MODULES
@@ -40,18 +46,21 @@ class Executor;
 
 namespace coro {
 
+#if __has_include(<memory_resource>)
+namespace lazy_pmr = std::pmr;
+#else
 namespace pmr {
 
-// This is a class similar to std::pmr::memory_resource, but do not have
-// alingment parameter and do not allow throwing exceptions, because
-// get_return_object_on_allocation_failure() is defined on all subclasses of
-// LazyPromiseBase
 class memory_resource {
 public:
-    void* allocate(std::size_t bytes) noexcept { return do_allocate(bytes); };
+    void* allocate(std::size_t bytes,
+                   std::size_t alignment = alignof(std::max_align_t)) {
+        return do_allocate(bytes, alignment);
+    };
 
-    void deallocate(void* p, std::size_t bytes) noexcept {
-        do_deallocate(p, bytes);
+    void deallocate(void* p, std::size_t bytes,
+                    std::size_t alignment = alignof(std::max_align_t)) {
+        do_deallocate(p, bytes, alignment);
     };
 
     bool is_equal(const memory_resource& other) const noexcept;
@@ -59,53 +68,24 @@ public:
     virtual ~memory_resource() = default;
 
 private:
-    virtual void* do_allocate(std::size_t bytes) noexcept = 0;
+    virtual void* do_allocate(std::size_t bytes, std::size_t alignment) = 0;
 
-    virtual void do_deallocate(void* p, std::size_t bytes) noexcept = 0;
+    virtual void do_deallocate(void* p, std::size_t bytes,
+                               std::size_t alignment) = 0;
 
     virtual bool do_is_equal(const memory_resource& other) const noexcept = 0;
 };
 
-#if __has_include(<memory_resource>)
-class std_pmr_resource_adaptor : public memory_resource {
-    std::pmr::memory_resource* m_resource;
-
-    void* do_allocate(std::size_t bytes) noexcept override {
-        try {
-            return m_resource->allocate(bytes);
-        } catch (std::bad_alloc& e) {
-            return nullptr;
-        }
-    }
-
-    void do_deallocate(void* p, std::size_t bytes) noexcept override {
-        m_resource->deallocate(p, bytes);
-    }
-
-    bool do_is_equal(const memory_resource& other) const noexcept override {
-        return this == &other;
-    }
-
-public:
-    explicit std_pmr_resource_adaptor(std::pmr::memory_resource* resource)
-        : m_resource(resource) {}
-
-    std_pmr_resource_adaptor(const std_pmr_resource_adaptor&) = delete;
-    std_pmr_resource_adaptor& operator=(const std_pmr_resource_adaptor&) =
-        delete;
-};
-#endif
-
 namespace detail {
 
 class global_new_delete_resource : public memory_resource {
-    void* do_allocate(std::size_t bytes) noexcept override {
-        return ::operator new(bytes, std::nothrow);
+    void* do_allocate(std::size_t bytes, std::size_t alignment) override {
+        return ::operator new(bytes, std::align_val_t(alignment));
     }
 
-    void do_deallocate(void* p, std::size_t bytes) noexcept override {
-        // noexcept since C++11
-        ::operator delete(p, bytes);
+    void do_deallocate(void* p, std::size_t bytes,
+                       std::size_t alignment) override {
+        ::operator delete(p, bytes, std::align_val_t(alignment));
     }
 
     bool do_is_equal(const memory_resource& other) const noexcept override {
@@ -122,6 +102,9 @@ inline memory_resource* new_delete_resource() {
 };
 
 }  // namespace pmr
+
+namespace lazy_pmr = pmr;
+#endif
 
 template <typename T>
 class Lazy;
@@ -227,26 +210,38 @@ public:
     Executor* _executor;
     void* _lazy_local;
 
-    void* operator new(std::size_t size, pmr::memory_resource* resource,
+    void* operator new(std::size_t size, lazy_pmr::memory_resource* resource,
                        ...) noexcept {
-        char* r = static_cast<char*>(
-            resource->allocate(size + sizeof(pmr::memory_resource*)));
-        *reinterpret_cast<pmr::memory_resource**>(r + size) = resource;
+        char* r = nullptr;
+        try {
+            r = static_cast<char*>(
+                resource->allocate(size + sizeof(lazy_pmr::memory_resource*)));
+        } catch (...) {
+            return nullptr;
+        }
+        *reinterpret_cast<lazy_pmr::memory_resource**>(r + size) = resource;
         return r;
     }
 
     void* operator new(std::size_t size) noexcept {
-        char* r = static_cast<char*>(pmr::new_delete_resource()->allocate(
-            size + sizeof(pmr::memory_resource*)));
-        *reinterpret_cast<pmr::memory_resource**>(r + size) =
-            pmr::new_delete_resource();
+        char* r = nullptr;
+        try {
+            r = static_cast<char*>(lazy_pmr::new_delete_resource()->allocate(
+                size + sizeof(lazy_pmr::memory_resource*)));
+        } catch (...) {
+            return nullptr;
+        }
+        *reinterpret_cast<lazy_pmr::memory_resource**>(r + size) =
+            lazy_pmr::new_delete_resource();
         return r;
     }
 
     void operator delete(void* ptr, std::size_t size) noexcept {
         char* p = static_cast<char*>(ptr);
-        (*reinterpret_cast<pmr::memory_resource**>(p + size))
-            ->deallocate(p, size + sizeof(pmr::memory_resource*));
+        // though not qualified with noexcept,
+        // std::pmr::memory_resource::deallocate do not throw exception
+        (*reinterpret_cast<lazy_pmr::memory_resource**>(p + size))
+            ->deallocate(p, size + sizeof(lazy_pmr::memory_resource*));
     }
 };
 

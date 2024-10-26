@@ -5,18 +5,19 @@
 #include <cstddef>
 #include <iostream>
 #include <memory_resource>
+#include <new>
 
 namespace ac = async_simple::coro;
 
-class print_new_delete_memory_resource : public ac::pmr::memory_resource {
-    void* do_allocate(std::size_t bytes) noexcept override {
+class print_new_delete_memory_resource : public ac::lazy_pmr::memory_resource {
+    void* do_allocate(std::size_t bytes, size_t alignment) override {
         std::cout << "allocate " << bytes << " bytes\n";
-        return ::operator new(bytes, std::nothrow);
+        return ::operator new(bytes, std::align_val_t(alignment));
     }
 
-    void do_deallocate(void* p, std::size_t bytes) noexcept override {
+    void do_deallocate(void* p, std::size_t bytes, size_t alignment) override {
         std::cout << "deallocate " << bytes << " bytes\n";
-        ::operator delete(p, bytes);
+        ::operator delete(p, bytes, std::align_val_t(alignment));
     }
 
     bool do_is_equal(const memory_resource& other) const noexcept override {
@@ -29,7 +30,7 @@ ac::Lazy<int> foo() {
     co_return 43;
 }
 
-ac::Lazy<int> foo(ac::pmr::memory_resource* resource, int i = 0) {
+ac::Lazy<int> foo(ac::lazy_pmr::memory_resource* resource, int i = 0) {
     std::cout << "run with async_simple::coro::pmr::memory_resource" << '\n';
     int test{};
     test = co_await foo();
@@ -54,8 +55,7 @@ int main() {
     std::pmr::monotonic_buffer_resource pool(global_buffer.data(),
                                              global_buffer.size(),
                                              std::pmr::null_memory_resource());
-    async_simple::coro::pmr::std_pmr_resource_adaptor adaptor(&pool);
-    i += syncAwait(foo(&adaptor));
+    i += syncAwait(foo(&pool));
 
     // allocate Lazy's coroutine state on stack
     std::cout << "\n###############################################\n";
@@ -64,10 +64,8 @@ int main() {
     std::pmr::monotonic_buffer_resource stack_pool(
         stack_buffer.data(), stack_buffer.size(),
         std::pmr::null_memory_resource());
-    async_simple::coro::pmr::std_pmr_resource_adaptor stack_adaptor(
-        &stack_pool);
     // additional argument can be passed to the coroutine
-    i += syncAwait(foo(&stack_adaptor, 4));
+    i += syncAwait(foo(&stack_pool, 4));
 
     // run with a custom memory resource which prints the allocation and
     // deallocation process
