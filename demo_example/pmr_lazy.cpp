@@ -2,10 +2,13 @@
 #include <cassert>
 #include <cstddef>
 #include <iostream>
-#include <memory_resource>
 #include <new>
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SyncAwait.h"
+
+#if __has_include(<memory_resource>)
+#include <memory_resource>
+#endif
 
 namespace ac = async_simple::coro;
 
