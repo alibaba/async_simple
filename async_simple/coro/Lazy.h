@@ -29,14 +29,10 @@
 
 #if __has_include(<memory_resource>)
 #include <memory_resource>
-#else
-namespace std {
-// align_val_t is a C++17 feature, add it to compatible with older stdlib
-enum class align_val_t : size_t {};
-};  // namespace std
-void* operator new(std::size_t count, std::align_val_t al);
-void operator delete(void* ptr, std::align_val_t al) noexcept;
 #endif
+
+// C++14 feature, just add this declaration to compatiable with older stdlib
+void operator delete(void* ptr, std::size_t sz) noexcept;
 
 #endif  // ASYNC_SIMPLE_USE_MODULES
 
@@ -80,12 +76,12 @@ namespace detail {
 
 class global_new_delete_resource : public memory_resource {
     void* do_allocate(std::size_t bytes, std::size_t alignment) override {
-        return ::operator new(bytes, std::align_val_t(alignment));
+        return ::operator new(bytes);
     }
 
     void do_deallocate(void* p, std::size_t bytes,
                        std::size_t alignment) override {
-        ::operator delete(p, bytes, std::align_val_t(alignment));
+        ::operator delete(p, bytes);
     }
 
     bool do_is_equal(const memory_resource& other) const noexcept override {
