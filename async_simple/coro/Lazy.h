@@ -20,12 +20,17 @@
 #include <cstddef>
 #include <cstdio>
 #include <exception>
+#include <new>
 #include <variant>
 #include "async_simple/Common.h"
 #include "async_simple/Try.h"
 #include "async_simple/coro/DetachedCoroutine.h"
 #include "async_simple/coro/ViaCoroutine.h"
 #include "async_simple/experimental/coroutine.h"
+
+#if __has_include(<memory_resource>)
+#include <memory_resource>
+#endif
 
 #endif  // ASYNC_SIMPLE_USE_MODULES
 
@@ -34,6 +39,89 @@ namespace async_simple {
 class Executor;
 
 namespace coro {
+
+namespace pmr {
+
+// This is a class similar to std::pmr::memory_resource, but do not have
+// alingment parameter and do not allow throwing exceptions, because
+// get_return_object_on_allocation_failure() is defined on all subclasses of
+// LazyPromiseBase
+class memory_resource {
+public:
+    void* allocate(std::size_t bytes) noexcept { return do_allocate(bytes); };
+
+    void deallocate(void* p, std::size_t bytes) noexcept {
+        do_deallocate(p, bytes);
+    };
+
+    bool is_equal(const memory_resource& other) const noexcept;
+
+    virtual ~memory_resource() = default;
+
+private:
+    virtual void* do_allocate(std::size_t bytes) noexcept = 0;
+
+    virtual void do_deallocate(void* p, std::size_t bytes) noexcept = 0;
+
+    virtual bool do_is_equal(const memory_resource& other) const noexcept = 0;
+};
+
+#if __has_include(<memory_resource>)
+class std_pmr_resource_adaptor : public memory_resource {
+    std::pmr::memory_resource* m_resource;
+
+    void* do_allocate(std::size_t bytes) noexcept override {
+        try {
+            return m_resource->allocate(bytes);
+        } catch (std::bad_alloc& e) {
+            return nullptr;
+        }
+    }
+
+    void do_deallocate(void* p, std::size_t bytes) noexcept override {
+        m_resource->deallocate(p, bytes);
+    }
+
+    bool do_is_equal(const memory_resource& other) const noexcept override {
+        return this == &other;
+    }
+
+public:
+    explicit std_pmr_resource_adaptor(std::pmr::memory_resource* resource)
+        : m_resource(resource) {}
+
+    std_pmr_resource_adaptor(const std_pmr_resource_adaptor&) = delete;
+    std_pmr_resource_adaptor& operator=(const std_pmr_resource_adaptor&) =
+        delete;
+};
+#endif
+
+namespace detail {
+
+class global_new_delete_resource : public memory_resource {
+    void* do_allocate(std::size_t bytes) noexcept override {
+        return ::operator new(bytes, std::nothrow);
+    }
+
+    void do_deallocate(void* p, std::size_t bytes) noexcept override {
+        // noexcept since C++11
+        ::operator delete(p, bytes);
+    }
+
+    bool do_is_equal(const memory_resource& other) const noexcept override {
+        return this == &other;
+    }
+};
+
+constinit inline global_new_delete_resource global_new_delete_resource_object{};
+
+}  // namespace detail
+
+inline memory_resource* new_delete_resource() {
+    return &detail::global_new_delete_resource_object;
+};
+
+}  // namespace pmr
 
 template <typename T>
 class Lazy;
@@ -138,6 +226,28 @@ public:
     std::coroutine_handle<> _continuation;
     Executor* _executor;
     void* _lazy_local;
+
+    void* operator new(std::size_t size, pmr::memory_resource* resource,
+                       ...) noexcept {
+        char* r = static_cast<char*>(
+            resource->allocate(size + sizeof(pmr::memory_resource*)));
+        *reinterpret_cast<pmr::memory_resource**>(r + size) = resource;
+        return r;
+    }
+
+    void* operator new(std::size_t size) noexcept {
+        char* r = static_cast<char*>(pmr::new_delete_resource()->allocate(
+            size + sizeof(pmr::memory_resource*)));
+        *reinterpret_cast<pmr::memory_resource**>(r + size) =
+            pmr::new_delete_resource();
+        return r;
+    }
+
+    void operator delete(void* ptr, std::size_t size) noexcept {
+        char* p = static_cast<char*>(ptr);
+        (*reinterpret_cast<pmr::memory_resource**>(p + size))
+            ->deallocate(p, size + sizeof(pmr::memory_resource*));
+    }
 };
 
 template <typename T>
