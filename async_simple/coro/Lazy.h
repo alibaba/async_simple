@@ -24,15 +24,9 @@
 #include "async_simple/Common.h"
 #include "async_simple/Try.h"
 #include "async_simple/coro/DetachedCoroutine.h"
+#include "async_simple/coro/PromiseAllocator.h"
 #include "async_simple/coro/ViaCoroutine.h"
 #include "async_simple/experimental/coroutine.h"
-
-#if __has_include(<memory_resource>)
-#include <memory_resource>
-#endif
-
-// C++14 feature, just add this declaration to compatiable with older stdlib
-void operator delete(void* ptr, std::size_t sz) noexcept;
 
 #endif  // ASYNC_SIMPLE_USE_MODULES
 
@@ -41,66 +35,6 @@ namespace async_simple {
 class Executor;
 
 namespace coro {
-
-#if __has_include(<memory_resource>)
-namespace lazy_pmr = std::pmr;
-#else
-namespace pmr {
-
-class memory_resource {
-public:
-    void* allocate(std::size_t bytes,
-                   std::size_t alignment = alignof(std::max_align_t)) {
-        return do_allocate(bytes, alignment);
-    };
-
-    void deallocate(void* p, std::size_t bytes,
-                    std::size_t alignment = alignof(std::max_align_t)) {
-        do_deallocate(p, bytes, alignment);
-    };
-
-    bool is_equal(const memory_resource& other) const noexcept;
-
-    virtual ~memory_resource() = default;
-
-private:
-    virtual void* do_allocate(std::size_t bytes, std::size_t alignment) = 0;
-
-    virtual void do_deallocate(void* p, std::size_t bytes,
-                               std::size_t alignment) = 0;
-
-    virtual bool do_is_equal(const memory_resource& other) const noexcept = 0;
-};
-
-namespace detail {
-
-class global_new_delete_resource : public memory_resource {
-    void* do_allocate(std::size_t bytes, std::size_t alignment) override {
-        return ::operator new(bytes);
-    }
-
-    void do_deallocate(void* p, std::size_t bytes,
-                       std::size_t alignment) override {
-        ::operator delete(p, bytes);
-    }
-
-    bool do_is_equal(const memory_resource& other) const noexcept override {
-        return this == &other;
-    }
-};
-
-constinit inline global_new_delete_resource global_new_delete_resource_object{};
-
-}  // namespace detail
-
-inline memory_resource* new_delete_resource() {
-    return &detail::global_new_delete_resource_object;
-};
-
-}  // namespace pmr
-
-namespace lazy_pmr = pmr;
-#endif
 
 template <typename T>
 class Lazy;
@@ -139,7 +73,7 @@ struct CollectAnyVariadicPairAwaiter;
 
 namespace detail {
 
-class LazyPromiseBase {
+class LazyPromiseBase : public PromiseAllocator<void, true> {
 public:
     // Resume the caller waiting to the current coroutine. Note that we need
     // destroy the frame for the current coroutine explicitly. Since after
@@ -205,40 +139,6 @@ public:
     std::coroutine_handle<> _continuation;
     Executor* _executor;
     void* _lazy_local;
-
-    void* operator new(std::size_t size, lazy_pmr::memory_resource* resource,
-                       ...) noexcept {
-        char* r = nullptr;
-        try {
-            r = static_cast<char*>(
-                resource->allocate(size + sizeof(lazy_pmr::memory_resource*)));
-        } catch (...) {
-            return nullptr;
-        }
-        *reinterpret_cast<lazy_pmr::memory_resource**>(r + size) = resource;
-        return r;
-    }
-
-    void* operator new(std::size_t size) noexcept {
-        char* r = nullptr;
-        try {
-            r = static_cast<char*>(lazy_pmr::new_delete_resource()->allocate(
-                size + sizeof(lazy_pmr::memory_resource*)));
-        } catch (...) {
-            return nullptr;
-        }
-        *reinterpret_cast<lazy_pmr::memory_resource**>(r + size) =
-            lazy_pmr::new_delete_resource();
-        return r;
-    }
-
-    void operator delete(void* ptr, std::size_t size) noexcept {
-        char* p = static_cast<char*>(ptr);
-        // though not qualified with noexcept,
-        // std::pmr::memory_resource::deallocate do not throw exception
-        (*reinterpret_cast<lazy_pmr::memory_resource**>(p + size))
-            ->deallocate(p, size + sizeof(lazy_pmr::memory_resource*));
-    }
 };
 
 template <typename T>
