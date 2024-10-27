@@ -38,8 +38,10 @@ ac::Lazy<int> foo() {
 }
 
 #if __has_include(<memory_resource>)
-ac::Lazy<int> foo(std::allocator_arg_t /*unused*/,
-                  std::pmr::polymorphic_allocator<> /*unused*/, int i = 0) {
+ac::Lazy<int> foo(
+    std::allocator_arg_t /*unused*/,
+    std::pmr::polymorphic_allocator<> /*coroutine state allocator*/,
+    int i = 0) {
     std::cout << "run with async_simple::coro::pmr::memory_resource" << '\n';
     int test{};
     test = co_await foo();
@@ -53,20 +55,21 @@ std::array<std::byte, 1024> global_buffer;
 int main() {
     int i = 0;
 
+    std::cout << "###############################################\n";
     // run without pmr argument, use global new/delete to allocate Lazy's
     // coroutine state
-    std::cout << "###############################################\n";
     i += syncAwait(foo());
 
 #if __has_include(<memory_resource>)
-    // the first argument's type is async_simple::coro::pmr::memory_resource*,
-    // it will be used to allocate Lazy's coroutine state
     std::cout << "\n###############################################\n";
     std::cout << "global buffer address: " << global_buffer.data() << '\n';
     std::pmr::monotonic_buffer_resource pool(global_buffer.data(),
                                              global_buffer.size(),
                                              std::pmr::null_memory_resource());
     std::pmr::polymorphic_allocator alloc(&pool);
+    // the first argument std::allocator_arg indicates that the second argument
+    // is an custom allocator, which will be used to allocate the coroutine
+    // state
     i += syncAwait(foo(std::allocator_arg, alloc));
 
     // allocate Lazy's coroutine state on stack
@@ -80,9 +83,9 @@ int main() {
     // additional argument can be passed to the coroutine
     i += syncAwait(foo(std::allocator_arg, stack_alloc, 4));
 
+    std::cout << "\n###############################################\n";
     // run with a custom memory resource which prints the allocation and
     // deallocation process
-    std::cout << "\n###############################################\n";
     print_new_delete_memory_resource res;
     std::pmr::polymorphic_allocator<std::byte> print_alloc(&res);
     i += syncAwait(foo(std::allocator_arg, print_alloc));
