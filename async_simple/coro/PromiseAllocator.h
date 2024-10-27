@@ -18,6 +18,7 @@
 #define ASYNC_SIMPLE_CORO_PROMISEALLOCATOR_H
 
 #ifndef ASYNC_SIMPLE_USE_MODULES
+#include <algorithm>
 #include <concepts>
 #include <cstring>
 #include <memory>

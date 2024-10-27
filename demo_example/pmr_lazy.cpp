@@ -15,14 +15,15 @@ namespace ac = async_simple::coro;
 
 #if __has_include(<memory_resource>)
 class print_new_delete_memory_resource : public std::pmr::memory_resource {
-    void* do_allocate(std::size_t bytes, size_t alignment) override {
+    void* do_allocate(std::size_t bytes, size_t /*alignment*/) override {
         std::cout << "allocate " << bytes << " bytes\n";
         return ::operator new(bytes);
     }
 
-    void do_deallocate(void* p, std::size_t bytes, size_t alignment) override {
+    void do_deallocate(void* p, std::size_t bytes,
+                       size_t /*alignment*/) override {
         std::cout << "deallocate " << bytes << " bytes\n";
-        ::operator delete(p, bytes);
+        ::operator delete(p);
     }
 
     bool do_is_equal(const memory_resource& other) const noexcept override {
