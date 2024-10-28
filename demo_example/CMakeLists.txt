@@ -53,6 +53,9 @@ target_link_libraries(http_client async_simple)
 add_executable(block_http_server http/block_http/block_http_server.cpp)
 target_link_libraries(block_http_server async_simple)
 
+add_executable(pmr_lazy pmr_lazy.cpp)
+target_link_libraries(pmr_lazy async_simple)
+
 SET(ENABLE_SSL OFF)
 
 if (ENABLE_SSL)
