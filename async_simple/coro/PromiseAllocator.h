@@ -351,9 +351,6 @@ public:
     }
 
     static void operator delete(void* const ptr, std::size_t size) noexcept {
-        if (ptr == nullptr) {
-            return;
-        }
         DeallocFn dealloc;
         ::memcpy(&dealloc, static_cast<const char*>(ptr) + size,
                  sizeof(DeallocFn));
