@@ -240,8 +240,7 @@ public:
         return Allocate(al, size);
     }
 
-    static void operator delete(void* const ptr,
-                                std::size_t size) noexcept {
+    static void operator delete(void* const ptr, std::size_t size) noexcept {
         DeallocFn dealloc;
         ::memcpy(&dealloc, static_cast<const char*>(ptr) + size,
                  sizeof(DeallocFn));
@@ -255,7 +254,7 @@ private:
     using DeallocFn = void (*)(void*, size_t);
 
     template <class ProtoAlloc>
-    static void* Allocate(const ProtoAlloc& proto, std::size_t size) {
+    static void* Allocate(const ProtoAlloc& proto, std::size_t size) noexcept {
         using Alloc = Rebind<ProtoAlloc>;
         auto al = static_cast<Alloc>(proto);
 
@@ -273,7 +272,12 @@ private:
             const size_t count =
                 (size + sizeof(DeallocFn) + sizeof(Aligned_block) - 1) /
                 sizeof(Aligned_block);
-            void* const ptr = al.allocate(count);
+            void* ptr = nullptr;
+            try {
+                ptr = al.allocate(count);
+            } catch (...) {
+                return nullptr;
+            }
             ::memcpy(static_cast<char*>(ptr) + size, &dealloc, sizeof(dealloc));
             return ptr;
         } else {
@@ -298,7 +302,12 @@ private:
             const size_t count =
                 (size + sizeof(DeallocFn) + sizeof(al) + Align - 1) /
                 sizeof(Aligned_block);
-            void* const ptr = al.allocate(count);
+            void* ptr = nullptr;
+            try {
+                ptr = al.allocate(count);
+            } catch (...) {
+                return nullptr;
+            }
             ::memcpy(static_cast<char*>(ptr) + size, &dealloc, sizeof(dealloc));
             size += sizeof(DeallocFn);
             const auto al_address =
@@ -312,17 +321,16 @@ private:
 public:
     static void* operator new(
         const std::size_t size) noexcept {  // default: new/delete
-        try {
-            void* const ptr = ::operator new[](size + sizeof(DeallocFn));
-            const DeallocFn dealloc = [](void* const ptr, const size_t size) {
-                ::operator delete[](ptr, size + sizeof(DeallocFn));
-            };
-            ::memcpy(static_cast<char*>(ptr) + size, &dealloc,
-                     sizeof(DeallocFn));
-            return ptr;
-        } catch (...) {
+        void* const ptr =
+            ::operator new[](size + sizeof(DeallocFn), std::nothrow);
+        if (ptr == nullptr) {
             return nullptr;
         }
+        const DeallocFn dealloc = [](void* const ptr, const size_t size) {
+            ::operator delete[](ptr, size + sizeof(DeallocFn));
+        };
+        ::memcpy(static_cast<char*>(ptr) + size, &dealloc, sizeof(DeallocFn));
+        return ptr;
     }
 
     template <class Alloc, class... Args>
@@ -330,11 +338,7 @@ public:
                               const Alloc& al, const Args&...) noexcept {
         static_assert(HasRealPointers<Alloc>,
                       "coroutine allocators must use true pointers");
-        try {
-            return Allocate(al, size);
-        } catch (...) {
-            return nullptr;
-        }
+        return Allocate(al, size);
     }
 
     template <class This, class Alloc, class... Args>
@@ -343,11 +347,7 @@ public:
                               const Args&...) noexcept {
         static_assert(HasRealPointers<Alloc>,
                       "coroutine allocators must be true pointers");
-        try {
-            return Allocate(al, size);
-        } catch (...) {
-            return nullptr;
-        }
+        return Allocate(al, size);
     }
 
     static void operator delete(void* const ptr, std::size_t size) noexcept {
