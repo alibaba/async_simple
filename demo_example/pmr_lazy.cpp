@@ -40,7 +40,7 @@ ac::Lazy<int> get_43() {
 #if __has_include(<memory_resource>)
 ac::Lazy<int> get_43_plus_i(
     std::allocator_arg_t /*unused*/,
-    const std::pmr::polymorphic_allocator<>& /*coroutine state allocator*/,
+    std::pmr::polymorphic_allocator<> /*coroutine state allocator*/,
     int i = 0) {
     std::cout << "run with async_simple::coro::pmr::memory_resource" << '\n';
     int test{};

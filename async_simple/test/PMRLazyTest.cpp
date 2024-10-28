@@ -22,7 +22,7 @@ ac::Lazy<int> get_43_plus_i(int i = 0) { co_return 43 + i; }
 #if __has_include(<memory_resource>)
 ac::Lazy<int> get_43_plus_i(
     std::allocator_arg_t /*unused*/,
-    const std::pmr::polymorphic_allocator<>& /*coroutine state allocator*/,
+    std::pmr::polymorphic_allocator<> /*coroutine state allocator*/,
     int i = 0) {
     int test{};
     test = co_await get_43();
