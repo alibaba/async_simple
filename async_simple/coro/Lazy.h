@@ -507,14 +507,22 @@ public:
 
     // Bind an executor only. Don't re-schedule.
     //
-    // Users shouldn't use `setEx` directly. `setEx` is designed
-    // for internal purpose only. See uthread/Await.h/await for details.
-    Lazy<T> setEx(Executor* ex) && {
+    // This function is deprecated, please use start(cb,ex) instead of setEx.
+    [[deprecated]] Lazy<T> setEx(Executor* ex) && {
         logicAssert(this->_coro.operator bool(),
                     "Lazy do not have a coroutine_handle "
                     "Maybe the allocation failed or you're using a used Lazy");
         this->_coro.promise()._executor = ex;
         return Lazy<T>(std::exchange(this->_coro, nullptr));
+    }
+
+    using Base::start;
+
+    template <typename F>
+    void start(F&& callback,
+               Executor* executor) requires(std::is_invocable_v<F&&, Try<T>>) {
+        this->_coro.promise()._executor = executor;
+        return start(std::forward<F>(callback));
     }
 
     auto coAwait(Executor* ex) {
@@ -530,6 +538,8 @@ public:
 private:
     friend class RescheduleLazy<T>;
 };
+
+// dispatch a lazy to executor, dont reschedule immediately
 
 // A RescheduleLazy is a Lazy with an executor. The executor of a RescheduleLazy
 // wouldn't/shouldn't be nullptr. So we needn't check it.

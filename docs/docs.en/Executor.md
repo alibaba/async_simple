@@ -4,14 +4,16 @@ Executor is the key component for shceduling coroutine. A lot of the open-source
 
 ### Use Executor
 
-It is easy to assign a coroutine instance to an executor. The user need to pass the executor to coroutine only. The users could assign an executor to a Lazy by `via/setEx`. They could use `async` to pass Executor to Uthread.
+It is easy to assign a coroutine instance to an executor. The user need to pass the executor to coroutine only. The users could assign an executor to a Lazy then schedule immediately by `via`. User could also use start(cb, executor) to assign an executor wihtout schedul immediately. They could use `async` to pass Executor to Uthread.
 
 ```cpp
 Executor e;
 
 // lazy
-co_await f().via(&e).start([](){});
-co_await f().setEx(&e);
+// schedule to executor immediately
+f().via(&e).start([](auto&&){});
+// binding executor but dont schedule immediately
+f().start([](auto&&){},&e);
 
 // uthread
 uthread::async<uthread::Launch::Schedule>(<lambda>, &e);
