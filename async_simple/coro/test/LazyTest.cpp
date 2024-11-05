@@ -1074,14 +1074,12 @@ TEST_F(LazyTest, testCollectAllVariadic) {
             co_return std::this_thread::get_id();
         };
 
-        auto id = std::this_thread::get_id();
         CHECK_EXECUTOR(&e1);
         auto out_tuple = co_await collectAllPara(
             std::move(intLazy), std::move(doubleLazy), std::move(stringLazy),
             sleepLazy(2), sleepLazy(1));
         CHECK_EXECUTOR(&e1);
 
-        EXPECT_EQ(std::this_thread::get_id(), id);
         EXPECT_EQ(5u, std::tuple_size<decltype(out_tuple)>::value);
 
         auto [v_try_int, v_try_double, v_try_string, id0, id1] =

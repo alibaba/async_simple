@@ -606,7 +606,7 @@ template <bool Para, template <typename> typename LazyType, typename... Ts>
 inline auto collectAllVariadicImpl(LazyType<Ts>&&... awaitables) {
     static_assert(sizeof...(Ts) > 0);
     using AT = std::conditional_t<
-        is_lazy<LazyType<void>>::value && !Para,
+        is_lazy<LazyType<void>>::value,
         SimpleCollectAllVariadicAwaiter<Para, LazyType, Ts...>,
         CollectAllVariadicAwaiter<Para, LazyType, Ts...>>;
     return AT(std::move(awaitables)...);
