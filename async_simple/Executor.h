@@ -16,12 +16,12 @@
 #ifndef ASYNC_SIMPLE_EXECUTOR_H
 #define ASYNC_SIMPLE_EXECUTOR_H
 
-#include <cstdint>
 #ifndef ASYNC_SIMPLE_USE_MODULES
 #include <chrono>
+#include <cstdint>
 #include <functional>
-#include <string>
 #include <ratio>
+#include <string>
 #include <thread>
 #include "async_simple/MoveWrapper.h"
 #include "async_simple/experimental/coroutine.h"
