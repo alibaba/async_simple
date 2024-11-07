@@ -30,7 +30,7 @@ of async_simple itself, we requrie the alignment of `T` in `Lazy<T>` can exceed 
 
 ## Start Lazy
 
-We could start a Lazy by `co_await`, `syncAwait` and `.start(callback)`.
+We could start a Lazy by `co_await`, `syncAwait`, `.start(callback)` or `directlyStart(callback, executor)`.
 
 ### co_await
 
@@ -91,6 +91,28 @@ By design, `start` should be a non-blocking asynchronous interface. Semantically
 In case the `callback` isn't needed, we could write:
 ```cpp
 task().start([](auto&&){});
+```
+
+
+### directlyStart(callback, executor)
+
+Similar to `start`, but provides a paramter for binding a scheduler when starting a coroutine. It is important to note that `directlyStart` does not immediately schedule the task when coroutine start.
+
+```cpp
+Lazy<> task() {
+    auto e = co_await currentExecutor{};
+    // binding executor successfully.
+    assert(e!=nullptr);
+    // lazy schedule, work doesn't run in executor.
+    assert(e->currentThreadInExecutor()==false);
+    co_await coro::Sleep(1s);
+    // Sleep function need executor schedule, now work runs in executor.
+    assert(e->currentThreadInExecutor()==true);
+}
+void func() {
+    auto executor=std::make_shared<executors::SimpleExecutor>(1);
+    task().directlyStart([executor](Try<void> Result){},executor.get());
+}
 ```
 
 ### syncAwait

@@ -17,6 +17,7 @@
 #include <condition_variable>
 #include <exception>
 #include <functional>
+#include <future>
 #include <mutex>
 #include <thread>
 #include <type_traits>
@@ -24,8 +25,10 @@
 #include <iostream>
 
 #include <chrono>
+#include "async_simple/Executor.h"
 #include "async_simple/coro/Collect.h"
 #include "async_simple/coro/Lazy.h"
+#include "async_simple/coro/Sleep.h"
 #include "async_simple/coro/SyncAwait.h"
 #include "async_simple/coro/test/Time.h"
 #include "async_simple/executors/SimpleExecutor.h"
@@ -254,6 +257,20 @@ TEST_F(LazyTest, testSimpleAsync2) {
     };
     triggerValue(100);
     ASSERT_EQ(101, syncAwait(test(), &_executor));
+}
+
+TEST_F(LazyTest, testStartWithExecutor) {
+    auto test = [this]() -> Lazy<void> {
+        auto executor = co_await CurrentExecutor();
+        EXPECT_TRUE(executor == &_executor);
+        EXPECT_TRUE(executor->currentThreadInExecutor() == false);
+        co_await async_simple::coro::sleep(10ms);
+        CHECK_EXECUTOR(&_executor);
+        co_return;
+    };
+    std::promise<void> f;
+    test().directlyStart([&f](auto&&) { f.set_value(); }, &_executor);
+    f.get_future().wait();
 }
 
 TEST_F(LazyTest, testVia) {
