@@ -26,6 +26,7 @@
 #include <chrono>
 #include "async_simple/coro/Collect.h"
 #include "async_simple/coro/Lazy.h"
+#include "async_simple/coro/Sleep.h"
 #include "async_simple/coro/SyncAwait.h"
 #include "async_simple/coro/test/Time.h"
 #include "async_simple/executors/SimpleExecutor.h"
@@ -53,6 +54,7 @@ public:
         std::lock_guard<std::mutex> g(_mtx);
         _value = 0;
         _done = false;
+        _yieldflag = false;
     }
     void caseTearDown() override {}
 
@@ -60,10 +62,37 @@ public:
     std::condition_variable _cv;
     int _value;
     bool _done;
+    std::atomic_bool _yieldflag;
 
     executors::SimpleExecutor _executor;
 
 public:
+    async_simple::Executor* getSimpleExecutor() {
+        static async_simple::executors::SimpleExecutor executor{1};
+        return &executor;
+    }
+    async_simple::coro::Lazy<int> yield_waiter() {
+        int counter = 0;
+        while (!_yieldflag) {
+            ++counter;
+            co_await async_simple::coro::Yield{};
+        }
+        co_return counter;
+    }
+    async_simple::coro::Lazy<void> yield_notifyer() {
+        using namespace std::chrono_literals;
+        std::cout << "start sleep:" << std::endl;
+        co_await async_simple::coro::sleep(10ms);
+        std::cout << "end sleep:" << std::endl;
+        _yieldflag = true;
+    }
+    async_simple::coro::Lazy<void> testYieldNoDeadLock(
+        async_simple::Executor* ex) {
+        auto [cnt, _] = co_await async_simple::coro::collectAll(
+            yield_waiter().via(ex), yield_notifyer().via(ex));
+        std::cout << "yield cnt:" << cnt.value() << std::endl;
+    }
+
     void applyValue(std::function<void(int x)> f) {
         std::thread([this, f = std::move(f)]() {
             std::unique_lock<std::mutex> l(_mtx);
@@ -1750,6 +1779,10 @@ TEST_F(LazyTest, testDetach) {
     test1(cond, count).via(&e1).detach();
     cond.acquire();
     EXPECT_EQ(count, 2);
+}
+
+TEST_F(LazyTest, testYieldNoDeadLockWithSimpleExecutor) {
+    syncAwait(testYieldNoDeadLock(getSimpleExecutor()));
 }
 
 }  // namespace coro

@@ -103,7 +103,10 @@ public:
 
             logicAssert(_executor,
                         "Yielding is only meaningful with an executor!");
-            _executor->schedule(std::move(handle));
+            // schedule_hint is YIELD_LEVEL here, which avoid executor always
+            // run handle immediately when other works are waiting, which may
+            // cause deadlock.
+            _executor->schedule(std::move(handle), Executor::YIELD_LEVEL);
         }
         void await_resume() noexcept {}
 
