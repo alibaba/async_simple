@@ -30,7 +30,7 @@ Lazy<int> task2(int x) {
 
 ## 启动方式
 
-一个 Lazy 应该以 `co_await`、 `syncAwait` 以及 `.start(callback)` 方式启动。
+一个 Lazy 应该以 `co_await`、 `syncAwait`, `.start(callback)` 以及 `directlyStart(callback, executor)`方式启动。
 
 ### co_await 启动
 
@@ -91,6 +91,28 @@ void func() {
 对于不需要 `callback` 的情况，用户可以写:
 ```cpp
 task().start([](auto&&){});
+```
+
+### directlyStart(callback, executor) 启动
+
+和`start`类似，但是提供了调度器接口，用于在启动协程时绑定调度器。需要注意的是，`directlyStart`不会在启动时立即调度协程。
+
+```cpp
+Lazy<> task() {
+
+    auto e = co_await currentExecutor{};
+    // 已经成功绑定调度器
+    assert(e!=nullptr);
+    // 惰性调度，此时任务还未被提交给调度器运行
+    assert(e.currentThreadInExecutor()==false);
+    co_await coro::Sleep(1s);
+    // Sleep函数需要使用调度器，因此任务已被提交给调度器运行。
+    assert(e.currentThreadInExecutor()==true);
+}
+void func() {
+    auto executor=std::make_shared<executors::SimpleExecutor>(1);
+    task().directlyStart([executor](Try<void> Result){},executor.get());
+}
 ```
 
 ### syncAwait 启动

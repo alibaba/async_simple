@@ -4,7 +4,7 @@ Executor是调度协程的关键组件。绝大多数开源协程框架提供内
 
 ## 使用Executor
 
-让协程运行在指定的调度器中非常简单，只需要创建协程时传递Executor给协程即可。在Lazy中通过`via()`可以传递Executor。或者可以在start()接口中传递executor实现惰性调度，也可以在Uthread中设置`async()`的Executor参数传递。
+让协程运行在指定的调度器中非常简单，只需要创建协程时传递Executor给协程即可。在Lazy中通过`via()`可以传递Executor。或者可以使用`directlyStart(callback, executor)`接口启动协程并惰性调度，也可以在Uthread中设置`async()`的Executor参数传递。
 
 ```cpp
 Executor e;

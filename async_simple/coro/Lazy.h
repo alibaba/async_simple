@@ -518,9 +518,10 @@ public:
 
     using Base::start;
 
+    // Bind an executor and start coroutine without scheduling immediately.
     template <typename F>
-    void start(F&& callback,
-               Executor* executor) requires(std::is_invocable_v<F&&, Try<T>>) {
+    void directlyStart(F&& callback, Executor* executor) requires(
+        std::is_invocable_v<F&&, Try<T>>) {
         this->_coro.promise()._executor = executor;
         return start(std::forward<F>(callback));
     }

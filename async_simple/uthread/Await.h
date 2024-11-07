@@ -98,7 +98,7 @@ decltype(auto) await(Executor* ex, Fn&& fn, Args&&... args) requires
         co_return;
     };
     lazy(std::forward<Fn>(fn), std::forward<Args>(args)...)
-        .start([](auto&&) {}, ex);
+        .directlyStart([](auto&&) {}, ex);
     return await(std::move(f));
 }
 

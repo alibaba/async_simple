@@ -269,7 +269,7 @@ TEST_F(LazyTest, testStartWithExecutor) {
         co_return;
     };
     std::promise<void> f;
-    test().start([&f](auto&&) { f.set_value(); }, &_executor);
+    test().directlyStart([&f](auto&&) { f.set_value(); }, &_executor);
     f.get_future().wait();
 }
 
