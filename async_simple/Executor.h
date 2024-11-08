@@ -16,6 +16,7 @@
 #ifndef ASYNC_SIMPLE_EXECUTOR_H
 #define ASYNC_SIMPLE_EXECUTOR_H
 
+#include <sys/types.h>
 #ifndef ASYNC_SIMPLE_USE_MODULES
 #include <chrono>
 #include <cstdint>
@@ -94,24 +95,24 @@ public:
     // should guarantee that the func would be executed.
     virtual bool schedule(Func func) = 0;
 
-    // 4-bits priority_level, less level is more important. Default
+    // 4-bits priority, less level is more important. Default
     // value of async-simple schedule is DEFAULT_LEVEL. For scheduling level >=
-    // 8, executor shouldn't always execute the work immediately if other works
-    // are waiting.
-    enum priority_level {
-        HIGHEST_LEVEL = 0,
-        DEFAULT_LEVEL = 7,
-        YIELD_LEVEL = 8,
-        LOWEST_LEVEL = 15
+    // YIELD_LEVEL, if executor always execute the work immediately if other
+    // works, it may cause dead lock. are waiting.
+    enum class Priority {
+        HIGHEST_LEVEL = 0x0,
+        DEFAULT_LEVEL = 0x7,
+        YIELD_LEVEL = 0x8,
+        LOWEST_LEVEL = 0xF
     };
 
-    // Low 16-bit of schedule_hint is reserved for async-simple, and the lowest
+    // Low 16-bit of schedule_info is reserved for async-simple, and the lowest
     // 4-bit is stand for priority level. The implementation of scheduling logic
     // isn't necessary, which is determined by implementation. However, to avoid
     // spinlock/yield deadlock, when priority level >= YIELD_LEVEL, scheduler
-    // shouldn't always execute the work immediately when other works are
+    // can't always execute the work immediately when other works are
     // waiting.
-    virtual bool schedule(Func func, [[maybe_unused]] uint64_t schedule_hint) {
+    virtual bool schedule(Func func, uint64_t schedule_info) {
         return schedule(std::move(func));
     }
 
@@ -122,9 +123,9 @@ public:
     }
 
     bool schedule_move_only(util::move_only_function<void()> func,
-                            [[maybe_unused]] uint64_t schedule_hint) {
+                            uint64_t schedule_info) {
         MoveWrapper<decltype(func)> tmp(std::move(func));
-        return schedule([func = tmp]() { func.get()(); }, schedule_hint);
+        return schedule([func = tmp]() { func.get()(); }, schedule_info);
     }
 
     // Return true if caller runs in the executor.
@@ -151,10 +152,13 @@ public:
 
     const std::string &name() const { return _name; }
 
-    // Use
-    //  co_await executor.after(sometime)
+    // Use co_await executor.after(sometime)
     // to schedule current execution after some time.
-    TimeAwaitable after(Duration dur, uint64_t schedule_hint = DEFAULT_LEVEL);
+    TimeAwaitable after(Duration dur);
+
+    // Use co_await executor.after(sometime)
+    // to schedule current execution after some time.
+    TimeAwaitable after(Duration dur, uint64_t schedule_info);
 
     // IOExecutor accepts IO read/write requests.
     // Return nullptr if the executor doesn't offer an IOExecutor.
@@ -169,7 +173,7 @@ protected:
             schedule(std::move(func));
         }).detach();
     }
-    virtual void schedule(Func func, Duration dur, uint64_t schedule_hint) {
+    virtual void schedule(Func func, Duration dur, uint64_t schedule_info) {
         schedule(std::move(func), dur);
     }
 
@@ -180,43 +184,48 @@ private:
 // Awaiter to implement Executor::after.
 class Executor::TimeAwaiter {
 public:
-    TimeAwaiter(Executor *ex, Executor::Duration dur, uint64_t schedule_hint)
-        : _ex(ex), _dur(dur), _schedule_hint(schedule_hint) {}
+    TimeAwaiter(Executor *ex, Executor::Duration dur, uint64_t schedule_info)
+        : _ex(ex), _dur(dur), _schedule_info(schedule_info) {}
 
 public:
     bool await_ready() const noexcept { return false; }
 
     template <typename PromiseType>
     void await_suspend(coro::CoroHandle<PromiseType> continuation) {
-        _ex->schedule(std::move(continuation), _dur, _schedule_hint);
+        _ex->schedule(std::move(continuation), _dur, _schedule_info);
     }
     void await_resume() const noexcept {}
 
 private:
     Executor *_ex;
     Executor::Duration _dur;
-    uint64_t _schedule_hint;
+    uint64_t _schedule_info;
 };
 
 // Awaitable to implement Executor::after.
 class Executor::TimeAwaitable {
 public:
-    TimeAwaitable(Executor *ex, Executor::Duration dur, uint64_t schedule_hint)
-        : _ex(ex), _dur(dur), _schedule_hint(schedule_hint) {}
+    TimeAwaitable(Executor *ex, Executor::Duration dur, uint64_t schedule_info)
+        : _ex(ex), _dur(dur), _schedule_info(schedule_info) {}
 
     auto coAwait(Executor *) {
-        return Executor::TimeAwaiter(_ex, _dur, _schedule_hint);
+        return Executor::TimeAwaiter(_ex, _dur, _schedule_info);
     }
 
 private:
     Executor *_ex;
     Executor::Duration _dur;
-    uint64_t _schedule_hint;
+    uint64_t _schedule_info;
 };
 
+Executor::TimeAwaitable inline Executor::after(Executor::Duration dur) {
+    return Executor::TimeAwaitable(
+        this, dur, static_cast<uint64_t>(Executor::Priority::DEFAULT_LEVEL));
+}
+
 Executor::TimeAwaitable inline Executor::after(Executor::Duration dur,
-                                               uint64_t schedule_hint) {
-    return Executor::TimeAwaitable(this, dur, schedule_hint);
+                                               uint64_t schedule_info) {
+    return Executor::TimeAwaitable(this, dur, schedule_info);
 }
 
 }  // namespace async_simple

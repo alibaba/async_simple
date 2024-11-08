@@ -15,6 +15,7 @@
  */
 #ifndef ASYNC_SIMPLE_DEMO_ASIO_CORO_UTIL_H
 #define ASYNC_SIMPLE_DEMO_ASIO_CORO_UTIL_H
+#include <sys/types.h>
 #include "async_simple/Executor.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SyncAwait.h"
@@ -22,6 +23,7 @@
 
 #include <chrono>
 #include <concepts>
+#include <cstdint>
 #include "asio.hpp"
 
 template <typename Arg, typename Derived>
@@ -133,8 +135,10 @@ public:
         return true;
     }
 
-    virtual bool schedule(Func func, uint64_t schedule_hint) override {
-        if ((schedule_hint & 0xF) >= async_simple::Executor::YIELD_LEVEL) {
+    virtual bool schedule(Func func, uint64_t schedule_info) override {
+        if ((schedule_info & 0xF) >=
+            static_cast<uint64_t>(
+                async_simple::Executor::Priority::YIELD_LEVEL)) {
             asio::post(executor_, std::move(func));
         } else {
             asio::dispatch(executor_, std::move(func));
