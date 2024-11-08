@@ -63,10 +63,12 @@ public:
     std::condition_variable _cv;
     int _value;
     bool _done;
+    
 
     executors::SimpleExecutor _executor;
 
 public:
+
     void applyValue(std::function<void(int x)> f) {
         std::thread([this, f = std::move(f)]() {
             std::unique_lock<std::mutex> l(_mtx);
@@ -1765,6 +1767,33 @@ TEST_F(LazyTest, testDetach) {
     test1(cond, count).via(&e1).detach();
     cond.acquire();
     EXPECT_EQ(count, 2);
+}
+
+async_simple::coro::Lazy<int> yield_waiter(std::atomic_bool& yieldflag) {
+    int counter = 0;
+    while (!yieldflag) {
+        ++counter;
+        co_await async_simple::coro::Yield{};
+    }
+    co_return counter;
+}
+async_simple::coro::Lazy<void> yield_notifyer(std::atomic_bool& yieldflag) {
+    using namespace std::chrono_literals;
+    std::cout << "start sleep:" << std::endl;
+    co_await async_simple::coro::sleep(10ms);
+    std::cout << "end sleep:" << std::endl;
+    yieldflag = true;
+}
+async_simple::coro::Lazy<void> testYieldNoDeadLock(
+    async_simple::Executor* ex) {
+    std::atomic_bool _yieldflag;
+    auto [cnt, _] = co_await async_simple::coro::collectAll(
+        yield_waiter(_yieldflag).via(ex), yield_notifyer(_yieldflag).via(ex));
+    std::cout << "yield cnt:" << cnt.value() << std::endl;
+}
+
+TEST_F(LazyTest, testYieldNoDeadLockWithSimpleExecutor) {
+    syncAwait(testYieldNoDeadLock(&_executor));
 }
 
 }  // namespace coro

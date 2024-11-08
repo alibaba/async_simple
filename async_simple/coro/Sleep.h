@@ -39,11 +39,28 @@ Lazy<void> sleep(std::chrono::duration<Rep, Period> dur) {
     co_return co_await ex->after(
         std::chrono::duration_cast<Executor::Duration>(dur));
 }
-
+template <typename Rep, typename Period>
+Lazy<void> sleep(std::chrono::duration<Rep, Period> dur,
+                 uint64_t schedule_hint) {
+    auto ex = co_await CurrentExecutor();
+    if (!ex) {
+        std::this_thread::sleep_for(dur);
+        co_return;
+    }
+    co_return co_await ex->after(
+        std::chrono::duration_cast<Executor::Duration>(dur), schedule_hint);
+}
 template <typename Rep, typename Period>
 Lazy<void> sleep(Executor* ex, std::chrono::duration<Rep, Period> dur) {
     co_return co_await ex->after(
         std::chrono::duration_cast<Executor::Duration>(dur));
+}
+
+template <typename Rep, typename Period>
+Lazy<void> sleep(Executor* ex, std::chrono::duration<Rep, Period> dur,
+                 uint64_t schedule_hint) {
+    co_return co_await ex->after(
+        std::chrono::duration_cast<Executor::Duration>(dur), schedule_hint);
 }
 
 }  // namespace coro

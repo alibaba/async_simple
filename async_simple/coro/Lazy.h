@@ -16,6 +16,7 @@
 #ifndef ASYNC_SIMPLE_CORO_LAZY_H
 #define ASYNC_SIMPLE_CORO_LAZY_H
 
+#include <cstdint>
 #ifndef ASYNC_SIMPLE_USE_MODULES
 #include <cstddef>
 #include <cstdio>
@@ -103,7 +104,12 @@ public:
 
             logicAssert(_executor,
                         "Yielding is only meaningful with an executor!");
-            _executor->schedule(std::move(handle));
+            // schedule_info is YIELD_LEVEL here, which avoid executor always
+            // run handle immediately when other works are waiting, which may
+            // cause deadlock.
+            _executor->schedule(
+                std::move(handle),
+                static_cast<uint64_t>(Executor::Priority::YIELD_LEVEL));
         }
         void await_resume() noexcept {}
 
