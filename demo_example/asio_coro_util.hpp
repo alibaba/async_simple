@@ -15,25 +15,160 @@
  */
 #ifndef ASYNC_SIMPLE_DEMO_ASIO_CORO_UTIL_H
 #define ASYNC_SIMPLE_DEMO_ASIO_CORO_UTIL_H
+#include <sys/types.h>
+#include "async_simple/Executor.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SyncAwait.h"
 #include "async_simple/executors/SimpleExecutor.h"
 
 #include <chrono>
 #include <concepts>
+#include <cstdint>
 #include "asio.hpp"
 
-class AsioExecutor : public async_simple::Executor {
-public:
-    AsioExecutor(asio::io_context &io_context) : io_context_(io_context) {}
+template <typename Arg, typename Derived>
+class callback_awaitor_base {
+private:
+    template <typename Op>
+    class callback_awaitor_impl {
+    public:
+        callback_awaitor_impl(Derived &awaitor, Op &op) noexcept
+            : awaitor(awaitor), op(op) {}
+        constexpr bool await_ready() const noexcept { return false; }
+        void await_suspend(std::coroutine_handle<> handle) noexcept {
+            awaitor.coro_ = handle;
+            op(awaitor_handler{&awaitor});
+        }
+        auto coAwait(async_simple::Executor *executor) const noexcept {
+            return *this;
+        }
+        decltype(auto) await_resume() noexcept {
+            if constexpr (std::is_void_v<Arg>) {
+                return;
+            } else {
+                return std::move(awaitor.arg_);
+            }
+        }
 
-    virtual bool schedule(Func func) override {
-        asio::post(io_context_, std::move(func));
-        return true;
+    private:
+        Derived &awaitor;
+        Op &op;
+    };
+
+public:
+    class awaitor_handler {
+    public:
+        awaitor_handler(Derived *obj) : obj(obj) {}
+        awaitor_handler(awaitor_handler &&) = default;
+        awaitor_handler(const awaitor_handler &) = default;
+        awaitor_handler &operator=(const awaitor_handler &) = default;
+        awaitor_handler &operator=(awaitor_handler &&) = default;
+        template <typename... Args>
+        void set_value_then_resume(Args &&...args) const {
+            set_value(std::forward<Args>(args)...);
+            resume();
+        }
+        template <typename... Args>
+        void set_value(Args &&...args) const {
+            if constexpr (!std::is_void_v<Arg>) {
+                obj->arg_ = {std::forward<Args>(args)...};
+            }
+        }
+        void resume() const { obj->coro_.resume(); }
+
+    private:
+        Derived *obj;
+    };
+    template <typename Op>
+    callback_awaitor_impl<Op> await_resume(Op &&op) noexcept {
+        return callback_awaitor_impl<Op>{static_cast<Derived &>(*this), op};
     }
 
 private:
-    asio::io_context &io_context_;
+    std::coroutine_handle<> coro_;
+};
+
+template <typename Arg>
+class callback_awaitor
+    : public callback_awaitor_base<Arg, callback_awaitor<Arg>> {
+    friend class callback_awaitor_base<Arg, callback_awaitor<Arg>>;
+
+private:
+    Arg arg_;
+};
+
+template <>
+class callback_awaitor<void>
+    : public callback_awaitor_base<void, callback_awaitor<void>> {};
+
+class period_timer : public asio::steady_timer {
+public:
+    using asio::steady_timer::steady_timer;
+    template <typename T>
+    period_timer(asio::io_context &ioc) : asio::steady_timer(ioc) {}
+
+    async_simple::coro::Lazy<bool> async_await() noexcept {
+        callback_awaitor<bool> awaitor;
+
+        co_return co_await awaitor.await_resume([&](auto handler) {
+            this->async_wait([&, handler](const auto &ec) {
+                handler.set_value_then_resume(!ec);
+            });
+        });
+    }
+};
+
+class AsioExecutor : public async_simple::Executor {
+private:
+    asio::io_context &executor_;
+
+public:
+    AsioExecutor(asio::io_context &executor) : executor_(executor) {}
+
+    static asio::io_context **get_current() {
+        static thread_local asio::io_context *current = nullptr;
+        return &current;
+    }
+
+    virtual bool schedule(Func func) override {
+        asio::dispatch(executor_, std::move(func));
+        return true;
+    }
+
+    virtual bool schedule(Func func, uint64_t schedule_info) override {
+        if ((schedule_info & 0xF) >=
+            static_cast<uint64_t>(async_simple::Executor::Priority::YIELD)) {
+            asio::post(executor_, std::move(func));
+        } else {
+            asio::dispatch(executor_, std::move(func));
+        }
+        return true;
+    }
+
+    virtual bool checkin(Func func, void *ctx) override {
+        asio::dispatch(executor_, std::move(func));
+        return true;
+    }
+    virtual void *checkout() override { return (void *)&executor_; }
+
+    bool currentThreadInExecutor() const override {
+        auto ctx = get_current();
+        return *ctx == &executor_;
+    }
+
+    size_t currentContextId() const override {
+        auto ctx = get_current();
+        auto ptr = *ctx;
+        return ptr ? (size_t)ptr : 0;
+    }
+
+private:
+    void schedule(Func func, Duration dur) override {
+        auto timer = std::make_unique<asio::steady_timer>(executor_, dur);
+        auto tm = timer.get();
+        tm->async_wait([fn = std::move(func),
+                        timer = std::move(timer)](auto ec) { fn(); });
+    }
 };
 
 template <typename T>
