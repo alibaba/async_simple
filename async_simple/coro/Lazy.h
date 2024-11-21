@@ -76,8 +76,6 @@ struct CollectAnyVariadicPairAwaiter;
 
 namespace detail {
 
-template <typename T>
-concept isDerivedFromLazyLocal = std::is_base_of<LazyLocalBase, T>();
 class LazyPromiseBase : public PromiseAllocator<void, true> {
 public:
     // Resume the caller waiting to the current coroutine. Note that we need
