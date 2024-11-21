@@ -33,7 +33,7 @@ TEST(LazyLocalTest, testSimpleLazyLocalNoOwnership) {
     auto sub_task = [&]() -> Lazy<> {
         auto localbase = co_await CurrentLazyLocals{};
         EXPECT_NE(localbase, nullptr);
-        EXPECT_FALSE(localbase->empty());
+        EXPECT_NE(localbase->getTypeTag(), nullptr);
 
         int** v = co_await CurrentLazyLocals<int*>{};
         EXPECT_NE(v, nullptr);
@@ -73,7 +73,7 @@ TEST(LazyLocalTest, testSimpleLazyLocal) {
     auto sub_task = [&]() -> Lazy<> {
         auto localbase = co_await CurrentLazyLocals{};
         EXPECT_NE(localbase, nullptr);
-        EXPECT_FALSE(localbase->empty());
+        EXPECT_NE(localbase->getTypeTag(), nullptr);
 
         std::string* v = co_await CurrentLazyLocals<std::string>{};
         EXPECT_NE(v, nullptr);
@@ -98,17 +98,21 @@ TEST(LazyLocalTest, testSimpleLazyLocal) {
         .setLazyLocal(std::string{"10"})
         .start([p = std::move(p)](auto&&, LazyLocalBase* local) mutable {
             EXPECT_NE(local, nullptr);
-            EXPECT_NE(local->dynamicCast<std::string>(), nullptr);
-            EXPECT_EQ(*local->dynamicCast<std::string>(), "30");
+            EXPECT_NE(dynamicCast<std::string>(local), nullptr);
+            EXPECT_EQ(*dynamicCast<std::string>(local), "30");
             p.set_value();
         });
     f.wait();
 }
 
-struct mylocal : public LazyLocalBaseImpl<mylocal> {
-    mylocal(std::string sv) : name(std::move(sv)) {}
+struct mylocal : public LazyLocalBase {
+    mylocal(std::string sv) : LazyLocalBase(&tag), name(std::move(sv)) {}
     std::string& hello() { return name; }
     std::string name;
+    static bool classof(LazyLocalBase* base) {
+        return base->getTypeTag() == &tag;
+    }
+    inline static char tag;
 };
 
 TEST(LazyLocalTest, testMyLazyLocal) {
@@ -116,7 +120,7 @@ TEST(LazyLocalTest, testMyLazyLocal) {
     auto sub_task = [&]() -> Lazy<> {
         auto localbase = co_await CurrentLazyLocals{};
         EXPECT_NE(localbase, nullptr);
-        EXPECT_FALSE(localbase->empty());
+        EXPECT_NE(localbase->getTypeTag(), nullptr);
 
         auto* v = co_await CurrentLazyLocals<mylocal>{};
         EXPECT_NE(v, nullptr);
@@ -138,9 +142,9 @@ TEST(LazyLocalTest, testMyLazyLocal) {
     task().setLazyLocal<mylocal>("Hello").start(
         [p = std::move(p)](auto&&, LazyLocalBase* local) mutable {
             EXPECT_NE(local, nullptr);
-            EXPECT_EQ(local->dynamicCast<std::string>(), nullptr);
-            EXPECT_NE(local->dynamicCast<mylocal>(), nullptr);
-            EXPECT_EQ(local->dynamicCast<mylocal>()->hello(), "Hey");
+            EXPECT_EQ(dynamicCast<std::string>(local), nullptr);
+            EXPECT_NE(dynamicCast<mylocal>(local), nullptr);
+            EXPECT_EQ(dynamicCast<mylocal>(local)->hello(), "Hey");
             p.set_value();
         });
     f.wait();

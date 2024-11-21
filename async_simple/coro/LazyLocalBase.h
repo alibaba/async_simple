@@ -22,61 +22,57 @@
 #include <utility>
 #endif  // ASYNC_SIMPLE_USE_MODULES
 namespace async_simple::coro {
+class LazyLocalBase;
 
-namespace detail {
-struct LazyLocalBaseTypeTag {};
-}  // namespace detail
 class LazyLocalBase {
-private:
+protected:
     template <typename Derived>
     friend class LazyLocalBaseImpl;
-    LazyLocalBase(detail::LazyLocalBaseTypeTag* typeinfo)
-        : _typeinfo(typeinfo){};
+    LazyLocalBase(char* typeinfo) : _typeinfo(typeinfo){};
 
 public:
-    LazyLocalBase(std::nullptr_t) : _typeinfo(nullptr){};
-    template <typename T>
-    T* dynamicCast() noexcept;
-    bool empty() const noexcept { return _typeinfo == nullptr; }
+    const char* getTypeTag() const noexcept { return _typeinfo; }
+    LazyLocalBase(std::nullptr_t)
+        : LazyLocalBase(static_cast<char*>(nullptr)) {}
     virtual ~LazyLocalBase(){};
 
 protected:
-    detail::LazyLocalBaseTypeTag* _typeinfo;
+    char* _typeinfo;
 };
 
-template <typename Derived>
-class LazyLocalBaseImpl : public LazyLocalBase {
-public:
-    LazyLocalBaseImpl() : LazyLocalBase(&typeTag){};
-    static bool isMe(LazyLocalBase* p) { return p->_typeinfo == &typeTag; }
+template <typename T>
+concept isDerivedFromLazyLocal = std::is_base_of_v<LazyLocalBase, T>;
+
+template <typename T>
+struct SimpleLazyLocal : public LazyLocalBase {
+    template <typename... Args>
+    SimpleLazyLocal(Args&&... args)
+        : LazyLocalBase(&typeTag), localValue(std::forward<Args>(args)...) {}
+    T localValue;
+    static bool classof(LazyLocalBase* base) noexcept {
+        return &typeTag == base->getTypeTag();
+    }
 
 private:
-    inline static detail::LazyLocalBaseTypeTag typeTag{};
+    inline static char typeTag;
 };
 
 template <typename T>
-concept isDerivedFromLazyLocal = std::is_base_of_v<LazyLocalBaseImpl<T>, T>;
-
-template <typename T>
-struct SimpleLazyLocal : public LazyLocalBaseImpl<SimpleLazyLocal<T>> {
-    template <typename... Args>
-    SimpleLazyLocal(Args&&... args) : localValue(std::forward<Args>(args)...) {}
-    T localValue;
-};
-
-template <typename T>
-T* LazyLocalBase::dynamicCast() noexcept {
+T* dynamicCast(LazyLocalBase* base) noexcept {
+    if (base == nullptr) {
+        return nullptr;
+    }
     if constexpr (std::is_same_v<LazyLocalBase, T>) {
-        return this;
+        return base;
     } else if constexpr (isDerivedFromLazyLocal<T>) {
-        if (T::isMe(this)) {
-            return static_cast<T*>(this);
+        if (T::classof(base)) {
+            return static_cast<T*>(base);
         } else {
             return nullptr;
         }
     } else {
-        if (SimpleLazyLocal<T>::isMe(this)) {
-            return &static_cast<SimpleLazyLocal<T>*>(this)->localValue;
+        if (SimpleLazyLocal<T>::classof(base)) {
+            return &static_cast<SimpleLazyLocal<T>*>(base)->localValue;
         } else {
             return nullptr;
         }

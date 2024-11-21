@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <exception>
+#include <memory>
 #include <variant>
 #include "async_simple/Common.h"
 #include "async_simple/Try.h"
@@ -135,8 +136,7 @@ public:
 
     template <typename T>
     auto await_transform(CurrentLazyLocals<T>) {
-        return ReadyAwaiter<T*>(_lazy_local ? _lazy_local->dynamicCast<T>()
-                                            : nullptr);
+        return ReadyAwaiter<T*>(dynamicCast<T>(_lazy_local));
     }
 
     auto await_transform(Yield) { return YieldAwaiter(_executor); }
@@ -316,6 +316,7 @@ public:
             if constexpr (std::is_base_of<LazyPromiseBase,
                                           PromiseType>::value) {
                 auto& local = this->_handle.promise()._lazy_local;
+                std::unique_ptr<LazyLocalBase> guard{local};
                 logicAssert(
                     local == nullptr,
                     "co_await Lazy{}.setCancellation(...) is not allowed");
