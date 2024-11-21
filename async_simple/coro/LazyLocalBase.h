@@ -68,8 +68,7 @@ template <typename T>
 T* LazyLocalBase::dynamicCast() noexcept {
     if constexpr (std::is_same_v<LazyLocalBase, T>) {
         return this;
-    }
-    else if constexpr (isDerivedFromLazyLocal<T>) {
+    } else if constexpr (isDerivedFromLazyLocal<T>) {
         if (T::isMe(this)) {
             return static_cast<T*>(this);
         } else {
