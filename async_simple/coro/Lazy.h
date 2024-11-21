@@ -54,8 +54,6 @@ struct Yield {};
 template <typename T = LazyLocalBase>
 struct CurrentLazyLocals {};
 
-struct CurrentLazyLocalsTypeInfo {};
-
 namespace detail {
 template <class, typename OAlloc, bool Para>
 struct CollectAllAwaiter;
@@ -135,14 +133,9 @@ public:
         return ReadyAwaiter<Executor*>(_executor);
     }
 
-    auto await_transform(CurrentLazyLocalsTypeInfo) {
-        return ReadyAwaiter<const std::type_info*>(
-            _lazy_local ? _lazy_local->type() : nullptr);
-    }
-
     template <typename T>
     auto await_transform(CurrentLazyLocals<T>) {
-        return ReadyAwaiter<T*>(_lazy_local ? _lazy_local->dyn_cast<T>()
+        return ReadyAwaiter<T*>(_lazy_local ? _lazy_local->dynamicCast<T>()
                                             : nullptr);
     }
 

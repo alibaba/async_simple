@@ -30,13 +30,10 @@ namespace async_simple::coro {
 TEST(LazyLocalTest, testSimpleLazyLocalNoOwnership) {
     int* i = new int(10);
     async_simple::executors::SimpleExecutor ex(2);
-    const auto& type_info = typeid(async_simple::coro::SimpleLazyLocal<int*>);
     auto sub_task = [&]() -> Lazy<> {
         auto localbase = co_await CurrentLazyLocals{};
         EXPECT_NE(localbase, nullptr);
         EXPECT_FALSE(localbase->empty());
-        EXPECT_NE(localbase->type(), nullptr);
-        EXPECT_EQ(*localbase->type(), type_info);
 
         int** v = co_await CurrentLazyLocals<int*>{};
         EXPECT_NE(v, nullptr);
@@ -46,9 +43,6 @@ TEST(LazyLocalTest, testSimpleLazyLocalNoOwnership) {
     };
 
     auto task = [&]() -> Lazy<> {
-        auto&& info = co_await CurrentLazyLocalsTypeInfo{};
-        EXPECT_NE(info, nullptr);
-        EXPECT_TRUE(*info == type_info);
         void* v = co_await CurrentLazyLocals{};
         EXPECT_NE(v, nullptr);
         (*i) = 20;
@@ -76,14 +70,10 @@ TEST(LazyLocalTest, testSimpleLazyLocalNoOwnership) {
 
 TEST(LazyLocalTest, testSimpleLazyLocal) {
     async_simple::executors::SimpleExecutor ex(2);
-    const auto& type_info =
-        typeid(async_simple::coro::SimpleLazyLocal<std::string>);
     auto sub_task = [&]() -> Lazy<> {
         auto localbase = co_await CurrentLazyLocals{};
         EXPECT_NE(localbase, nullptr);
         EXPECT_FALSE(localbase->empty());
-        EXPECT_NE(localbase->type(), nullptr);
-        EXPECT_EQ(*localbase->type(), type_info);
 
         std::string* v = co_await CurrentLazyLocals<std::string>{};
         EXPECT_NE(v, nullptr);
@@ -92,9 +82,6 @@ TEST(LazyLocalTest, testSimpleLazyLocal) {
     };
 
     auto task = [&]() -> Lazy<> {
-        auto&& info = co_await CurrentLazyLocalsTypeInfo{};
-        EXPECT_NE(info, nullptr);
-        EXPECT_TRUE(*info == type_info);
         auto* u = co_await CurrentLazyLocals<int>{};
         EXPECT_EQ(u, nullptr);
         std::string* v = co_await CurrentLazyLocals<std::string>{};
@@ -111,8 +98,8 @@ TEST(LazyLocalTest, testSimpleLazyLocal) {
         .setLazyLocal(std::string{"10"})
         .start([p = std::move(p)](auto&&, LazyLocalBase* local) mutable {
             EXPECT_NE(local, nullptr);
-            EXPECT_NE(local->dyn_cast<std::string>(), nullptr);
-            EXPECT_EQ(*local->dyn_cast<std::string>(), "30");
+            EXPECT_NE(local->dynamicCast<std::string>(), nullptr);
+            EXPECT_EQ(*local->dynamicCast<std::string>(), "30");
             p.set_value();
         });
     f.wait();
@@ -125,14 +112,11 @@ struct mylocal : public LazyLocalBaseImpl<mylocal> {
 };
 
 TEST(LazyLocalTest, testMyLazyLocal) {
-    const auto& type_info = typeid(mylocal);
     async_simple::executors::SimpleExecutor ex(2);
     auto sub_task = [&]() -> Lazy<> {
         auto localbase = co_await CurrentLazyLocals{};
         EXPECT_NE(localbase, nullptr);
         EXPECT_FALSE(localbase->empty());
-        EXPECT_NE(localbase->type(), nullptr);
-        EXPECT_EQ(*localbase->type(), type_info);
 
         auto* v = co_await CurrentLazyLocals<mylocal>{};
         EXPECT_NE(v, nullptr);
@@ -140,9 +124,6 @@ TEST(LazyLocalTest, testMyLazyLocal) {
         v->hello() = "Hey";
     };
     auto task = [&]() -> Lazy<> {
-        auto&& info = co_await CurrentLazyLocalsTypeInfo{};
-        EXPECT_NE(info, nullptr);
-        EXPECT_TRUE(*info == type_info);
         auto* u = co_await CurrentLazyLocals<int>{};
         EXPECT_EQ(u, nullptr);
         auto* v = co_await CurrentLazyLocals<mylocal>{};
@@ -157,9 +138,9 @@ TEST(LazyLocalTest, testMyLazyLocal) {
     task().setLazyLocal<mylocal>("Hello").start(
         [p = std::move(p)](auto&&, LazyLocalBase* local) mutable {
             EXPECT_NE(local, nullptr);
-            EXPECT_EQ(local->dyn_cast<std::string>(), nullptr);
-            EXPECT_NE(local->dyn_cast<mylocal>(), nullptr);
-            EXPECT_EQ(local->dyn_cast<mylocal>()->hello(), "Hey");
+            EXPECT_EQ(local->dynamicCast<std::string>(), nullptr);
+            EXPECT_NE(local->dynamicCast<mylocal>(), nullptr);
+            EXPECT_EQ(local->dynamicCast<mylocal>()->hello(), "Hey");
             p.set_value();
         });
     f.wait();

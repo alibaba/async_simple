@@ -19,7 +19,6 @@
 #ifndef ASYNC_SIMPLE_USE_MODULES
 #include <cstdint>
 #include <type_traits>
-#include <typeinfo>
 #include <utility>
 #endif  // ASYNC_SIMPLE_USE_MODULES
 namespace async_simple::coro {
@@ -33,9 +32,8 @@ private:
 public:
     LazyLocalBase(std::nullptr_t) : _typeinfo(nullptr){};
     template <typename T>
-    T* dyn_cast() noexcept;
+    T* dynamicCast() noexcept;
     bool empty() const noexcept { return _typeinfo == nullptr; }
-    virtual const std::type_info* type() { return nullptr; }
     virtual ~LazyLocalBase(){};
 
 protected:
@@ -46,12 +44,11 @@ template <typename Derived>
 class LazyLocalBaseImpl : public LazyLocalBase {
 public:
     LazyLocalBaseImpl() : LazyLocalBase((void*)&typeTag){};
+    static bool isMe(LazyLocalBase* p) { return p->_typeinfo == &typeTag; }
 
 private:
     struct Unit {};
-    friend class LazyLocalBase;
     inline const static Unit typeTag{};
-    const std::type_info* type() noexcept override { return &typeid(Derived); }
 };
 
 template <typename T>
@@ -65,18 +62,18 @@ struct SimpleLazyLocal : public LazyLocalBaseImpl<SimpleLazyLocal<T>> {
 };
 
 template <typename T>
-T* LazyLocalBase::dyn_cast() noexcept {
+T* LazyLocalBase::dynamicCast() noexcept {
     if constexpr (std::is_same_v<LazyLocalBase, T>) {
         return this;
     }
     else if constexpr (isDerivedFromLazyLocal<T>) {
-        if (&T::typeTag == _typeinfo) {
+        if (T::isMe(this)) {
             return static_cast<T*>(this);
         } else {
             return nullptr;
         }
     } else {
-        if (&SimpleLazyLocal<T>::typeTag == _typeinfo) {
+        if (SimpleLazyLocal<T>::isMe(this)) {
             return &static_cast<SimpleLazyLocal<T>*>(this)->localValue;
         } else {
             return nullptr;
