@@ -146,4 +146,34 @@ TEST(LazyLocalTest, testMyLazyLocal) {
     f.wait();
 }
 
+TEST(LazyLocalTest, testSetLazyLocalTwice) {
+    auto task = [&]() -> Lazy<> {
+        auto* v = co_await CurrentLazyLocals<int>{};
+        EXPECT_NE(v, nullptr);
+        EXPECT_EQ(*v, 1);
+        co_return;
+    };
+    syncAwait(task().setLazyLocal(2).setLazyLocal(1));
+}
+
+TEST(LazyLocalTest, testSetLazyLocalNested) {
+    auto sub_task = [&]() -> Lazy<> { co_return; };
+    auto task = [&]() -> Lazy<void> {
+        auto* v = co_await CurrentLazyLocals<int>{};
+        EXPECT_NE(v, nullptr);
+        EXPECT_EQ(*v, 2);
+
+        bool has_error = false;
+        try {
+            co_await sub_task().setLazyLocal(1);
+        } catch (...) {
+            has_error = true;
+        }
+        EXPECT_TRUE(has_error);
+        co_return;
+    };
+
+    syncAwait(task().setLazyLocal(2));
+}
+
 }  // namespace async_simple::coro

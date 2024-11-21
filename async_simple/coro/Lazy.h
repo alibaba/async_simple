@@ -302,8 +302,8 @@ public:
         AwaiterBase(Handle coro) : Base(coro) {}
 
         template <typename PromiseType>
-        AS_INLINE auto await_suspend(std::coroutine_handle<PromiseType>
-                                         continuation) noexcept(!reschedule) {
+        AS_INLINE auto await_suspend(
+            std::coroutine_handle<PromiseType> continuation) {
             static_assert(
                 std::is_base_of<LazyPromiseBase, PromiseType>::value ||
                     std::is_same_v<detail::DetachedCoroutine::promise_type,
@@ -315,8 +315,11 @@ public:
             this->_handle.promise()._continuation = continuation;
             if constexpr (std::is_base_of<LazyPromiseBase,
                                           PromiseType>::value) {
-                this->_handle.promise()._lazy_local =
-                    continuation.promise()._lazy_local;
+                auto& local = this->_handle.promise()._lazy_local;
+                logicAssert(
+                    local == nullptr,
+                    "co_await Lazy{}.setCancellation(...) is not allowed");
+                local = continuation.promise()._lazy_local;
             }
             return awaitSuspendImpl();
         }
@@ -413,7 +416,11 @@ protected:
         logicAssert(this->_coro.operator bool(),
                     "Lazy do not have a coroutine_handle "
                     "Maybe the allocation failed or you're using a used Lazy");
-        this->_coro.promise()._lazy_local = base.release();
+        auto& local = this->_coro.promise()._lazy_local;
+        if (local) {
+            delete local;
+        }
+        local = base.release();
     }
 
     template <isDerivedFromLazyLocal LazyLocal, typename... Args>
@@ -421,8 +428,11 @@ protected:
         logicAssert(this->_coro.operator bool(),
                     "Lazy do not have a coroutine_handle "
                     "Maybe the allocation failed or you're using a used Lazy");
-        this->_coro.promise()._lazy_local =
-            new LazyLocal{std::forward<Args>(args)...};
+        auto& local = this->_coro.promise()._lazy_local;
+        if (local) {
+            delete local;
+        }
+        local = new LazyLocal{std::forward<Args>(args)...};
     }
 
     Handle _coro;
@@ -537,7 +547,6 @@ public:
         logicAssert(this->_coro.operator bool(),
                     "Lazy do not have a coroutine_handle "
                     "Maybe the allocation failed or you're using a used Lazy");
-
         this->_coro.promise()._executor = ex;
         return RescheduleLazy<T>(std::exchange(this->_coro, nullptr));
     }
