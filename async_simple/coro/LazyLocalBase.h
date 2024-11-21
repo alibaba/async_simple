@@ -23,11 +23,15 @@
 #endif  // ASYNC_SIMPLE_USE_MODULES
 namespace async_simple::coro {
 
+namespace detail {
+struct LazyLocalBaseTypeTag {};
+}  // namespace detail
 class LazyLocalBase {
 private:
     template <typename Derived>
     friend class LazyLocalBaseImpl;
-    LazyLocalBase(void* typeinfo) : _typeinfo(typeinfo){};
+    LazyLocalBase(detail::LazyLocalBaseTypeTag* typeinfo)
+        : _typeinfo(typeinfo){};
 
 public:
     LazyLocalBase(std::nullptr_t) : _typeinfo(nullptr){};
@@ -37,18 +41,17 @@ public:
     virtual ~LazyLocalBase(){};
 
 protected:
-    void* _typeinfo;
+    detail::LazyLocalBaseTypeTag* _typeinfo;
 };
 
 template <typename Derived>
 class LazyLocalBaseImpl : public LazyLocalBase {
 public:
-    LazyLocalBaseImpl() : LazyLocalBase((void*)&typeTag){};
+    LazyLocalBaseImpl() : LazyLocalBase(&typeTag){};
     static bool isMe(LazyLocalBase* p) { return p->_typeinfo == &typeTag; }
 
 private:
-    struct Unit {};
-    inline const static Unit typeTag{};
+    inline static detail::LazyLocalBaseTypeTag typeTag{};
 };
 
 template <typename T>
