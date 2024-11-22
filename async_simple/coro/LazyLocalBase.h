@@ -43,36 +43,16 @@ protected:
 template <typename T>
 concept isDerivedFromLazyLocal = std::is_base_of_v<LazyLocalBase, T>;
 
-template <typename T>
-struct SimpleLazyLocal : public LazyLocalBase {
-    template <typename... Args>
-    SimpleLazyLocal(Args&&... args)
-        : LazyLocalBase(&typeTag), localValue(std::forward<Args>(args)...) {}
-    T localValue;
-    static bool classof(LazyLocalBase* base) noexcept {
-        return &typeTag == base->getTypeTag();
-    }
-
-private:
-    inline static char typeTag;
-};
-
-template <typename T>
+template <isDerivedFromLazyLocal T>
 T* dynamicCast(LazyLocalBase* base) noexcept {
     if (base == nullptr) {
         return nullptr;
     }
     if constexpr (std::is_same_v<LazyLocalBase, T>) {
         return base;
-    } else if constexpr (isDerivedFromLazyLocal<T>) {
+    } else {
         if (T::classof(base)) {
             return static_cast<T*>(base);
-        } else {
-            return nullptr;
-        }
-    } else {
-        if (SimpleLazyLocal<T>::classof(base)) {
-            return &static_cast<SimpleLazyLocal<T>*>(base)->localValue;
         } else {
             return nullptr;
         }

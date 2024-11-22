@@ -579,21 +579,6 @@ public:
         return Lazy<T>(std::exchange(this->_coro, nullptr));
     }
 
-    template <typename LazyLocal, typename... Args>
-    Lazy<T> setLazyLocal(Args&&... args) && {
-        Base::template setLazyLocal<SimpleLazyLocal<LazyLocal>>(
-            std::forward<Args>(args)...);
-        return Lazy<T>(std::exchange(this->_coro, nullptr));
-    }
-
-    template <typename LocalType>
-    Lazy<T> setLazyLocal(LocalType&& local) && {
-        Base::template setLazyLocal<
-            SimpleLazyLocal<std::remove_reference_t<LocalType>>>(
-            std::forward<LocalType>(local));
-        return Lazy<T>(std::exchange(this->_coro, nullptr));
-    }
-
     using Base::start;
 
     // Bind an executor and start coroutine without scheduling immediately.
@@ -658,23 +643,6 @@ public:
     template <isDerivedFromLazyLocal LazyLocal, typename... Args>
     RescheduleLazy<T> setLazyLocal(Args&&... args) && {
         Base::template setLazyLocal<LazyLocal>(std::forward<Args>(args)...);
-        return RescheduleLazy<T>(std::exchange(this->_coro, nullptr));
-    }
-
-    // user can override LazyLocal derived class's new/delete operator for
-    // custom allocate
-    template <typename LazyLocal, typename... Args>
-    RescheduleLazy<T> setLazyLocal(Args&&... args) && {
-        Base::template setLazyLocal<SimpleLazyLocal<LazyLocal>>(
-            std::forward<Args>(args)...);
-        return RescheduleLazy<T>(std::exchange(this->_coro, nullptr));
-    }
-
-    template <typename LocalType>
-    RescheduleLazy<T> setLazyLocal(LocalType&& local) && {
-        Base::template setLazyLocal<
-            SimpleLazyLocal<std::remove_reference_t<LocalType>>>(
-            std::forward<LocalType>(local));
         return RescheduleLazy<T>(std::exchange(this->_coro, nullptr));
     }
 
