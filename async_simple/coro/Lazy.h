@@ -136,7 +136,8 @@ public:
 
     template <typename T>
     auto await_transform(CurrentLazyLocals<T>) {
-        return ReadyAwaiter<T*>(dynamicCast<T>(_lazy_local));
+        return ReadyAwaiter<T*>(_lazy_local ? dynamicCast<T>(_lazy_local)
+                                            : nullptr);
     }
 
     auto await_transform(Yield) { return YieldAwaiter(_executor); }
@@ -287,8 +288,7 @@ struct LazyAwaiterBase {
 };
 
 template <typename T, typename CB>
-concept isLazyCallback = std::is_invocable_v<CB, Try<T>> ||
-    std::is_invocable_v<CB, Try<T>, LazyLocalBase*>;
+concept isLazyCallback = std::is_invocable_v<CB, Try<T>>;
 
 template <typename T, bool reschedule>
 class LazyBase {
@@ -310,17 +310,17 @@ public:
                                    PromiseType>,
                 "'co_await Lazy' is only allowed to be called by Lazy or "
                 "DetachedCoroutine");
-
             // current coro started, caller becomes my continuation
             this->_handle.promise()._continuation = continuation;
             if constexpr (std::is_base_of<LazyPromiseBase,
                                           PromiseType>::value) {
                 auto& local = this->_handle.promise()._lazy_local;
-                std::unique_ptr<LazyLocalBase> guard{local};
-                logicAssert(
-                    local == nullptr,
-                    "co_await Lazy{}.setCancellation(...) is not allowed");
-                local = continuation.promise()._lazy_local;
+                logicAssert(local == nullptr ||
+                                continuation.promise()._lazy_local == nullptr,
+                            "we dont allowed set lazy local twice or co_await "
+                            "a lazy with local value");
+                if (local == nullptr)
+                    local = continuation.promise()._lazy_local;
             }
             return awaitSuspendImpl();
         }
@@ -391,13 +391,7 @@ public:
         // suspend point.
         auto launchCoro = [](LazyBase lazy,
                              std::decay_t<F> cb) -> detail::DetachedCoroutine {
-            auto lazy_local = lazy._coro.promise()._lazy_local;
-            if constexpr (requires { cb(Try<T>{}); }) {
-                cb(co_await lazy.coAwaitTry());
-            } else {
-                cb(co_await lazy.coAwaitTry(), lazy_local);
-            }
-            delete lazy_local;
+            cb(co_await lazy.coAwaitTry());
         };
         [[maybe_unused]] auto detached =
             launchCoro(std::move(*this), std::forward<F>(callback));
@@ -412,29 +406,6 @@ public:
     auto coAwaitTry() { return TryAwaiter(std::exchange(_coro, nullptr)); }
 
 protected:
-    template <isDerivedFromLazyLocal LazyLocal>
-    void setLazyLocal(std::unique_ptr<LazyLocal> base) {
-        logicAssert(this->_coro.operator bool(),
-                    "Lazy do not have a coroutine_handle "
-                    "Maybe the allocation failed or you're using a used Lazy");
-        auto& local = this->_coro.promise()._lazy_local;
-        if (local) {
-            delete local;
-        }
-        local = base.release();
-    }
-
-    template <isDerivedFromLazyLocal LazyLocal, typename... Args>
-    void setLazyLocal(Args&&... args) {
-        logicAssert(this->_coro.operator bool(),
-                    "Lazy do not have a coroutine_handle "
-                    "Maybe the allocation failed or you're using a used Lazy");
-        auto& local = this->_coro.promise()._lazy_local;
-        if (local) {
-            delete local;
-        }
-        local = new LazyLocal{std::forward<Args>(args)...};
-    }
 
     Handle _coro;
 
@@ -567,16 +538,20 @@ public:
     // custom allocate
     template <isDerivedFromLazyLocal LazyLocal>
     Lazy<T> setLazyLocal(std::unique_ptr<LazyLocal> base) && {
-        Base::template setLazyLocal<LazyLocal>(std::move(base));
-        return Lazy<T>(std::exchange(this->_coro, nullptr));
+        logicAssert(this->_coro.operator bool(),
+                    "Lazy do not have a coroutine_handle "
+                    "Maybe the allocation failed or you're using a used Lazy");
+        this->_coro.promise()._lazy_local = base.get();
+        co_return co_await *this;
     }
 
     // user can override LazyLocal derived class's new/delete operator for
     // custom allocate
     template <isDerivedFromLazyLocal LazyLocal, typename... Args>
     Lazy<T> setLazyLocal(Args&&... args) && {
-        Base::template setLazyLocal<LazyLocal>(std::forward<Args>(args)...);
-        return Lazy<T>(std::exchange(this->_coro, nullptr));
+        LazyLocal local{std::forward<Args>(args)...};
+        this->_coro.promise()._lazy_local = &local;
+        co_return co_await *this;
     }
 
     using Base::start;
@@ -628,22 +603,6 @@ public:
                 std::rethrow_exception(t.getException());
             }
         });
-    }
-
-    // user can override LazyLocal derived class's new/delete operator for
-    // custom allocate
-    template <isDerivedFromLazyLocal LazyLocal>
-    RescheduleLazy<T> setLazyLocal(std::unique_ptr<LazyLocal> base) && {
-        Base::template setLazyLocal(std::move(base));
-        return RescheduleLazy<T>(std::exchange(this->_coro, nullptr));
-    }
-
-    // user can override LazyLocal derived class's new/delete operator for
-    // custom allocate
-    template <isDerivedFromLazyLocal LazyLocal, typename... Args>
-    RescheduleLazy<T> setLazyLocal(Args&&... args) && {
-        Base::template setLazyLocal<LazyLocal>(std::forward<Args>(args)...);
-        return RescheduleLazy<T>(std::exchange(this->_coro, nullptr));
     }
 
     [[deprecated(

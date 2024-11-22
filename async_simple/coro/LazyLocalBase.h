@@ -26,35 +26,39 @@ namespace async_simple::coro {
 class LazyLocalBase;
 
 class LazyLocalBase {
+private:
+    template <typename T>
+    friend T* dynamicCast(LazyLocalBase* base) noexcept;
+
 protected:
     template <typename Derived>
     friend class LazyLocalBaseImpl;
     LazyLocalBase(char* typeinfo) : _typeinfo(typeinfo) {
         assert(typeinfo != nullptr);
     };
-
 public:
-    static bool classof(LazyLocalBase*) noexcept { return true; }
     const char* getTypeTag() const noexcept { return _typeinfo; }
     LazyLocalBase() : _typeinfo(nullptr) {}
     virtual ~LazyLocalBase(){};
-
 protected:
     char* _typeinfo;
 };
 
 template <typename T>
 concept isDerivedFromLazyLocal = std::is_base_of_v<LazyLocalBase, T>;
-
 template <isDerivedFromLazyLocal T>
 T* dynamicCast(LazyLocalBase* base) noexcept {
-    if (base == nullptr) {
-        return nullptr;
-    } else if (T::classof(base)) {
-        return static_cast<T*>(base);
+    assert(base != nullptr);
+    if constexpr (std::is_same_v<T, LazyLocalBase>) {
+        return base;
     } else {
-        return nullptr;
+        if (T::classof(base)) {
+            return static_cast<T*>(base);
+        } else {
+            return nullptr;
+        }
     }
-}
+
+}  // namespace async_simple::coro
 }  // namespace async_simple::coro
 #endif

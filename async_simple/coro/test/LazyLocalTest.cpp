@@ -72,14 +72,7 @@ TEST(LazyLocalTest, testMyLazyLocal) {
     std::promise<void> p;
     std::future<void> f = p.get_future();
     task().setLazyLocal<mylocal>("Hello").start(
-        [p = std::move(p)](auto&&, LazyLocalBase* local) mutable {
-            EXPECT_NE(local, nullptr);
-            EXPECT_EQ(dynamicCast<mylocal2>(local), nullptr);
-            EXPECT_NE(dynamicCast<mylocal>(local), nullptr);
-            EXPECT_EQ(dynamicCast<mylocal>(local)->hello(), "Hey");
-            p.set_value();
-        });
-    f.wait();
+        [p = std::move(p)](auto&&) mutable { p.set_value(); });
 }
 
 TEST(LazyLocalTest, testSetLazyLocalTwice) {
@@ -89,7 +82,13 @@ TEST(LazyLocalTest, testSetLazyLocalTwice) {
         EXPECT_EQ(v->hello(), "1");
         co_return;
     };
-    syncAwait(task().setLazyLocal<mylocal>("2").setLazyLocal<mylocal>("1"));
+    bool has_error = false;
+    try {
+        syncAwait(task().setLazyLocal<mylocal>("2").setLazyLocal<mylocal>("1"));
+    } catch (...) {
+        has_error = true;
+    }
+    EXPECT_TRUE(has_error);
 }
 
 TEST(LazyLocalTest, testSetLazyLocalNested) {
