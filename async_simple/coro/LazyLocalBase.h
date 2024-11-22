@@ -36,17 +36,17 @@ protected:
     LazyLocalBase(char* typeinfo) : _typeinfo(typeinfo) {
         assert(typeinfo != nullptr);
     };
+
 public:
     const char* getTypeTag() const noexcept { return _typeinfo; }
     LazyLocalBase() : _typeinfo(nullptr) {}
     virtual ~LazyLocalBase(){};
+
 protected:
     char* _typeinfo;
 };
 
 template <typename T>
-concept isDerivedFromLazyLocal = std::is_base_of_v<LazyLocalBase, T>;
-template <isDerivedFromLazyLocal T>
 T* dynamicCast(LazyLocalBase* base) noexcept {
     assert(base != nullptr);
     if constexpr (std::is_same_v<T, LazyLocalBase>) {

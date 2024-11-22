@@ -406,7 +406,6 @@ public:
     auto coAwaitTry() { return TryAwaiter(std::exchange(_coro, nullptr)); }
 
 protected:
-
     Handle _coro;
 
     template <class, typename OAlloc, bool Para>
@@ -504,6 +503,10 @@ protected:
 // If any awaitable wants to derive the executor instance from its caller, it
 // should implement `coAwait(Executor*)` member method. Then the caller would
 // pass its executor instance to the awaitable.
+
+template <typename T>
+concept isDerivedFromLazyLocal = std::is_base_of_v<LazyLocalBase, T>;
+
 template <typename T = void>
 class [[nodiscard]] CORO_ONLY_DESTROY_WHEN_DONE ELIDEABLE_AFTER_AWAIT Lazy
     : public detail::LazyBase<T, /*reschedule=*/false> {
