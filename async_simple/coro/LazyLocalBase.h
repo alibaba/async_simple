@@ -17,6 +17,7 @@
 #define ASYNC_SIMPLE_CORO_LAZYLOCALBASE_H
 
 #ifndef ASYNC_SIMPLE_USE_MODULES
+#include <cassert>
 #include <cstdint>
 #include <type_traits>
 #include <utility>
@@ -28,12 +29,14 @@ class LazyLocalBase {
 protected:
     template <typename Derived>
     friend class LazyLocalBaseImpl;
-    LazyLocalBase(char* typeinfo) : _typeinfo(typeinfo){};
+    LazyLocalBase(char* typeinfo) : _typeinfo(typeinfo) {
+        assert(typeinfo != nullptr);
+    };
 
 public:
+    static bool classof(LazyLocalBase*) noexcept { return true; }
     const char* getTypeTag() const noexcept { return _typeinfo; }
-    LazyLocalBase(std::nullptr_t)
-        : LazyLocalBase(static_cast<char*>(nullptr)) {}
+    LazyLocalBase() : _typeinfo(nullptr) {}
     virtual ~LazyLocalBase(){};
 
 protected:
@@ -47,15 +50,10 @@ template <isDerivedFromLazyLocal T>
 T* dynamicCast(LazyLocalBase* base) noexcept {
     if (base == nullptr) {
         return nullptr;
-    }
-    if constexpr (std::is_same_v<LazyLocalBase, T>) {
-        return base;
+    } else if (T::classof(base)) {
+        return static_cast<T*>(base);
     } else {
-        if (T::classof(base)) {
-            return static_cast<T*>(base);
-        } else {
-            return nullptr;
-        }
+        return nullptr;
     }
 }
 }  // namespace async_simple::coro
