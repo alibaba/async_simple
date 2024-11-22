@@ -363,9 +363,6 @@ public:
 
     ~LazyBase() {
         if (_coro) {
-            if (_coro.operator bool()) {
-                delete this->_coro.promise()._lazy_local;
-            }
             _coro.destroy();
             _coro = nullptr;
         }

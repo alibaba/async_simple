@@ -111,4 +111,9 @@ TEST(LazyLocalTest, testSetLazyLocalNested) {
     syncAwait(task().setLazyLocal<mylocal>("1"));
 }
 
+TEST(LazyLocalTest, testSetLazyLocalButDoNothing) {
+    auto task = [&]() -> Lazy<void> { co_return; };
+    auto task2 = task().setLazyLocal<mylocal>("1");
+}
+
 }  // namespace async_simple::coro
