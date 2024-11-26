@@ -274,7 +274,7 @@ So we could assign the executor at the root the task chain simply.
 
 # LazyLocals
 
-LazyLocals is similar to `thread_local` in a thread environment. Users can customize their own LazyLocals by deriving from LazyLocals. 
+LazyLocals is similar to `thread_local` in a thread environment. Users can customize their own LazyLocals by deriving from LazyLocals and implement static function `T::classsof(const LazyLocalBase*)` 
 
 `async_simple` provides a type conversion check for LazyLocals that is safe and efficient without relying on RTTI, requiring only a single integer comparison operation. Additionally, `async_simple` automatically manages the lifecycle of LazyLocal. Below is an example of usage:
 
@@ -283,7 +283,7 @@ template<typename T>
 struct mylocal: public LazyLocalBase {
     template<typename... Args>
     mylocalImpl(Args...&& args): LazyLocalBase(&tag), value(std::forward<Args>(args)...){}
-    static bool classof(LazyLocalBase* base) {
+    static bool classof(const LazyLocalBase* base) {
         return base->getTypeTag() == &tag;
     }
     T value;

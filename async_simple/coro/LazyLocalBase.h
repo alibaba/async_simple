@@ -25,7 +25,7 @@
 namespace async_simple::coro {
 
 // User can derived user-defined class from Lazy Local variable to implement
-// user-define lazy local value.
+// user-define lazy local value by implement static function T::classof(const LazyLocalBase*).
 
 // For example:
 // struct mylocal : public LazyLocalBase {
@@ -36,7 +36,7 @@ namespace async_simple::coro {
 //     mylocal(std::string sv) : LazyLocalBase(&tag), name(std::move(sv)) {}
 //     // derived class support implement T::classof(LazyLocalBase*), which
 //     check if this object is-a derived class of T static bool
-//     classof(LazyLocalBase*) {
+//     classof(const LazyLocalBase*) {
 //         return base->getTypeTag() == &tag;
 //     }
 
@@ -44,13 +44,8 @@ namespace async_simple::coro {
 
 // };
 class LazyLocalBase {
-private:
-    template <typename T>
-    friend T* dynamicCast(LazyLocalBase* base) noexcept;
 
 protected:
-    template <typename Derived>
-    friend class LazyLocalBaseImpl;
     LazyLocalBase(char* typeinfo) : _typeinfo(typeinfo) {
         assert(typeinfo != nullptr);
     };
@@ -65,6 +60,19 @@ protected:
 };
 
 template <typename T>
+const T* dynamicCast(const LazyLocalBase* base) noexcept {
+    assert(base != nullptr);
+    if constexpr (std::is_same_v<T, LazyLocalBase>) {
+        return base;
+    } else {
+        if (T::classof(base)) {
+            return static_cast<T*>(base);
+        } else {
+            return nullptr;
+        }
+    }
+}
+template <typename T>
 T* dynamicCast(LazyLocalBase* base) noexcept {
     assert(base != nullptr);
     if constexpr (std::is_same_v<T, LazyLocalBase>) {
@@ -76,7 +84,7 @@ T* dynamicCast(LazyLocalBase* base) noexcept {
             return nullptr;
         }
     }
-
-}  // namespace async_simple::coro
+}
+  // namespace async_simple::coro
 }  // namespace async_simple::coro
 #endif

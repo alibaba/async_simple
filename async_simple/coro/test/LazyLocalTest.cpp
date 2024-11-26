@@ -32,7 +32,7 @@ struct mylocal : public LazyLocalBase {
     mylocal(std::string sv) : LazyLocalBase(&tag), name(std::move(sv)) {}
     std::string& hello() { return name; }
     std::string name;
-    static bool classof(LazyLocalBase* base) {
+    static bool classof(const LazyLocalBase* base) {
         return base->getTypeTag() == &tag;
     }
     inline static char tag;
@@ -42,7 +42,7 @@ struct mylocal2 : public LazyLocalBase {
     mylocal2(std::string sv) : LazyLocalBase(&tag), name(std::move(sv)) {}
     std::string& hello() { return name; }
     std::string name;
-    static bool classof(LazyLocalBase* base) {
+    static bool classof(const LazyLocalBase* base) {
         return base->getTypeTag() == &tag;
     }
     inline static char tag;
@@ -53,7 +53,7 @@ struct mylocal3 : public LazyLocalBase {
     mylocal3(mylocal3&&) = delete;
     std::string& hello() { return name; }
     std::string name;
-    static bool classof(LazyLocalBase* base) {
+    static bool classof(const LazyLocalBase* base) {
         return base->getTypeTag() == &tag;
     }
     inline static char tag;

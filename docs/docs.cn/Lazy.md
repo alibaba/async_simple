@@ -276,14 +276,14 @@ void func(int x, Executor *e) {
 
 # LazyLocals
 
-LazyLocals类似于线程环境下的thread_local。用户可以通过派生LazyLocals来自定义自己的LazyLocals。
+LazyLocals类似于线程环境下的thread_local。用户可以通过派生LazyLocals并实现静态函数`T::classof(const LazyLocalBase*)`来自定义LazyLocals。
 async_simple为LazyLocals提供了不依赖rtti且安全高效的类型转换检查，只需要做一次整数比较操作即可。此外，async_simple还会自动管理LazyLocal的生命周期。以下为使用示例：
 ```cpp
 template<typename T>
 struct mylocal: public LazyLocalBase {
     template<typename ...Args>
     mylocalImpl(Args...&& args): LazyLocalBase(&tag),value(std::forward<Args>(args)...){}
-    static bool classof(LazyLocalBase* base) {
+    static bool classof(const LazyLocalBase* base) {
         return base->getTypeTag() == &tag;
     }
     T value;
