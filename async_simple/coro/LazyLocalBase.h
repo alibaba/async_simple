@@ -45,7 +45,6 @@ namespace async_simple::coro {
 
 // };
 class LazyLocalBase {
-
 protected:
     LazyLocalBase(char* typeinfo) : _typeinfo(typeinfo) {
         assert(typeinfo != nullptr);
