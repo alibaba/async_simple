@@ -25,7 +25,8 @@
 namespace async_simple::coro {
 
 // User can derived user-defined class from Lazy Local variable to implement
-// user-define lazy local value by implement static function T::classof(const LazyLocalBase*).
+// user-define lazy local value by implement static function T::classof(const
+// LazyLocalBase*).
 
 // For example:
 // struct mylocal : public LazyLocalBase {
@@ -85,6 +86,6 @@ T* dynamicCast(LazyLocalBase* base) noexcept {
         }
     }
 }
-  // namespace async_simple::coro
+// namespace async_simple::coro
 }  // namespace async_simple::coro
 #endif
