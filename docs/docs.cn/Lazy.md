@@ -275,40 +275,63 @@ void func(int x, Executor *e) {
 总之，当我们需要为多个 Lazy 组成的任务链指定调度器时，我们只需要在任务链的开头指定调度器就好了。
 
 # LazyLocals
-LazyLocals类似于线程环境下的thread_local，用户可以通过LazyLocals为具有调用关系的Lazy间共享数据。
-只允许为RescheduleLazy绑定LazyLocals，其会随着co_await一路传递。
-RescheduleLazy和Lazy持有的LazyLocals为一个void*类型的指针，类型转换与生命周期需要由用户管理，以下为使用示例：
-```c++
-    int* i = new int(10);
-    async_simple::executors::SimpleExecutor ex(2);
 
-    auto sub_task = [&]() -> Lazy<> {
-        // 类型转换无运行时检测，正确性由用户保证
-        int* v = co_await LazyLocals<int>{};
-        EXPECT_EQ(v, i);
-        EXPECT_EQ(*v, 20);
-        *v = 30;
+LazyLocals类似于线程环境下的thread_local。用户可以通过派生LazyLocals来自定义自己的LazyLocals。
+async_simple为LazyLocals提供了不依赖rtti且安全高效的类型转换检查，只需要做一次整数比较操作即可。此外，async_simple还会自动管理LazyLocal的生命周期。以下为使用示例：
+```cpp
+template<typename T>
+struct mylocal: public LazyLocalBase {
+    template<typename ...Args>
+    mylocalImpl(Args...&& args): LazyLocalBase(&tag),value(std::forward<Args>(args)...){}
+    static bool classof(LazyLocalBase* base) {
+        return base->getTypeTag() == &tag;
+    }
+    T value;
+    inline static char tag;
+};
+void foo() {
+    auto sub_task = []() -> Lazy<> {
+        // 通过调用co_await CurrentLazyLocals 获取lazy local value的指针
+        mylocal<int>* v = co_await CurrentLazyLocals<mylocal<int>>{};
+        // 如果协程未绑定local变量，或者类型转换失败，则返回空指针
+        EXPECT_NE(v, nullptr);
+        EXPECT_EQ(v->value, 42);
     };
 
-    auto task = [&]() -> Lazy<> {
-        void* v = co_await LazyLocals{};
-        EXPECT_EQ(v, i);
-        (*i) = 20;
+    auto task = []() -> Lazy<> {
+        // 获取到基类指针
+        LazyLocalBase* v = co_await CurrentLazyLocals{};
+        // 如果协程未绑定local变量，则返回空指针
+        EXPECT_NE(v, nullptr);
+        // 用户可以通过强制转换基类指针来跳过类型转换过程中的安全检查。
+        EXPECT_EQ(static_cast<mylocal<int>>(v)->value, 42);
+        // local value会自动通过co_await 传染到调用链上的每一个协程中
         co_await sub_task();
         co_return;
     };
-    syncAwait(task().via(&ex).setLazyLocal(i));
-    EXPECT_EQ(*i, 30);
-    delete i;
+    syncAwait(task().setLazyLocal<mylocal<int>>(42));
+} 
 ```
-如果用户通过`start(callback)`启动并需要在Lazy执行完毕后回收LazyLocals资源，则可以在callback中完成，例如：
+
+`setLazyLocal`允许用户原地构造指定的对象，也可以传入该对象的unique_ptr或者shared_ptr。
+
+需要注意的是，LazyLocals会在协程执行完毕之后，调用回调之前析构。因此如果想要在回调函数中安全的访问LazyLocals，要么自己管理生命周期，要么通过shared_ptr共享生命周期。
 ```c++
-    int* i = new int(10);
-    task().via(&ex).setLazyLocal(i).start([&](Try<void>) {
+void foo() {
+    int* i = new int(42);
+    task().via(&ex).setLazyLocal<mylocal<int*>>(i).start([i](Try<void>) {
+        std::cout<<*i<<std::endl;
         delete i;
-        i = nullptr;
     });
+}
+void bar() {
+    auto ptr = std::make_shared<mylocal<int>>(42);
+    task().via(&ex).setLazyLocal<mylocal<int>>(ptr).start([ptr](Try<void>) {
+        std::cout<<ptr->value<<std::endl;
+    });
+}
 ```
+最后，已经调用过setLazyLocal的协程再次调用setLazyLocal会抛出`std::logic_error`异常，这是因为设计上来说我们希望启动协程后不要中途改变其绑定的LazyLocals。
 
 # Yield
 

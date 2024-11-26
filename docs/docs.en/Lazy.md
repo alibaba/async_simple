@@ -273,41 +273,69 @@ In the above example, `task1...task4` represents a task chain consists of Lazy. 
 So we could assign the executor at the root the task chain simply.
 
 # LazyLocals
-LazyLocals is similar to thread_local in the thread environment, and users can share data for related Lazies through LazyLocals.
-LazyLocals can only be bound to RescheduleLazy, and it will be passed along with co_wait.
-LazyLocals held by RescheduleLazy and Lazy have void* type, type conversion and lifecycle need to be managed by users,the following is an example:
-```c++
-    int* i = new int(10);
-    async_simple::executors::SimpleExecutor ex(2);
 
-    auto sub_task = [&]() -> Lazy<> {
-        // There is no runtime detection for Type conversion, and the correctness is guaranteed by users
-        int* v = co_await LazyLocals<int>{};
-        EXPECT_EQ(v, i);
-        EXPECT_EQ(*v, 20);
-        *v = 30;
+LazyLocals is similar to `thread_local` in a thread environment. Users can customize their own LazyLocals by deriving from LazyLocals. 
+
+`async_simple` provides a type conversion check for LazyLocals that is safe and efficient without relying on RTTI, requiring only a single integer comparison operation. Additionally, `async_simple` automatically manages the lifecycle of LazyLocal. Below is an example of usage:
+
+```cpp
+template<typename T>
+struct mylocal: public LazyLocalBase {
+    template<typename... Args>
+    mylocalImpl(Args...&& args): LazyLocalBase(&tag), value(std::forward<Args>(args)...){}
+    static bool classof(LazyLocalBase* base) {
+        return base->getTypeTag() == &tag;
+    }
+    T value;
+    inline static char tag;
+};
+
+void foo() {
+    auto sub_task = []() -> Lazy<> {
+        // Get the pointer to the lazy local value by calling co_await CurrentLazyLocals
+        mylocal<int>* v = co_await CurrentLazyLocals<mylocal<int>>{};
+        // If the coroutine is not bound to a local variable, or the type conversion fails, return a null pointer
+        EXPECT_NE(v, nullptr);
+        EXPECT_EQ(v->value, 42);
     };
 
-    auto task = [&]() -> Lazy<> {
-        void* v = co_await LazyLocals{};
-        EXPECT_EQ(v, i);
-        (*i) = 20;
+    auto task = []() -> Lazy<> {
+        // Obtain the base class pointer
+        LazyLocalBase* v = co_await CurrentLazyLocals{};
+        // If the coroutine is not bound to a local variable, return a null pointer
+        EXPECT_NE(v, nullptr);
+        // The user can skip the safety check of type conversion by casting the base class pointer
+        EXPECT_EQ(static_cast<mylocal<int>>(v)->value, 42);
+        // The local value will automatically propagate to each coroutine in the call chain via co_await
         co_await sub_task();
         co_return;
     };
-    syncAwait(task().via(&ex).setLazyLocal(i));
-    EXPECT_EQ(*i, 30);
-    delete i;
+    syncAwait(task().setLazyLocal<mylocal<int>>(42));
+}
 ```
-If the user starts Lazy through 'start (callback)' and needs to recycle LazyLocals resources after Lazy execution is completed, it can be done in the callback, for example:
+
+`setLazyLocal` allows users to construct the specified object in place or pass in a `unique_ptr` or `shared_ptr` of that object.
+
+It is important to note that LazyLocals will be destructed after the coroutine completes and before the callback is invoked. Therefore, if you want to safely access LazyLocals in the callback function, you need to manage the lifecycle yourself or share the lifecycle using `shared_ptr`.
 
 ```c++
-    int* i = new int(10);
-    task().via(&ex).setLazyLocal(i).start([&](Try<void>) {
+void foo() {
+    int* i = new int(42);
+    task().via(&ex).setLazyLocal<mylocal<int*>>(i).start([i](Try<void>) {
+        std::cout << *i << std::endl;
         delete i;
-        i = nullptr;
     });
+}
+
+void bar() {
+    auto ptr = std::make_shared<mylocal<int>>(42);
+    task().via(&ex).setLazyLocal<mylocal<int*>>(ptr).start([ptr](Try<void>) {
+        std::cout << ptr->value << std::endl;
+    });
+}
 ```
+
+Finally, calling `setLazyLocal` again in a coroutine that has already called `setLazyLocal` will throw a `std::logic_error` exception, as we want to ensure that the bound LazyLocals are not changed midway through the coroutine's execution.
 
 # Yield
 

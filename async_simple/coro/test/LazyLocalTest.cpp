@@ -22,6 +22,7 @@
 
 #include <condition_variable>
 #include <future>
+#include <memory>
 #include <mutex>
 #include <string>
 
@@ -39,6 +40,17 @@ struct mylocal : public LazyLocalBase {
 
 struct mylocal2 : public LazyLocalBase {
     mylocal2(std::string sv) : LazyLocalBase(&tag), name(std::move(sv)) {}
+    std::string& hello() { return name; }
+    std::string name;
+    static bool classof(LazyLocalBase* base) {
+        return base->getTypeTag() == &tag;
+    }
+    inline static char tag;
+};
+
+struct mylocal3 : public LazyLocalBase {
+    mylocal3(std::string sv) : LazyLocalBase(&tag), name(std::move(sv)) {}
+    mylocal3(mylocal3&&) = delete;
     std::string& hello() { return name; }
     std::string name;
     static bool classof(LazyLocalBase* base) {
@@ -70,10 +82,70 @@ TEST(LazyLocalTest, testMyLazyLocal) {
         co_await sub_task();
         co_return;
     };
-    std::promise<void> p;
-    std::future<void> f = p.get_future();
-    task().setLazyLocal<mylocal>("Hello"s).start(
-        [p = std::move(p)](auto&&) mutable { p.set_value(); });
+    {
+        std::promise<void> p;
+        std::future<void> f = p.get_future();
+        auto k = task().setLazyLocal<mylocal>("Hello"s);
+        k.start([p = std::move(p)](auto&&) mutable { p.set_value(); });
+        f.wait();
+    }
+    {
+        std::promise<void> p;
+        std::future<void> f = p.get_future();
+        auto k = task().setLazyLocal<mylocal>(mylocal{"Hello"});
+        k.start([p = std::move(p)](auto&&) mutable { p.set_value(); });
+        f.wait();
+    }
+    {
+        std::promise<void> p;
+        std::future<void> f = p.get_future();
+        auto k =
+            task().setLazyLocal<mylocal>(std::make_unique<mylocal>("Hello"));
+        k.start([p = std::move(p)](auto&&) mutable { p.set_value(); });
+        f.wait();
+    }
+    {
+        auto v = std::make_shared<mylocal>("Hello");
+        std::promise<void> p;
+        std::future<void> f = p.get_future();
+        task().setLazyLocal<mylocal>(v).start(
+            [p = std::move(p), &v](auto&&) mutable {
+                p.set_value();
+                EXPECT_EQ(v->hello(), "Hey");
+            });
+        f.wait();
+    }
+}
+
+TEST(LazyLocalTest, testMyLazyLocalWithNoMoveConstructor) {
+    async_simple::executors::SimpleExecutor ex(2);
+    auto sub_task = [&]() -> Lazy<> {
+        auto localbase = co_await CurrentLazyLocals{};
+        EXPECT_NE(localbase, nullptr);
+        EXPECT_NE(localbase->getTypeTag(), nullptr);
+
+        auto* v = co_await CurrentLazyLocals<mylocal3>{};
+        EXPECT_NE(v, nullptr);
+        EXPECT_EQ(v->hello(), "Hi");
+        v->hello() = "Hey";
+    };
+    auto task = [&]() -> Lazy<> {
+        auto* u = co_await CurrentLazyLocals<mylocal2>{};
+        EXPECT_EQ(u, nullptr);
+        auto* v = co_await CurrentLazyLocals<mylocal3>{};
+        EXPECT_NE(v, nullptr);
+        EXPECT_EQ(v->hello(), "Hello");
+        v->hello() = "Hi";
+        co_await sub_task();
+        co_return;
+    };
+    {
+        std::promise<void> p;
+        std::future<void> f = p.get_future();
+        auto k = task().setLazyLocal<mylocal3>("Hello");
+        k.start([p = std::move(p)](auto&&) mutable { p.set_value(); });
+        f.wait();
+    }
 }
 
 TEST(LazyLocalTest, testSetLazyLocalTwice) {

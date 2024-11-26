@@ -16,6 +16,8 @@
 #ifndef ASYNC_SIMPLE_CORO_LAZY_H
 #define ASYNC_SIMPLE_CORO_LAZY_H
 
+#include <type_traits>
+#include <utility>
 #ifndef ASYNC_SIMPLE_USE_MODULES
 #include <cstddef>
 #include <cstdio>
@@ -314,7 +316,7 @@ public:
             this->_handle.promise()._continuation = continuation;
             if constexpr (std::is_base_of<LazyPromiseBase,
                                           PromiseType>::value) {
-                auto& local = this->_handle.promise()._lazy_local;
+                auto*& local = this->_handle.promise()._lazy_local;
                 logicAssert(local == nullptr ||
                                 continuation.promise()._lazy_local == nullptr,
                             "we dont allowed set lazy local twice or co_await "
@@ -508,6 +510,24 @@ template <typename T = void>
 class [[nodiscard]] CORO_ONLY_DESTROY_WHEN_DONE ELIDEABLE_AFTER_AWAIT Lazy
     : public detail::LazyBase<T, /*reschedule=*/false> {
     using Base = detail::LazyBase<T, false>;
+    template <isDerivedFromLazyLocal LazyLocal>
+    static Lazy<T> setLazyLocalImpl(Lazy<T> self, LazyLocal local) {
+        self._coro.promise()._lazy_local = &local;
+        co_return co_await std::move(self);
+    }
+    template <isDerivedFromLazyLocal LazyLocal>
+    static Lazy<T> setLazyLocalImpl(Lazy<T> self,
+                                    std::unique_ptr<LazyLocal> base) {
+        self._coro.promise()._lazy_local = base.get();
+        co_return co_await std::move(self);
+    }
+
+    template <isDerivedFromLazyLocal LazyLocal>
+    static Lazy<T> setLazyLocalImpl(Lazy<T> self,
+                                    std::shared_ptr<LazyLocal> base) {
+        self._coro.promise()._lazy_local = base.get();
+        co_return co_await std::move(self);
+    }
 
 public:
     using Base::Base;
@@ -534,35 +554,29 @@ public:
         return Lazy<T>(std::exchange(this->_coro, nullptr));
     }
 
-    // user can override LazyLocal derived class's new/delete operator for
-    // custom allocate
     template <isDerivedFromLazyLocal LazyLocal>
     Lazy<T> setLazyLocal(std::unique_ptr<LazyLocal> base) && {
-        logicAssert(this->_coro.operator bool(),
-                    "Lazy do not have a coroutine_handle "
-                    "Maybe the allocation failed or you're using a used Lazy");
-        this->_coro.promise()._lazy_local = base.get();
-        co_return co_await *this;
+        return setLazyLocalImpl(std::move(*this), std::move(base));
     }
 
-    // user can override LazyLocal derived class's new/delete operator for
-    // custom allocate
     template <isDerivedFromLazyLocal LazyLocal>
     Lazy<T> setLazyLocal(std::shared_ptr<LazyLocal> base) && {
-        logicAssert(this->_coro.operator bool(),
-                    "Lazy do not have a coroutine_handle "
-                    "Maybe the allocation failed or you're using a used Lazy");
-        this->_coro.promise()._lazy_local = base.get();
-        co_return co_await *this;
+        return setLazyLocalImpl(std::move(*this), std::move(base));
     }
 
-    template <isDerivedFromLazyLocal LazyLocal>
-    Lazy<T> setLazyLocal(LazyLocal local) && {
+    template <isDerivedFromLazyLocal LazyLocal, typename... Args>
+    Lazy<T> setLazyLocal(Args&&... args) && {
         logicAssert(this->_coro.operator bool(),
                     "Lazy do not have a coroutine_handle "
                     "Maybe the allocation failed or you're using a used Lazy");
-        this->_coro.promise()._lazy_local = &local;
-        co_return co_await *this;
+        if constexpr (std::is_move_constructible_v<LazyLocal>) {
+            return setLazyLocalImpl<LazyLocal>(
+                std::move(*this), LazyLocal{std::forward<Args>(args)...});
+        } else {
+            return setLazyLocalImpl<LazyLocal>(
+                std::move(*this),
+                std::make_unique<LazyLocal>(std::forward<Args>(args)...));
+        }
     }
 
     using Base::start;

@@ -23,8 +23,26 @@
 #include <utility>
 #endif  // ASYNC_SIMPLE_USE_MODULES
 namespace async_simple::coro {
-class LazyLocalBase;
 
+// User can derived user-defined class from Lazy Local variable to implement
+// user-define lazy local value.
+
+// For example:
+// struct mylocal : public LazyLocalBase {
+
+//     inline static char tag; // support a not-null unique address for type
+//     checking
+//     // init LazyLocalBase by unique address
+//     mylocal(std::string sv) : LazyLocalBase(&tag), name(std::move(sv)) {}
+//     // derived class support implement T::classof(LazyLocalBase*), which
+//     check if this object is-a derived class of T static bool
+//     classof(LazyLocalBase*) {
+//         return base->getTypeTag() == &tag;
+//     }
+
+//     std::string name;
+
+// };
 class LazyLocalBase {
 private:
     template <typename T>
