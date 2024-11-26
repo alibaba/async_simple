@@ -547,9 +547,20 @@ public:
 
     // user can override LazyLocal derived class's new/delete operator for
     // custom allocate
-    template <isDerivedFromLazyLocal LazyLocal, typename... Args>
-    Lazy<T> setLazyLocal(Args&&... args) && {
-        LazyLocal local{std::forward<Args>(args)...};
+    template <isDerivedFromLazyLocal LazyLocal>
+    Lazy<T> setLazyLocal(std::shared_ptr<LazyLocal> base) && {
+        logicAssert(this->_coro.operator bool(),
+                    "Lazy do not have a coroutine_handle "
+                    "Maybe the allocation failed or you're using a used Lazy");
+        this->_coro.promise()._lazy_local = base.get();
+        co_return co_await *this;
+    }
+
+    template <isDerivedFromLazyLocal LazyLocal>
+    Lazy<T> setLazyLocal(LazyLocal local) && {
+        logicAssert(this->_coro.operator bool(),
+                    "Lazy do not have a coroutine_handle "
+                    "Maybe the allocation failed or you're using a used Lazy");
         this->_coro.promise()._lazy_local = &local;
         co_return co_await *this;
     }

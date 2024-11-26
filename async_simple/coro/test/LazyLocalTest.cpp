@@ -46,6 +46,7 @@ struct mylocal2 : public LazyLocalBase {
     }
     inline static char tag;
 };
+using namespace std::literals;
 
 TEST(LazyLocalTest, testMyLazyLocal) {
     async_simple::executors::SimpleExecutor ex(2);
@@ -71,7 +72,7 @@ TEST(LazyLocalTest, testMyLazyLocal) {
     };
     std::promise<void> p;
     std::future<void> f = p.get_future();
-    task().setLazyLocal<mylocal>("Hello").start(
+    task().setLazyLocal<mylocal>("Hello"s).start(
         [p = std::move(p)](auto&&) mutable { p.set_value(); });
 }
 
@@ -84,7 +85,8 @@ TEST(LazyLocalTest, testSetLazyLocalTwice) {
     };
     bool has_error = false;
     try {
-        syncAwait(task().setLazyLocal<mylocal>("2").setLazyLocal<mylocal>("1"));
+        syncAwait(
+            task().setLazyLocal<mylocal>("2"s).setLazyLocal<mylocal>("1"s));
     } catch (...) {
         has_error = true;
     }
@@ -100,7 +102,7 @@ TEST(LazyLocalTest, testSetLazyLocalNested) {
 
         bool has_error = false;
         try {
-            co_await sub_task().setLazyLocal<mylocal>("2");
+            co_await sub_task().setLazyLocal<mylocal>("2"s);
         } catch (...) {
             has_error = true;
         }
@@ -108,12 +110,12 @@ TEST(LazyLocalTest, testSetLazyLocalNested) {
         co_return;
     };
 
-    syncAwait(task().setLazyLocal<mylocal>("1"));
+    syncAwait(task().setLazyLocal<mylocal>("1"s));
 }
 
 TEST(LazyLocalTest, testSetLazyLocalButDoNothing) {
     auto task = [&]() -> Lazy<void> { co_return; };
-    auto task2 = task().setLazyLocal<mylocal>("1");
+    auto task2 = task().setLazyLocal<mylocal>("1"s);
 }
 
 }  // namespace async_simple::coro
