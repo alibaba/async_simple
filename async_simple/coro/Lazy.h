@@ -16,13 +16,14 @@
 #ifndef ASYNC_SIMPLE_CORO_LAZY_H
 #define ASYNC_SIMPLE_CORO_LAZY_H
 
-#include <type_traits>
-#include <utility>
 #ifndef ASYNC_SIMPLE_USE_MODULES
+
 #include <cstddef>
 #include <cstdio>
 #include <exception>
 #include <memory>
+#include <type_traits>
+#include <utility>
 #include <variant>
 #include "async_simple/Common.h"
 #include "async_simple/Try.h"
