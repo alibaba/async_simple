@@ -51,7 +51,10 @@ struct FutureAwaiter {
             }
         });
     }
-    auto await_resume() { return std::move(future_.value()); }
+    auto await_resume() {
+        if constexpr (!std::is_same_v<T, void>)
+            return std::move(future_.value());
+    }
 };
 }  // namespace coro::detail
 

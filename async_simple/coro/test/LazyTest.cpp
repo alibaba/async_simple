@@ -13,20 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <gtest/gtest.h>
 #include <atomic>
 #include <condition_variable>
 #include <exception>
 #include <functional>
 #include <future>
+#include <memory>
 #include <mutex>
+#include <system_error>
 #include <thread>
 #include <type_traits>
 
 #include <iostream>
 
 #include <chrono>
+#include "async_simple/Cancellation.h"
 #include "async_simple/Executor.h"
+#include "async_simple/Promise.h"
+#include "async_simple/Try.h"
 #include "async_simple/coro/Collect.h"
+#include "async_simple/coro/FutureAwaiter.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/Sleep.h"
 #include "async_simple/coro/SyncAwait.h"
@@ -334,6 +341,26 @@ TEST_F(LazyTest, testYield) {
 
     m1.unlock();
     m2.unlock();
+}
+
+TEST_F(LazyTest, testYieldCancel) {
+    executors::SimpleExecutor executor(1);
+    auto test1 = []() -> Lazy<void> {
+        while (true) {
+            co_await Yield{};
+        }
+    };
+    auto signal = async_simple::CancellationSignal::create();
+    std::promise<void> p;
+    test1()
+        .setLazyLocal(signal.get())
+        .via(&executor)
+        .start([&](Try<void>&& result) {
+            EXPECT_EQ(result.hasError(), true);
+            p.set_value();
+        });
+    signal->emit(CancellationType::terminal);
+    p.get_future().wait();
 }
 
 TEST_F(LazyTest, testVoid) {
@@ -1111,120 +1138,6 @@ TEST_F(LazyTest, testCollectAllVariadic) {
     syncAwait(testCollectAllPara().via(&e1));
 }
 
-TEST_F(LazyTest, testCollectAnyWithCallbackVariadic) {
-    auto test0 = []() -> Lazy<Unit> { co_return Unit{}; };
-    auto test1 = []() -> Lazy<int> { co_return 42; };
-    auto test2 = [](int val) -> Lazy<std::string> {
-        co_return std::to_string(val);
-    };
-
-    auto collectAnyLazy = [](auto&&... args) -> Lazy<size_t> {
-        co_return co_await collectAny(std::move(args)...);
-    };
-
-    auto move_only_v = std::make_unique<int>(0);
-    auto move_only_cb = [mv = std::move(move_only_v)](Try<int> v) {
-        EXPECT_EQ(42, v.value());
-    };
-
-    size_t index =
-        syncAwait(collectAnyLazy(std::pair{test0(), [](auto val) {}}));
-
-    index =
-        syncAwait(collectAnyLazy(std::pair{test1(), std::move(move_only_cb)}));
-
-    index = syncAwait(collectAnyLazy(
-        std::pair{test2(42), [](auto str) { EXPECT_EQ("42", str.value()); }}));
-    EXPECT_EQ(index, 0);
-
-    int call_count = 0;
-    index = syncAwait(
-        collectAnyLazy(std::pair{test0(), [&](auto) { call_count++; }},
-                       std::pair{test1(),
-                                 [&](auto val) {
-                                     call_count++;
-                                     EXPECT_EQ(val.value(), 42);
-                                 }},
-                       std::pair{test2(42), [&](auto val) {
-                                     call_count++;
-                                     EXPECT_EQ("42", val.value());
-                                 }}));
-    EXPECT_EQ(1, call_count);
-
-    executors::SimpleExecutor e1(4);
-    auto test3 = []() -> Lazy<int> { co_return 42; };
-    auto test4 = [](int val) -> Lazy<int> { co_return val; };
-
-    int test_value = 0;
-    index =
-        syncAwait(collectAnyLazy(std::pair{test3().via(&e1),
-                                           [&](auto val) {
-                                               test_value = val.value();
-                                               EXPECT_EQ(42, test_value);
-                                           }},
-                                 std::pair{test4(41).via(&e1), [&](auto val) {
-                                               test_value = val.value();
-                                               EXPECT_EQ(41, test_value);
-                                           }}));
-    if (index == 0) {
-        EXPECT_EQ(42, test_value);
-    } else {
-        EXPECT_EQ(41, test_value);
-    }
-}
-
-TEST_F(LazyTest, testCollectAnyWithCallbackVector) {
-    auto test0 = []() -> Lazy<int> { co_return 41; };
-    auto test1 = []() -> Lazy<int> { co_return 42; };
-
-    std::vector<Lazy<int>> input;
-    input.push_back(test0());
-    input.push_back(test1());
-
-    auto collectAnyLazy = [](auto input, auto func) -> Lazy<void> {
-        co_await collectAny(std::move(input), func);
-    };
-
-    syncAwait(collectAnyLazy(std::move(input), [](size_t index, Try<int> val) {
-        if (index == 0) {
-            EXPECT_EQ(val.value(), 41);
-        } else {
-            EXPECT_EQ(val.value(), 42);
-        }
-    }));
-
-    auto test2 = []() -> Lazy<Unit> { co_return Unit{}; };
-    auto test3 = []() -> Lazy<Unit> { co_return Unit{}; };
-
-    std::vector<Lazy<Unit>> input1;
-    input1.push_back(test2());
-    input1.push_back(test3());
-
-    int call_count = 0;
-    syncAwait(
-        collectAnyLazy(std::move(input1),
-                       [&](size_t index, Try<Unit> unit) { call_count++; }));
-    EXPECT_EQ(call_count, 1);
-
-    auto test4 = []() -> Lazy<int> {
-        throw std::logic_error("exception in lazy");
-        co_return 41;
-    };
-
-    std::vector<Lazy<int>> input2;
-    input2.push_back(test4());
-    syncAwait(collectAnyLazy(std::move(input2), [](size_t index, Try<int> val) {
-        EXPECT_TRUE(val.hasError());
-
-        try {
-            std::rethrow_exception(val.getException());
-        } catch (std::exception& ex) {
-            std::string msg(ex.what());
-            EXPECT_EQ(msg, "exception in lazy");
-        }
-    }));
-}
-
 TEST_F(LazyTest, testCollectAny) {
     srand((unsigned)time(NULL));
     executors::SimpleExecutor e1(10);
@@ -1437,6 +1350,205 @@ TEST_F(LazyTest, testCollectAnyVariadic) {
     auto out = syncAwait(test3().via(&e3));
     ASSERT_EQ(out.available(), true);
     ASSERT_EQ(out.value(), tmp);
+}
+
+struct mylocal : public LazyLocalBase {
+    mylocal(std::string sv) : LazyLocalBase(&tag), name(std::move(sv)) {}
+    std::string& hello() { return name; }
+    std::string name;
+    static bool classof(const LazyLocalBase* base) {
+        return base->getTypeTag() == &tag;
+    }
+    inline static char tag;
+};
+
+auto my_sleep_impl = [](std::chrono::microseconds ms,
+                        CancellationType expected_type,
+                        bool should_cancel = true) -> Lazy<bool> {
+    bool cancel = false;
+    auto l = co_await CurrentLazyLocals<mylocal>{};
+    if (should_cancel) {
+        EXPECT_TRUE(l->getCancellationSlot() != nullptr);
+    }
+    EXPECT_TRUE(l->hello() == "hello");
+    try {
+        co_await async_simple::coro::sleep(ms);
+    } catch (const std::system_error& err) {
+        std::cout << err.what() << std::endl;
+        cancel = true;
+    }
+    if (cancel) {
+        auto slot = co_await CurrentCancellationSlot{};
+        EXPECT_TRUE(expected_type == slot->signal()->state());
+    }
+    EXPECT_TRUE(should_cancel == cancel);
+    co_return cancel;
+};
+
+auto my_sleep = [](std::chrono::microseconds ms, CancellationType expected_type,
+                   bool should_cancel = true) -> Lazy<bool> {
+    return my_sleep_impl(ms, expected_type, should_cancel)
+        .setLazyLocal<mylocal>(std::string{"hello"});
+};
+
+TEST_F(LazyTest, testCollectAnyVariadicWithCancel) {
+    executors::SimpleExecutor e1(10);
+
+    []() -> Lazy<void> {
+        auto slot = co_await CurrentCancellationSlot{};
+        auto result = co_await collectAny<CancellationType::all>(
+            collectAny<CancellationType::terminal>(
+                my_sleep(500ms, CancellationType::all),
+                my_sleep(100s, CancellationType::all)),
+            collectAny<CancellationType::terminal>(
+                my_sleep(10ms, CancellationType::terminal, false),
+                my_sleep(5s, CancellationType::terminal)));
+        EXPECT_EQ(result.index(), 1);
+        auto slot2 = co_await CurrentCancellationSlot{};
+        EXPECT_EQ(slot, slot2);
+    }()
+                .via(&e1)
+                .detach();
+
+    []() -> Lazy<void> {
+        auto slot = co_await CurrentCancellationSlot{};
+        auto result = co_await collectAny<CancellationType::terminal>(
+            collectAny<CancellationType::none>(
+                my_sleep(100ms, CancellationType::terminal),
+                my_sleep(100s, CancellationType::terminal)),
+            collectAny<CancellationType::none>(
+                my_sleep(10ms, CancellationType::none, false),
+                my_sleep(200ms, CancellationType::none, false)));
+        EXPECT_EQ(result.index(), 1);
+        auto slot2 = co_await CurrentCancellationSlot{};
+        EXPECT_EQ(slot, slot2);
+    }()
+                .via(&e1)
+                .detach();
+    std::this_thread::sleep_for(500ms);
+}
+
+TEST_F(LazyTest, testCollectAnyWithCancel) {
+    executors::SimpleExecutor e1(10);
+
+    []() -> Lazy<void> {
+        auto slot = co_await CurrentCancellationSlot{};
+        std::vector<Lazy<bool>> v1, v2;
+        v1.push_back(my_sleep(500ms, CancellationType::all));
+        v1.push_back(my_sleep(100s, CancellationType::all));
+        v2.push_back(my_sleep(10ms, CancellationType::terminal, false));
+        v2.push_back(my_sleep(5s, CancellationType::terminal));
+        std::vector<Lazy<detail::CollectAnyResult<bool>>> v3;
+        v3.push_back(collectAny<CancellationType::terminal>(std::move(v1)));
+        v3.push_back(collectAny<CancellationType::terminal>(std::move(v2)));
+        auto result = co_await collectAny<CancellationType::all>(std::move(v3));
+        EXPECT_EQ(result.index(), 1);
+        auto slot2 = co_await CurrentCancellationSlot{};
+        EXPECT_EQ(slot, slot2);
+    }()
+                .via(&e1)
+                .detach();
+    []() -> Lazy<void> {
+        auto slot = co_await CurrentCancellationSlot{};
+        std::vector<Lazy<bool>> v1, v2;
+        v1.push_back(my_sleep(100ms, CancellationType::terminal));
+        v1.push_back(my_sleep(100s, CancellationType::terminal));
+        v2.push_back(my_sleep(10ms, CancellationType::none, false));
+        v2.push_back(my_sleep(200ms, CancellationType::none, false));
+        std::vector<Lazy<detail::CollectAnyResult<bool>>> v3;
+        v3.push_back(collectAny<CancellationType::terminal>(std::move(v1)));
+        v3.push_back(collectAny<CancellationType::none>(std::move(v2)));
+        auto result =
+            co_await collectAny<CancellationType::terminal>(std::move(v3));
+        EXPECT_EQ(result.index(), 1);
+        auto slot2 = co_await CurrentCancellationSlot{};
+        EXPECT_EQ(slot, slot2);
+    }()
+                .via(&e1)
+                .detach();
+    std::this_thread::sleep_for(500ms);
+}
+
+TEST_F(LazyTest, testCollectAllVaradicWithCancel) {
+    executors::SimpleExecutor e1(10);
+    syncAwait([]() -> Lazy<void> {
+        auto slot = co_await CurrentCancellationSlot{};
+        auto result = co_await collectAll<CancellationType::none>(
+            collectAll<CancellationType::all>(
+                my_sleep(100ms, CancellationType::none, false),
+                my_sleep(100s, CancellationType::all)),
+            collectAll<CancellationType::terminal>(
+                my_sleep(10ms, CancellationType::terminal, false),
+                my_sleep(200ms, CancellationType::terminal)));
+        EXPECT_EQ(std::get<0>(std::get<0>(result).value()).value(), false);
+        EXPECT_EQ(std::get<1>(std::get<0>(result).value()).value(), true);
+        EXPECT_EQ(std::get<0>(std::get<1>(result).value()).value(), false);
+        EXPECT_EQ(std::get<1>(std::get<1>(result).value()).value(), true);
+        auto slot2 = co_await CurrentCancellationSlot{};
+        EXPECT_EQ(slot, slot2);
+    }()
+                          .via(&e1));
+    syncAwait([]() -> Lazy<void> {
+        auto slot = co_await CurrentCancellationSlot{};
+        auto result = co_await collectAll<CancellationType::terminal>(
+            collectAll<CancellationType::all>(
+                my_sleep(500ms, CancellationType::terminal),
+                my_sleep(100s, CancellationType::terminal)),
+            collectAll<CancellationType::none>(
+                my_sleep(10ms, CancellationType::none, false),
+                my_sleep(200ms, CancellationType::none, false)));
+        EXPECT_EQ(std::get<0>(std::get<0>(result).value()).value(), true);
+        EXPECT_EQ(std::get<1>(std::get<0>(result).value()).value(), true);
+        EXPECT_EQ(std::get<0>(std::get<1>(result).value()).value(), false);
+        EXPECT_EQ(std::get<1>(std::get<1>(result).value()).value(), false);
+        auto slot2 = co_await CurrentCancellationSlot{};
+        EXPECT_EQ(slot, slot2);
+    }()
+                          .via(&e1));
+}
+
+TEST_F(LazyTest, testCollectAllWithCancel) {
+    executors::SimpleExecutor e1(10);
+    syncAwait([]() -> Lazy<void> {
+        auto slot = co_await CurrentCancellationSlot{};
+        std::vector<Lazy<bool>> v1, v2;
+        v1.push_back(my_sleep(100ms, CancellationType::none, false));
+        v1.push_back(my_sleep(100s, CancellationType::all));
+        v2.push_back(my_sleep(10ms, CancellationType::terminal, false));
+        v2.push_back(my_sleep(200ms, CancellationType::terminal));
+        std::vector<Lazy<std::vector<Try<bool>>>> v3;
+        v3.push_back(collectAll<CancellationType::all>(std::move(v1)));
+        v3.push_back(collectAll<CancellationType::terminal>(std::move(v2)));
+        auto result =
+            co_await collectAll<CancellationType::none>(std::move(v3));
+        EXPECT_EQ(result[0].value()[0].value(), false);
+        EXPECT_EQ(result[0].value()[1].value(), true);
+        EXPECT_EQ(result[1].value()[0].value(), false);
+        EXPECT_EQ(result[1].value()[1].value(), true);
+        auto slot2 = co_await CurrentCancellationSlot{};
+        EXPECT_EQ(slot, slot2);
+    }()
+                          .via(&e1));
+    syncAwait([]() -> Lazy<void> {
+        auto slot = co_await CurrentCancellationSlot{};
+        std::vector<Lazy<bool>> v1, v2;
+        v1.push_back(my_sleep(500ms, CancellationType::terminal));
+        v1.push_back(my_sleep(100s, CancellationType::terminal));
+        v2.push_back(my_sleep(10ms, CancellationType::none, false));
+        v2.push_back(my_sleep(100ms, CancellationType::none, false));
+        std::vector<Lazy<std::vector<Try<bool>>>> v3;
+        v3.push_back(collectAll<CancellationType::all>(std::move(v1)));
+        v3.push_back(collectAll<CancellationType::none>(std::move(v2)));
+        auto result =
+            co_await collectAll<CancellationType::terminal>(std::move(v3));
+        EXPECT_EQ(result[0].value()[0].value(), true);
+        EXPECT_EQ(result[0].value()[1].value(), true);
+        EXPECT_EQ(result[1].value()[0].value(), false);
+        EXPECT_EQ(result[1].value()[1].value(), false);
+        auto slot2 = co_await CurrentCancellationSlot{};
+        EXPECT_EQ(slot, slot2);
+    }()
+                          .via(&e1));
 }
 
 TEST_F(LazyTest, testException) {
@@ -1788,6 +1900,110 @@ async_simple::coro::Lazy<void> testYieldNoDeadLock(async_simple::Executor* ex) {
 
 TEST_F(LazyTest, testYieldNoDeadLockWithSimpleExecutor) {
     syncAwait(testYieldNoDeadLock(&_executor));
+}
+
+TEST_F(LazyTest, testLazyWithEmptyCancellationSlot) {
+    syncAwait([]() -> Lazy<void> {
+        auto slot = co_await CurrentCancellationSlot{};
+        EXPECT_EQ(slot, nullptr);
+        co_await ForbidCancellation{};
+        slot = co_await CurrentCancellationSlot{};
+        EXPECT_EQ(slot, nullptr);
+        co_return;
+    }());
+}
+
+TEST_F(LazyTest, testLazyWithCancellationSlot) {
+    auto signal = CancellationSignal::create();
+    auto ptr = signal.get();
+    auto observer = std::weak_ptr<CancellationSignal>(signal);
+    auto lazy =
+        [](std::shared_ptr<CancellationSignal> signal,
+           std::weak_ptr<CancellationSignal> observer) -> Lazy<void> {
+        signal = nullptr;
+        auto slot = co_await CurrentCancellationSlot{};
+        EXPECT_NE(slot, nullptr);
+        EXPECT_EQ(observer.expired(), false);
+        EXPECT_EQ(slot->signal(), observer.lock().get());
+        co_await ForbidCancellation{};
+        slot = co_await CurrentCancellationSlot{};
+        EXPECT_EQ(slot, nullptr);
+        EXPECT_EQ(observer.expired(), true);
+        co_return;
+    }(std::move(signal), observer)
+                                                              .setLazyLocal(
+                                                                  ptr);
+    syncAwait(std::move(lazy));
+    EXPECT_EQ(observer.expired(), true);
+}
+
+TEST_F(LazyTest, testNestedLazyWithCancellationSlot) {
+    auto signal = CancellationSignal::create();
+    auto ptr = signal.get();
+    auto observer = std::weak_ptr<CancellationSignal>(signal);
+    auto lazy =
+        [](std::shared_ptr<CancellationSignal> signal,
+           std::weak_ptr<CancellationSignal> observer) -> Lazy<void> {
+        signal = nullptr;
+        auto slot = co_await CurrentCancellationSlot{};
+        EXPECT_NE(slot, nullptr);
+        EXPECT_EQ(observer.expired(), false);
+        EXPECT_EQ(slot->signal(), observer.lock().get());
+        co_await [](std::weak_ptr<CancellationSignal> observer) -> Lazy<void> {
+            auto slot = co_await CurrentCancellationSlot{};
+            EXPECT_NE(slot, nullptr);
+            EXPECT_EQ(observer.expired(), false);
+            EXPECT_EQ(slot->signal(), observer.lock().get());
+            co_await ForbidCancellation{};
+            slot = co_await CurrentCancellationSlot{};
+            EXPECT_EQ(slot, nullptr);
+            EXPECT_EQ(observer.expired(), true);
+        }(observer);
+        slot = co_await CurrentCancellationSlot{};
+        EXPECT_EQ(slot, nullptr);
+        EXPECT_EQ(observer.expired(), true);
+        co_return;
+    }(std::move(signal), observer)
+                                                              .setLazyLocal(
+                                                                  ptr);
+    signal = nullptr;
+    syncAwait(std::move(lazy));
+    EXPECT_EQ(observer.expired(), true);
+}
+
+TEST_F(LazyTest, testForbiddenCancel) {
+    executors::SimpleExecutor e(1);
+    {
+        auto signal = CancellationSignal::create();
+        async_simple::Promise<void> p;
+        auto lazy = [](async_simple::Future<void> f) -> Lazy<void> {
+            auto slot = co_await CurrentCancellationSlot{};
+            EXPECT_NE(slot, nullptr);
+            co_await std::move(f);
+            EXPECT_TRUE(slot->canceled());
+            EXPECT_EQ(slot->signal()->state(), CancellationType::terminal);
+        };
+        lazy(p.getFuture()).setLazyLocal(signal.get()).via(&e).detach();
+        signal->emit(CancellationType::terminal);
+        p.setValue();
+    }
+    {
+        auto signal = CancellationSignal::create();
+        async_simple::Promise<void> p;
+        auto lazy = [](async_simple::Future<void> f) -> Lazy<void> {
+            auto slot = co_await CurrentCancellationSlot{};
+            EXPECT_NE(slot, nullptr);
+            co_await ForbidCancellation{};
+            slot = co_await CurrentCancellationSlot{};
+            EXPECT_EQ(slot, nullptr);
+            co_await std::move(f);
+            slot = co_await CurrentCancellationSlot{};
+            EXPECT_EQ(slot, nullptr);
+        };
+        lazy(p.getFuture()).setLazyLocal(signal.get()).via(&e).detach();
+        signal->emit(CancellationType::terminal);
+        p.setValue();
+    }
 }
 
 }  // namespace coro

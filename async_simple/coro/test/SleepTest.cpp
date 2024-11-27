@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
+#include <gtest/gtest.h>
+#include <cstdint>
 #include <functional>
 
+#include "async_simple/Cancellation.h"
+#include "async_simple/Executor.h"
+#include "async_simple/coro/Collect.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/Sleep.h"
 #include "async_simple/coro/SyncAwait.h"
@@ -25,6 +30,7 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+#include <vector>
 
 using namespace std;
 using namespace std::chrono_literals;
@@ -92,6 +98,10 @@ TEST_F(SleepTest, testSleep) {
                     func();
                 }).detach();
             }
+            virtual void schedule(Func func, Duration dur, uint64_t,
+                                  CancellationSlot*) override {
+                schedule(std::move(func), dur);
+            }
 
             std::thread::id id;
         };
@@ -112,6 +122,62 @@ TEST_F(SleepTest, testSleep) {
     };
 
     syncAwait(sleepTask3().via(&e1));
+}
+
+Lazy<void> cancelSleep() {
+    auto executor = co_await CurrentExecutor{};
+    auto sleep = [](int i, std::atomic<int>& cnt) -> Lazy<void> {
+        bool cancel_flag = false;
+        try {
+            co_await async_simple::coro::sleep(i * 1s);
+        } catch (const std::system_error& err) {
+            ++cnt;
+            cancel_flag = true;
+        }
+        auto slot = co_await async_simple::coro::CurrentCancellationSlot{};
+        auto ok = slot->signal()->emit(CancellationType::terminal);
+        if (ok) {
+            std::cout << "Coro " << i << " emit cancel work" << std::endl;
+        } else {
+            EXPECT_TRUE(cancel_flag);
+        }
+        co_return;
+    };
+    {
+        std::vector<RescheduleLazy<void>> works;
+        auto signal = async_simple::CancellationSignal::create();
+        std::atomic<int> cnt;
+        auto tp1 = std::chrono::steady_clock::now();
+        for (int i = 0; i < 100; ++i) {
+            works.emplace_back(
+                sleep(i, cnt).setLazyLocal(signal.get()).via(executor));
+        }
+        co_await async_simple::coro::collectAll(std::move(works));
+        auto tp2 = std::chrono::steady_clock::now();
+        EXPECT_EQ(cnt, 99);
+        std::cout << "cost time: " << (tp2 - tp1) / 1ms << "ms" << std::endl;
+        EXPECT_LE((tp2 - tp1) / 1ms, 800);
+    }
+    {
+        std::vector<RescheduleLazy<void>> works;
+        auto signal = async_simple::CancellationSignal::create();
+        std::atomic<int> cnt;
+        auto tp1 = std::chrono::steady_clock::now();
+        for (int i = 99; i >= 0; --i) {
+            works.emplace_back(
+                sleep(i, cnt).setLazyLocal(signal.get()).via(executor));
+        }
+        co_await async_simple::coro::collectAll(std::move(works));
+        auto tp2 = std::chrono::steady_clock::now();
+        EXPECT_EQ(cnt, 99);
+        std::cout << "cost time: " << (tp2 - tp1) / 1ms << "ms" << std::endl;
+        EXPECT_LE((tp2 - tp1) / 1ms, 800);
+    }
+}
+
+TEST_F(SleepTest, testCancelSleep) {
+    executors::SimpleExecutor e1(5);
+    syncAwait(cancelSleep().via(&e1));
 }
 
 }  // namespace coro

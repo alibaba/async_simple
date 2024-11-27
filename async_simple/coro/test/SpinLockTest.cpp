@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <mutex>
+#include <thread>
+#include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SpinLock.h"
 #include "async_simple/executors/SimpleExecutor.h"
 #include "async_simple/test/unittest.h"
@@ -107,6 +110,47 @@ TEST_F(SpinLockTest, testSyncLock) {
     }
 
     EXPECT_EQ(0, data);
+}
+
+TEST_F(SpinLockTest, testSpinLockCancel) {
+    using namespace std::chrono_literals;
+    executors::SimpleExecutor executor(1);
+    SpinLock lock;
+    std::unique_lock l(lock);
+    auto test = [&executor](Lazy<void>&& lazy, bool ok, bool cancelFirst) {
+        auto signal = async_simple::CancellationSignal::create();
+        std::promise<void> p;
+        if (cancelFirst) {
+            signal->emit(CancellationType::terminal);
+        }
+        std::move(lazy)
+            .setLazyLocal(signal.get())
+            .via(&executor)
+            .start([&p, ok](Try<void>&& result) {
+                EXPECT_EQ(result.hasError(), !ok);
+                p.set_value();
+            });
+        if (!cancelFirst) {
+            std::this_thread::sleep_for(10ms);
+            signal->emit(CancellationType::terminal);
+        }
+        p.get_future().wait();
+    };
+    for (int i = 0; i <= 1; ++i) {
+        test([&]() -> Lazy<void> { co_await lock.coScopedLock(); }(), false, i);
+        test(
+            [&]() -> Lazy<void> {
+                co_await lock.coLock();
+                lock.unlock();
+            }(),
+            false, i);
+        test(
+            [&]() -> Lazy<void> {
+                lock.tryLock();
+                co_return;
+            }(),
+            true, i);
+    }
 }
 
 }  // namespace coro
