@@ -201,7 +201,7 @@ In addition to manually checking if the cancellation signal has been triggered, 
 The following objects and functions support cancellation. A canceled coroutine may throw a `std::system_error` with an error code of `std::errc::operation_canceled`. Additionally, all functions automatically insert two checkpoints to check if a task has been canceled during suspension/resumption.
 1. CollectAny: When canceled, forwards the signal to all sub-tasks and immediately returns with an exception.
 2. CollectAll: When canceled, forwards the signal to all sub-tasks, then waits for all sub-tasks to complete before returning normally.
-3. Yield/SpinLock/Latch: If canceled, an exception is thrown. Currently, tasks queued in the scheduler do not support cancellation.
+3. Yield/SpinLock: If canceled, an exception is thrown. Currently, tasks queued in the scheduler do not support cancellation.
 4. Sleep: Depends on whether the scheduler has overridden the virtual function `void schedule(Func func, Duration dur, uint64_t schedule_info, CancellationSlot *slot = nullptr)` and correctly implemented the cancellation functionality. If this function is not overridden, the default implementation of `async_simple` supports canceling sleep.
 
 The following IO objects and functions do not yet support cancellation and need further improvement.
