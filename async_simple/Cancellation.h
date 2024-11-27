@@ -16,6 +16,7 @@
 #ifndef ASYNC_SIMPLE_CANCELLATION_H
 #define ASYNC_SIMPLE_CANCELLATION_H
 
+#include <thread>
 #ifndef ASYNC_SIMPLE_USE_MODULES
 
 #include <assert.h>
@@ -71,6 +72,7 @@ class CancellationSignal
         void operator()(CancellationType type);
         std::atomic<CancellationHandler*> _handler;
         std::atomic<CancellationType> _filter;
+        std::atomic<bool> _isHandlerFinished;
         Node* _next;
     };
     static inline Node emittedTag{CancellationType::none};
@@ -78,15 +80,21 @@ class CancellationSignal
 
 public:
     CancellationSignal(PrivateConstructTag){};
+    // Signal can only trigger once. This function emit a signal to binding
+    // slots, then execute the slot callback functions. Thread-safe, emit twice
+    // or more times will return false.
     bool emit(CancellationType state) noexcept;
+    // Check if signal has emited.
     bool hasEmited() noexcept {
         return _state.load(std::memory_order::acquire) !=
                CancellationType::none;
     }
     friend class CancellationSlot;
+    // Return cancellation type now.
     CancellationType state() const noexcept {
         return _state.load(std::memory_order_acquire);
     }
+    // Create CancellationSignal by Factory function.
     static std::shared_ptr<CancellationSignal> create() {
         return std::make_shared<CancellationSignal>(PrivateConstructTag{});
     }
@@ -238,9 +246,17 @@ public:
     // Check whether the emplaced handler has started executing.
     // if slot is not connect to signal, or slot never emplaced, it will return
     // false;
-    bool hasExecuted() const noexcept {
+    bool hasStartExecute() const noexcept {
         return _hasEmplaced &&
                _node->_handler.load(std::memory_order_acquire) == &emittedTag;
+    }
+
+    // Check whether the emplaced handler has finished executing.
+    // if slot is not connect to signal, or slot never emplaced, it will return
+    // false;
+    bool hasFinishExecute() const noexcept {
+        return _hasEmplaced &&
+               _node->_isHandlerFinished.load(std::memory_order_acquire);
     }
 
     // The slot holds ownership of the corresponding signal, so the signal's
@@ -265,8 +281,14 @@ public:
         return true;
     }
 
+    template <bool syncAwaitCancelHandlerFinished = false>
     static void resume(CancellationSlot* slot) {
         if (slot && !slot->clear()) {
+            if constexpr (syncAwaitCancelHandlerFinished) {
+                while (slot->hasFinishExecute()) {
+                    std::this_thread::yield();
+                }
+            }
             throw std::system_error{
                 std::make_error_code(std::errc::operation_canceled)};
         }
@@ -299,6 +321,7 @@ inline void CancellationSignal::Node::operator()(CancellationType type) {
     if (handler != nullptr && is_canceled) {
         (*handler)(type);
     }
+    _isHandlerFinished.store(true, std::memory_order_release);
     delete handler;
 }
 

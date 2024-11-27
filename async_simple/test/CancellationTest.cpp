@@ -316,7 +316,7 @@ TEST_F(CancellationTest, testMultiThreadEmitWhenEmplace) {
                         slots[i]->emplace([&j](CancellationType type) { ++j; });
                     if (!ok) {
                         EXPECT_TRUE(slots[i]->canceled());
-                        EXPECT_FALSE(slots[i]->hasExecuted());
+                        EXPECT_FALSE(slots[i]->hasStartExecute());
                     }
                     return false;
                 }));
@@ -369,7 +369,7 @@ TEST_F(CancellationTest, testMultiThreadEmitWhenAddScopedFilter) {
             auto guard = slot->addScopedFilter(CancellationType::none);
             ok = slot->emplace([&cnter](CancellationType type) { ++cnter; });
             if (!ok) {
-                EXPECT_TRUE(slot->hasExecuted());
+                EXPECT_TRUE(slot->hasStartExecute());
             }
             slot->clear();
         });

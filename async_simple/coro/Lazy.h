@@ -60,8 +60,12 @@ struct Yield {};
 template <typename T = LazyLocalBase>
 struct CurrentLazyLocals {};
 
+// co_await CurrentCancellationSlot{} could return the point to current
+// CancellationSlot. Return nullptr if lazy don't binding to signal.
 struct CurrentCancellationSlot {};
 
+// co_await ForbidCancellation{} could forbid cancellation in lazy. After
+// calling this, call `co_await ForbidCancellation{}` will return nullptr.
 struct ForbidCancellation {};
 
 namespace detail {
