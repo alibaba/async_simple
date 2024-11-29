@@ -291,7 +291,7 @@ struct CollectAnyVariadicAwaiter {
                         if (count > std::tuple_size<InputType>() + 1) {
                             _result = std::make_unique<ResultType>(
                                 std::in_place_index_t<index>(), std::move(res));
-                                _signal->emit(_cancellationType);
+                            _signal->emit(_cancellationType);
                             c.resume();
                         }
                     });
