@@ -145,12 +145,10 @@ Lazy<void> cancelSleep() {
     };
     {
         std::vector<RescheduleLazy<void>> works;
-        auto signal = async_simple::CancellationSignal::create();
         std::atomic<int> cnt;
         auto tp1 = std::chrono::steady_clock::now();
         for (int i = 0; i < 100; ++i) {
-            works.emplace_back(
-                sleep(i, cnt).setLazyLocal(signal.get()).via(executor));
+            works.emplace_back(sleep(i, cnt).via(executor));
         }
         co_await async_simple::coro::collectAll(std::move(works));
         auto tp2 = std::chrono::steady_clock::now();
@@ -160,12 +158,10 @@ Lazy<void> cancelSleep() {
     }
     {
         std::vector<RescheduleLazy<void>> works;
-        auto signal = async_simple::CancellationSignal::create();
         std::atomic<int> cnt;
         auto tp1 = std::chrono::steady_clock::now();
         for (int i = 99; i >= 0; --i) {
-            works.emplace_back(
-                sleep(i, cnt).setLazyLocal(signal.get()).via(executor));
+            works.emplace_back(sleep(i, cnt).via(executor));
         }
         co_await async_simple::coro::collectAll(std::move(works));
         auto tp2 = std::chrono::steady_clock::now();

@@ -1367,9 +1367,7 @@ auto my_sleep_impl = [](std::chrono::microseconds ms,
                         bool should_cancel = true) -> Lazy<bool> {
     bool cancel = false;
     auto l = co_await CurrentLazyLocals<mylocal>{};
-    if (should_cancel) {
-        EXPECT_TRUE(l->getCancellationSlot() != nullptr);
-    }
+    EXPECT_TRUE(l->getCancellationSlot() != nullptr);
     EXPECT_TRUE(l->hello() == "hello");
     try {
         co_await async_simple::coro::sleep(ms);

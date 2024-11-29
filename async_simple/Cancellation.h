@@ -283,7 +283,7 @@ public:
 
     template <bool syncAwaitCancelHandlerFinished = false>
     static void resume(CancellationSlot* slot) {
-        if (slot && !slot->clear()) {
+        if (slot && !slot->clear() && slot->canceled()) {
             if constexpr (syncAwaitCancelHandlerFinished) {
                 while (slot->hasFinishExecute()) {
                     std::this_thread::yield();
@@ -294,7 +294,7 @@ public:
         }
     }
 
-    static bool ready(CancellationSlot* slot) noexcept {
+    static bool ready(const CancellationSlot* slot) noexcept {
         return slot && slot->canceled();
     }
 

@@ -159,9 +159,7 @@ struct CollectAnyAwaiter {
         // if coroutine resume before this function.
         auto input = std::move(_input);
         auto event = std::make_shared<detail::CountEvent>(input.size() + 1);
-        if (_slot || _cancellationType != CancellationType::none) {
-            _signal = CancellationSignal::create();
-        }
+        _signal = CancellationSignal::create();
         if (!CancellationSlot::suspend(
                 _slot, [signal = this->_signal, c = continuation, e = event,
                         size = input.size()](CancellationType type) mutable {
@@ -181,10 +179,8 @@ struct CollectAnyAwaiter {
                 input[i]._coro.promise()._executor = executor;
             }
             std::unique_ptr<LazyLocalBase> local;
-            if (_signal) {
-                local = std::make_unique<LazyLocalBase>(_signal.get());
-                input[i]._coro.promise()._lazy_local = local.get();
-            }
+            local = std::make_unique<LazyLocalBase>(_signal.get());
+            input[i]._coro.promise()._lazy_local = local.get();
             input[i].start(
                 [this, i, size = input.size(), c = continuation, e = event,
                  local = std::move(local)](Try<ValueType>&& result) mutable {
@@ -194,9 +190,7 @@ struct CollectAnyAwaiter {
                         _result = std::make_unique<ResultType>();
                         _result->_idx = i;
                         _result->_value = std::move(result);
-                        if (_cancellationType != CancellationType::none) {
-                            _signal->emit(_cancellationType);
-                        }
+                        _signal->emit(_cancellationType);
                         c.resume();
                     }
                 });
@@ -265,9 +259,7 @@ struct CollectAnyVariadicAwaiter {
 
         auto event = std::make_shared<detail::CountEvent>(
             std::tuple_size<InputType>() + 1);
-        if (_slot || _cancellationType != CancellationType::none) {
-            _signal = CancellationSignal::create();
-        }
+        _signal = CancellationSignal::create();
         if (!CancellationSlot::suspend(
                 _slot, [signal = this->_signal, c = continuation,
                         e = event](CancellationType type) mutable {
@@ -288,10 +280,8 @@ struct CollectAnyVariadicAwaiter {
                     element._coro.promise()._executor = executor;
                 }
                 std::unique_ptr<LazyLocalBase> local;
-                if (_signal) {
-                    local = std::make_unique<LazyLocalBase>(_signal.get());
-                    element._coro.promise()._lazy_local = local.get();
-                }
+                local = std::make_unique<LazyLocalBase>(_signal.get());
+                element._coro.promise()._lazy_local = local.get();
                 element.start(
                     [this, c = continuation, e = event,
                      local = std::move(local)](
@@ -301,9 +291,7 @@ struct CollectAnyVariadicAwaiter {
                         if (count > std::tuple_size<InputType>() + 1) {
                             _result = std::make_unique<ResultType>(
                                 std::in_place_index_t<index>(), std::move(res));
-                            if (_cancellationType != CancellationType::none) {
                                 _signal->emit(_cancellationType);
-                            }
                             c.resume();
                         }
                     });
@@ -397,9 +385,7 @@ struct CollectAllAwaiter {
             std::coroutine_handle<LazyPromiseBase>::from_address(
                 continuation.address())
                 .promise();
-        if (_slot || _cancellationType != CancellationType::none) {
-            _signal = CancellationSignal::create();
-        }
+        _signal = CancellationSignal::create();
         if (!CancellationSlot::suspend(
                 _slot, [signal = this->_signal](CancellationType type) {
                     signal->emit(type);
@@ -414,17 +400,13 @@ struct CollectAllAwaiter {
                 exec = executor;
             }
             std::unique_ptr<LazyLocalBase> local;
-            if (_signal) {
-                local = std::make_unique<LazyLocalBase>(_signal.get());
-                _input[i]._coro.promise()._lazy_local = local.get();
-            }
+            local = std::make_unique<LazyLocalBase>(_signal.get());
+            _input[i]._coro.promise()._lazy_local = local.get();
             auto&& func = [this, i, local = std::move(local)]() mutable {
                 _input[i].start([this, i, local = std::move(local)](
                                     Try<ValueType>&& result) {
                     _output[i] = std::move(result);
-                    if (_cancellationType != CancellationType::none) {
-                        _signal->emit(_cancellationType);
-                    }
+                    _signal->emit(_cancellationType);
                     std::size_t oldCount;
                     auto awaitingCoro = _event.down(&oldCount);
                     if (awaitingCoro) {
@@ -578,9 +560,7 @@ struct CollectAllVariadicAwaiter {
     template <size_t... index>
     void await_suspend_impl(std::index_sequence<index...>,
                             std::coroutine_handle<> continuation) {
-        if (_slot || _cancellationType != CancellationType::none) {
-            _signal = CancellationSignal::create();
-        }
+        _signal = CancellationSignal::create();
         if (!CancellationSlot::suspend(
                 _slot, [signal = this->_signal](CancellationType type) {
                     signal->emit(type);
@@ -605,16 +585,12 @@ struct CollectAllVariadicAwaiter {
                     exec = executor;
                 }
                 std::unique_ptr<LazyLocalBase> local;
-                if (_signal) {
-                    local = std::make_unique<LazyLocalBase>(_signal.get());
-                    lazy._coro.promise()._lazy_local = local.get();
-                }
+                local = std::make_unique<LazyLocalBase>(_signal.get());
+                lazy._coro.promise()._lazy_local = local.get();
                 auto func = [&, local = std::move(local)]() mutable {
                     lazy.start([&, local = std::move(local), this](auto&& res) {
                         result = std::move(res);
-                        if (_cancellationType != CancellationType::none) {
-                            _signal->emit(_cancellationType);
-                        }
+                        _signal->emit(_cancellationType);
                         std::size_t oldCount;
                         if (auto awaitingCoro = _event.down(&oldCount);
                             awaitingCoro) {

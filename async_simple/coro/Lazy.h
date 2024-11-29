@@ -16,6 +16,7 @@
 #ifndef ASYNC_SIMPLE_CORO_LAZY_H
 #define ASYNC_SIMPLE_CORO_LAZY_H
 
+#include <system_error>
 #ifndef ASYNC_SIMPLE_USE_MODULES
 
 #include <cstddef>
@@ -128,7 +129,7 @@ public:
                 std::move(handle),
                 static_cast<uint64_t>(Executor::Priority::YIELD));
         }
-        void await_resume() { CancellationSlot::resume(_slot); }
+        void await_resume() const { CancellationSlot::resume(_slot); }
 
     private:
         Executor* _executor;
