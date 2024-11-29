@@ -17,13 +17,24 @@
 #define ASYNC_SIMPLE_CORO_LAZYLOCALBASE_H
 
 #ifndef ASYNC_SIMPLE_USE_MODULES
+
 #include <cassert>
 #include <cstdint>
+#include <memory>
 #include <type_traits>
 #include <utility>
+
+#include "async_simple/Cancellation.h"
+#include "async_simple/Common.h"
+
 #endif  // ASYNC_SIMPLE_USE_MODULES
 namespace async_simple::coro {
+class LazyLocalBase;
+namespace detail {
 
+void moveCancellationSlotFromContinuation(LazyLocalBase* nowLocal,
+                                          LazyLocalBase* preLocal);
+}
 // User can derived user-defined class from Lazy Local variable to implement
 // user-define lazy local value by implement static function T::classof(const
 // LazyLocalBase*).
@@ -46,17 +57,31 @@ namespace async_simple::coro {
 // };
 class LazyLocalBase {
 protected:
-    LazyLocalBase(char* typeinfo) : _typeinfo(typeinfo) {
+    LazyLocalBase(char* typeinfo, CancellationSignal* signal = nullptr,
+                  CancellationType type = CancellationType::all)
+        : _typeinfo(typeinfo) {
         assert(typeinfo != nullptr);
     };
 
 public:
+    LazyLocalBase(LazyLocalBase&&) = default;
     const char* getTypeTag() const noexcept { return _typeinfo; }
-    LazyLocalBase() : _typeinfo(nullptr) {}
+    CancellationSlot* getCancellationSlot() const noexcept {
+        return _slot.get();
+    }
+
+    void forbidCancellation() noexcept { _slot = nullptr; }
     virtual ~LazyLocalBase(){};
+    LazyLocalBase(CancellationSignal* signal,
+                  CancellationType type = CancellationType::all)
+        : _typeinfo(nullptr),
+          _slot(std::make_unique<CancellationSlot>(signal, type)) {}
+    friend void detail::moveCancellationSlotFromContinuation(
+        LazyLocalBase* nowLocal, LazyLocalBase* preLocal);
 
 protected:
     char* _typeinfo;
+    std::unique_ptr<CancellationSlot> _slot;
 };
 
 template <typename T>

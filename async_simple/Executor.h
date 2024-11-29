@@ -20,9 +20,12 @@
 #include <chrono>
 #include <cstdint>
 #include <functional>
+#include <future>
+#include <memory>
 #include <ratio>
 #include <string>
 #include <thread>
+#include "async_simple/Cancellation.h"
 #include "async_simple/MoveWrapper.h"
 #include "async_simple/experimental/coroutine.h"
 #include "async_simple/util/move_only_function.h"
@@ -157,7 +160,8 @@ public:
 
     // Use co_await executor.after(sometime)
     // to schedule current execution after some time.
-    TimeAwaitable after(Duration dur, uint64_t schedule_info);
+    TimeAwaitable after(Duration dur, uint64_t schedule_info,
+                        CancellationSlot *slot = nullptr);
 
     // IOExecutor accepts IO read/write requests.
     // Return nullptr if the executor doesn't offer an IOExecutor.
@@ -167,13 +171,23 @@ public:
 
 protected:
     virtual void schedule(Func func, Duration dur) {
-        std::thread([this, func = std::move(func), dur]() {
-            std::this_thread::sleep_for(dur);
+        return schedule(func, dur,
+                        static_cast<uint64_t>(Executor::Priority::DEFAULT),
+                        nullptr);
+    }
+    virtual void schedule(Func func, Duration dur, uint64_t schedule_info,
+                          CancellationSlot *slot = nullptr) {
+        std::thread([this, func = std::move(func), dur, slot]() {
+            auto promise = std::make_unique<std::promise<void>>();
+            auto future = promise->get_future();
+            bool hasnt_canceled = CancellationSlot::suspend(
+                slot, [p = std::move(promise)](CancellationType type) {
+                    p->set_value();
+                });
+            if (hasnt_canceled)
+                future.wait_for(dur);
             schedule(std::move(func));
         }).detach();
-    }
-    virtual void schedule(Func func, Duration dur, uint64_t schedule_info) {
-        schedule(std::move(func), dur);
     }
 
 private:
@@ -183,48 +197,53 @@ private:
 // Awaiter to implement Executor::after.
 class Executor::TimeAwaiter {
 public:
-    TimeAwaiter(Executor *ex, Executor::Duration dur, uint64_t schedule_info)
-        : _ex(ex), _dur(dur), _schedule_info(schedule_info) {}
+    TimeAwaiter(Executor *ex, Executor::Duration dur, uint64_t schedule_info,
+                CancellationSlot *slot)
+        : _ex(ex), _dur(dur), _schedule_info(schedule_info), _slot(slot) {}
 
 public:
-    bool await_ready() const noexcept { return false; }
+    bool await_ready() const noexcept { return CancellationSlot::ready(_slot); }
 
     template <typename PromiseType>
     void await_suspend(coro::CoroHandle<PromiseType> continuation) {
-        _ex->schedule(std::move(continuation), _dur, _schedule_info);
+        _ex->schedule(std::move(continuation), _dur, _schedule_info, _slot);
     }
-    void await_resume() const noexcept {}
+    void await_resume() { CancellationSlot::resume(_slot); }
 
 private:
     Executor *_ex;
     Executor::Duration _dur;
     uint64_t _schedule_info;
+    CancellationSlot *_slot;
 };
 
 // Awaitable to implement Executor::after.
 class Executor::TimeAwaitable {
 public:
-    TimeAwaitable(Executor *ex, Executor::Duration dur, uint64_t schedule_info)
-        : _ex(ex), _dur(dur), _schedule_info(schedule_info) {}
+    TimeAwaitable(Executor *ex, Executor::Duration dur, uint64_t schedule_info,
+                  CancellationSlot *slot)
+        : _ex(ex), _dur(dur), _schedule_info(schedule_info), _slot(slot) {}
 
     auto coAwait(Executor *) {
-        return Executor::TimeAwaiter(_ex, _dur, _schedule_info);
+        return Executor::TimeAwaiter(_ex, _dur, _schedule_info, _slot);
     }
 
 private:
     Executor *_ex;
     Executor::Duration _dur;
     uint64_t _schedule_info;
+    CancellationSlot *_slot;
 };
 
 Executor::TimeAwaitable inline Executor::after(Executor::Duration dur) {
     return Executor::TimeAwaitable(
-        this, dur, static_cast<uint64_t>(Executor::Priority::DEFAULT));
+        this, dur, static_cast<uint64_t>(Executor::Priority::DEFAULT), nullptr);
 }
 
 Executor::TimeAwaitable inline Executor::after(Executor::Duration dur,
-                                               uint64_t schedule_info) {
-    return Executor::TimeAwaitable(this, dur, schedule_info);
+                                               uint64_t schedule_info,
+                                               CancellationSlot *slot) {
+    return Executor::TimeAwaitable(this, dur, schedule_info, slot);
 }
 
 }  // namespace async_simple
