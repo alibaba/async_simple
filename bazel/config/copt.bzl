@@ -1,5 +1,5 @@
 ASYNC_SIMPLE_COPTS = select({
-    "@com_github_async_simple//bazel/config:msvc_compiler": [
+    "@async_simple//bazel/config:msvc_compiler": [
         "/std:c++20",
         "/await:strict",
         "/EHa"
