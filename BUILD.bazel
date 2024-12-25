@@ -55,5 +55,8 @@ cc_library(
         "@platforms//os:windows": [],
         "//conditions:default": ["-lpthread"],
     }),
+    deps = [
+        ":simple_executors",
+    ],
     visibility = ["//visibility:public"],
 )

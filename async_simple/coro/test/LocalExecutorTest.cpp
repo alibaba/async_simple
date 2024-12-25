@@ -17,7 +17,7 @@
 #include <coroutine>
 #include "async_simple/Try.h"
 #include "async_simple/coro/Lazy.h"
-#include "async_simple/executors/LocalExecutor.h"
+#include "async_simple/coro/SyncAwait.h"
 
 #include "async_simple/test/unittest.h"
 
@@ -64,10 +64,7 @@ Lazy<int> coro_compute() {
 }
 
 TEST(LocalExecutorTest, testStackOverflow) {
-    executors::LocalExecutor ex;
-    int result{0};
-    coro_compute().via(&ex).start([&](Try<int> i) { result = i.value(); });
-    ex.Loop();
+    int result = syncAwait(coro_compute());
     EXPECT_EQ(result, 49950000);
 }
 

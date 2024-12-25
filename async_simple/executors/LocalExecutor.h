@@ -17,7 +17,9 @@
 #ifndef ASYNC_LOCAL_EXECUTOR_H
 #define ASYNC_LOCAL_EXECUTOR_H
 
+#include <condition_variable>
 #include <deque>
+#include <mutex>
 #include "async_simple/Executor.h"
 
 namespace async_simple {
@@ -26,26 +28,41 @@ namespace executors {
 
 class LocalExecutor : public Executor {
 public:
-    LocalExecutor() : Executor("local executor") {}
+    LocalExecutor(std::condition_variable& cv, std::mutex& mut,
+                  const bool& quit)
+        : Executor("local executor"), cv_(cv), mut_(mut), quit_(quit) {}
 
     bool schedule(Func func) override {
+        std::unique_lock<std::mutex> lock(mut_);
         ready_queue_.push_back(std::move(func));
+        cv_.notify_all();
         return true;
     }
 
     void Loop() {
         while (true) {
-            if (ready_queue_.empty()) {
+            std::unique_lock<std::mutex> lock(mut_);
+            cv_.wait(lock, [this]() {
+                return quit_ == true || !ready_queue_.empty();
+            });
+            if (!ready_queue_.empty()) {
+                Func func = std::move(ready_queue_.front());
+                ready_queue_.pop_front();
+                lock.unlock();
+                func();
+                continue;
+            }
+            if (quit_ == true) {
                 return;
             }
-            Func func = std::move(ready_queue_.front());
-            ready_queue_.pop_front();
-            func();
         }
     }
 
 private:
     std::deque<Func> ready_queue_;
+    std::condition_variable& cv_;
+    std::mutex& mut_;
+    const bool& quit_;
 };
 
 }  // namespace executors
