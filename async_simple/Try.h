@@ -72,8 +72,7 @@ public:
     }
 
     template <class... U>
-    Try(U&&... value)
-        requires std::is_constructible_v<T, U...>
+    Try(U&&... value) requires std::is_constructible_v<T, U...>
         : _value(std::in_place_type<T>, std::forward<U>(value)...) {}
 
     Try(std::exception_ptr error) : _value(error) {}
@@ -176,7 +175,7 @@ public:
     bool hasError() const { return _error.operator bool(); }
 
     void setException(std::exception_ptr error) { _error = error; }
-    std::exception_ptr getException() { return _error; }
+    std::exception_ptr getException() const { return _error; }
 
 private:
     std::exception_ptr _error;

@@ -17,6 +17,7 @@
 #define ASYNC_SIMPLE_DEMO_ASIO_CORO_UTIL_H
 #include <sys/types.h>
 #include "async_simple/Executor.h"
+#include "async_simple/Signal.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SyncAwait.h"
 #include "async_simple/executors/SimpleExecutor.h"
