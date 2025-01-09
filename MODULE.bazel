@@ -1,11 +1,9 @@
-module(name = "async_simple")
-
-bazel_dep(name = "platforms", version = "0.0.9")
-bazel_dep(name = "bazel_skylib", version = "1.6.1")
-
-bazel_dep(name = "googletest", version = "1.14.0.bcr.1", repo_name = "com_google_googletest", dev_dependency = True)
-bazel_dep(name = "google_benchmark", version = "1.8.4", repo_name = "com_google_benchmark", dev_dependency = True)
-bazel_dep(name = "boringssl", version = "0.0.0-20240530-2db0eb3", dev_dependency = True)
+module(name = "com_github_async_simple")
+bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "googletest", version = "1.15.2", repo_name = "com_google_googletest", dev_dependency = True)
+bazel_dep(name = "google_benchmark", version = "1.8.5", repo_name = "com_google_benchmark", dev_dependency = True)
+bazel_dep(name = "boringssl", version = "0.20241209.0", dev_dependency = True)
 
 # Hedron's Compile Commands Extractor for Bazel
 # https://github.com/hedronvision/bazel-compile-commands-extractor
