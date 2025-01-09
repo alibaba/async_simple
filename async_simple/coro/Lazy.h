@@ -26,9 +26,9 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
-#include "async_simple/Cancellation.h"
 #include "async_simple/Common.h"
 #include "async_simple/Executor.h"
+#include "async_simple/Signal.h"
 #include "async_simple/Try.h"
 #include "async_simple/coro/DetachedCoroutine.h"
 #include "async_simple/coro/LazyLocalBase.h"
@@ -61,13 +61,13 @@ struct Yield {};
 template <typename T = LazyLocalBase>
 struct CurrentLazyLocals {};
 
-// co_await CurrentCancellationSlot{} could return the point to current
-// CancellationSlot. Return nullptr if lazy don't binding to signal.
-struct CurrentCancellationSlot {};
+// co_await CurrentSlot{} could return the point to current
+// Slot. Return nullptr if lazy don't binding to signal.
+struct CurrentSlot {};
 
-// co_await ForbidCancellation{} could forbid cancellation in lazy. After
-// calling this, call `co_await ForbidCancellation{}` will return nullptr.
-struct ForbidCancellation {};
+// co_await ForbidSignal{} could forbid Signal in lazy. After
+// calling this, call `co_await CurrentSlot{}` will return nullptr.
+struct ForbidSignal {};
 
 namespace detail {
 template <class, typename OAlloc, bool Para>
@@ -109,10 +109,10 @@ public:
     };
 
     struct YieldAwaiter {
-        YieldAwaiter(Executor* executor, CancellationSlot* slot)
+        YieldAwaiter(Executor* executor, Slot* slot)
             : _executor(executor), _slot(slot) {}
         bool await_ready() const noexcept {
-            return CancellationSlot::ready(_slot);
+            return signal_await{terminate}.ready(_slot);
         }
         template <typename PromiseType>
         void await_suspend(std::coroutine_handle<PromiseType> handle) {
@@ -129,11 +129,14 @@ public:
                 std::move(handle),
                 static_cast<uint64_t>(Executor::Priority::YIELD));
         }
-        void await_resume() const { CancellationSlot::resume(_slot); }
+        void await_resume() const {
+            signal_await{terminate}.resume(
+                _slot, "async_simple::Yield/SpinLock is canceled!");
+        }
 
     private:
         Executor* _executor;
-        CancellationSlot* _slot;
+        Slot* _slot;
     };
 
 public:
@@ -158,22 +161,21 @@ public:
                                             : nullptr);
     }
 
-    auto await_transform(CurrentCancellationSlot) {
-        return ReadyAwaiter<CancellationSlot*>(
-            _lazy_local ? _lazy_local->getCancellationSlot() : nullptr);
+    auto await_transform(CurrentSlot) {
+        return ReadyAwaiter<Slot*>(_lazy_local ? _lazy_local->getSlot()
+                                               : nullptr);
     }
 
-    auto await_transform(ForbidCancellation) {
+    auto await_transform(ForbidSignal) {
         if (_lazy_local) {
-            _lazy_local->forbidCancellation();
+            _lazy_local->forbidSignal();
         }
         return ReadyAwaiter<void>();
     }
 
     auto await_transform(Yield) {
-        return YieldAwaiter(_executor, _lazy_local
-                                           ? _lazy_local->getCancellationSlot()
-                                           : nullptr);
+        return YieldAwaiter(_executor,
+                            _lazy_local ? _lazy_local->getSlot() : nullptr);
     }
 
     /// IMPORTANT: _continuation should be the first member due to the
@@ -538,15 +540,14 @@ concept isDerivedFromLazyLocal = std::is_base_of_v<LazyLocalBase, T> &&
     });
 
 namespace detail {
-inline void moveCancellationSlotFromContinuation(LazyLocalBase* nowLocal,
-                                                 LazyLocalBase* preLocal) {
+inline void moveSlotFromContinuation(LazyLocalBase* nowLocal,
+                                     LazyLocalBase* preLocal) {
     if (preLocal) {
         // We only allow continuation has a local with LazyLocalBase type, which
         // is designed for calling collectAll/collectAny with lazy has local
         // variable.
-        if (preLocal->getTypeTag() == nullptr &&
-            preLocal->getCancellationSlot() &&
-            nowLocal->getCancellationSlot() == nullptr) {
+        if (preLocal->getTypeTag() == nullptr && preLocal->getSlot() &&
+            nowLocal->getSlot() == nullptr) {
             nowLocal->_slot = std::move(preLocal->_slot);
         } else {
             logicAssert(false, "we dont allowed set lazy local twice");
@@ -561,16 +562,15 @@ class [[nodiscard]] CORO_ONLY_DESTROY_WHEN_DONE ELIDEABLE_AFTER_AWAIT Lazy
     using Base = detail::LazyBase<T, false>;
     template <isDerivedFromLazyLocal LazyLocal>
     static Lazy<T> setLazyLocalImpl(Lazy<T> self, LazyLocal local) {
-        detail::moveCancellationSlotFromContinuation(
-            &local, co_await CurrentLazyLocals{});
+        detail::moveSlotFromContinuation(&local, co_await CurrentLazyLocals{});
         self._coro.promise()._lazy_local = &local;
         co_return co_await std::move(self);
     }
     template <isDerivedFromLazyLocal LazyLocal>
     static Lazy<T> setLazyLocalImpl(Lazy<T> self,
                                     std::unique_ptr<LazyLocal> local) {
-        detail::moveCancellationSlotFromContinuation(
-            local.get(), co_await CurrentLazyLocals{});
+        detail::moveSlotFromContinuation(local.get(),
+                                         co_await CurrentLazyLocals{});
         self._coro.promise()._lazy_local = local.get();
         co_return co_await std::move(self);
     }
@@ -578,8 +578,8 @@ class [[nodiscard]] CORO_ONLY_DESTROY_WHEN_DONE ELIDEABLE_AFTER_AWAIT Lazy
     template <isDerivedFromLazyLocal LazyLocal>
     static Lazy<T> setLazyLocalImpl(Lazy<T> self,
                                     std::shared_ptr<LazyLocal> local) {
-        detail::moveCancellationSlotFromContinuation(
-            local.get(), co_await CurrentLazyLocals{});
+        detail::moveSlotFromContinuation(local.get(),
+                                         co_await CurrentLazyLocals{});
         self._coro.promise()._lazy_local = local.get();
         co_return co_await std::move(self);
     }

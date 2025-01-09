@@ -118,10 +118,10 @@ TEST_F(SpinLockTest, testSpinLockCancel) {
     SpinLock lock;
     std::unique_lock l(lock);
     auto test = [&executor](Lazy<void>&& lazy, bool ok, bool cancelFirst) {
-        auto signal = async_simple::CancellationSignal::create();
+        auto signal = async_simple::Signal::create();
         std::promise<void> p;
         if (cancelFirst) {
-            signal->emit(CancellationType::terminal);
+            signal->emit(SignalType::terminate);
         }
         std::move(lazy)
             .setLazyLocal(signal.get())
@@ -132,7 +132,7 @@ TEST_F(SpinLockTest, testSpinLockCancel) {
             });
         if (!cancelFirst) {
             std::this_thread::sleep_for(10ms);
-            signal->emit(CancellationType::terminal);
+            signal->emit(SignalType::terminate);
         }
         p.get_future().wait();
     };

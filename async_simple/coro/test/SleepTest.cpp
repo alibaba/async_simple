@@ -18,8 +18,8 @@
 #include <cstdint>
 #include <functional>
 
-#include "async_simple/Cancellation.h"
 #include "async_simple/Executor.h"
+#include "async_simple/Signal.h"
 #include "async_simple/coro/Collect.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/Sleep.h"
@@ -28,6 +28,7 @@
 #include "async_simple/test/unittest.h"
 
 #include <chrono>
+#include <future>
 #include <iostream>
 #include <thread>
 #include <vector>
@@ -99,7 +100,7 @@ TEST_F(SleepTest, testSleep) {
                 }).detach();
             }
             virtual void schedule(Func func, Duration dur, uint64_t,
-                                  CancellationSlot*) override {
+                                  Slot*) override {
                 schedule(std::move(func), dur);
             }
 
@@ -130,12 +131,13 @@ Lazy<void> cancelSleep() {
         bool cancel_flag = false;
         try {
             co_await async_simple::coro::sleep(i * 1s);
-        } catch (const std::system_error& err) {
+        } catch (const async_simple::SignalException& err) {
             ++cnt;
             cancel_flag = true;
+            EXPECT_TRUE(err.value() == async_simple::terminate);
         }
-        auto slot = co_await async_simple::coro::CurrentCancellationSlot{};
-        auto ok = slot->signal()->emit(CancellationType::terminal);
+        auto slot = co_await async_simple::coro::CurrentSlot{};
+        auto ok = slot->signal()->emit(SignalType::terminate);
         if (ok) {
             std::cout << "Coro " << i << " emit cancel work" << std::endl;
         } else {

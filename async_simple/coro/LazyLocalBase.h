@@ -24,16 +24,15 @@
 #include <type_traits>
 #include <utility>
 
-#include "async_simple/Cancellation.h"
 #include "async_simple/Common.h"
+#include "async_simple/Signal.h"
 
 #endif  // ASYNC_SIMPLE_USE_MODULES
 namespace async_simple::coro {
 class LazyLocalBase;
 namespace detail {
 
-void moveCancellationSlotFromContinuation(LazyLocalBase* nowLocal,
-                                          LazyLocalBase* preLocal);
+void moveSlotFromContinuation(LazyLocalBase* nowLocal, LazyLocalBase* preLocal);
 }
 // User can derived user-defined class from Lazy Local variable to implement
 // user-define lazy local value by implement static function T::classof(const
@@ -57,8 +56,8 @@ void moveCancellationSlotFromContinuation(LazyLocalBase* nowLocal,
 // };
 class LazyLocalBase {
 protected:
-    LazyLocalBase(char* typeinfo, CancellationSignal* signal = nullptr,
-                  CancellationType type = CancellationType::all)
+    LazyLocalBase(char* typeinfo, Signal* signal = nullptr,
+                  SignalType type = SignalType::all)
         : _typeinfo(typeinfo) {
         assert(typeinfo != nullptr);
     };
@@ -66,22 +65,18 @@ protected:
 public:
     LazyLocalBase(LazyLocalBase&&) = default;
     const char* getTypeTag() const noexcept { return _typeinfo; }
-    CancellationSlot* getCancellationSlot() const noexcept {
-        return _slot.get();
-    }
+    Slot* getSlot() const noexcept { return _slot.get(); }
 
-    void forbidCancellation() noexcept { _slot = nullptr; }
+    void forbidSignal() noexcept { _slot = nullptr; }
     virtual ~LazyLocalBase(){};
-    LazyLocalBase(CancellationSignal* signal,
-                  CancellationType type = CancellationType::all)
-        : _typeinfo(nullptr),
-          _slot(std::make_unique<CancellationSlot>(signal, type)) {}
-    friend void detail::moveCancellationSlotFromContinuation(
-        LazyLocalBase* nowLocal, LazyLocalBase* preLocal);
+    LazyLocalBase(Signal* signal, SignalType type = SignalType::all)
+        : _typeinfo(nullptr), _slot(std::make_unique<Slot>(signal, type)) {}
+    friend void detail::moveSlotFromContinuation(LazyLocalBase* nowLocal,
+                                                 LazyLocalBase* preLocal);
 
 protected:
     char* _typeinfo;
-    std::unique_ptr<CancellationSlot> _slot;
+    std::unique_ptr<Slot> _slot;
 };
 
 template <typename T>
