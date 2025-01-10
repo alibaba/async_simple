@@ -299,6 +299,7 @@ public:
     using promise_type = detail::LazyPromise<T>;
     using Handle = CoroHandle<promise_type>;
     using ValueType = T;
+    static constexpr bool isReschedule = reschedule;
 
     struct AwaiterBase : public detail::LazyAwaiterBase<T> {
         using Base = detail::LazyAwaiterBase<T>;
