@@ -399,7 +399,7 @@ struct CollectAllAwaiter {
                                     Try<ValueType>&& result) {
                     _output[i] = std::move(result);
                     std::size_t oldCount;
-                    auto awaitingCoro = _event.down(&oldCount);
+                    auto awaitingCoro = _event.down(oldCount, 1);
                     if (oldCount == _input.size()) {
                         _signal->emit(_SignalType);
                     }
@@ -576,7 +576,7 @@ struct CollectAllVariadicAwaiter {
                         result = std::move(res);
 
                         std::size_t oldCount;
-                        auto awaitingCoro = _event.down(&oldCount);
+                        auto awaitingCoro = _event.down(oldCount, 1);
                         if (oldCount == sizeof...(Ts)) {
                             _signal->emit(_SignalType);
                         }

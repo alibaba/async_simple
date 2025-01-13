@@ -52,23 +52,29 @@ enum SignalType : uint64_t {
 };
 
 class Slot;
+
+namespace detail {
 struct SignalSlotSharedState;
+constexpr uint64_t high32bits_mask = uint64_t{UINT32_MAX} << 32;
+constexpr uint64_t MinMultiTriggerSignal = 1ull << 32;
+}  // namespace detail
 
 // The Signal type is used to emit a signal, whereas a Slot is used to
 // receive signals. We can create a signal using factory methods and bind
 // multiple Slots to the same Signal. When the Signal emits a signal, all
 // bound `Slot`s will receive the corresponding signal.
+// The Signal's life-time is not shorter than the bound Slots. Because those
+// slots owns a shared_ptr of signal.
 class Signal : public std::enable_shared_from_this<Signal> {
     friend class Slot;
-    friend struct SignalSlotSharedState;
+    friend struct detail::SignalSlotSharedState;
 
 private:
     // A list to manage different type of signal's handler.
-    void registSlot(Slot* slot, SignalType filter);
+    detail::SignalSlotSharedState& registSlot(SignalType filter);
     SignalType UpdateState(std::atomic<uint64_t>& state, SignalType type) {
         uint64_t expected = state.load(std::memory_order_acquire);
         uint64_t validSignal;
-        constexpr uint64_t high32bits_mask = uint64_t{UINT32_MAX} << 32;
         do {
             validSignal = (expected | type) ^ expected;
         } while (validSignal &&
@@ -76,7 +82,8 @@ private:
                                               std::memory_order_release));
         // high 32 bits signal is always valid, they can be trigger multiple
         // times. low 32 bits signal only trigger once.
-        return static_cast<SignalType>(validSignal | (type & high32bits_mask));
+        return static_cast<SignalType>(validSignal |
+                                       (type & detail::high32bits_mask));
     }
 
     struct PrivateConstructTag {};
@@ -93,7 +100,7 @@ public:
     SignalType state() const noexcept {
         return static_cast<SignalType>(_state.load(std::memory_order_acquire));
     }
-    // Create CancellationSignal by Factory function.
+    // Create Signal by Factory function.
     //
     template <typename T = Signal>
     static std::shared_ptr<T> create() {
@@ -104,10 +111,16 @@ public:
     virtual ~Signal();
 
 private:
+    // Default _state is zero. It's value means what signal type has triggered.
+    // It was updated by UpdateState(). If a signal is low 32bits, it can't emit
+    // multiple times.
     std::atomic<uint64_t> _state;
-    std::atomic<SignalSlotSharedState*> _slotsHead;
+    std::atomic<detail::SignalSlotSharedState*> _slotsHead;
 };
-
+namespace detail {
+// Each Slot has a reference to SignalSlotSharedState.
+// SignalSlotSharedState lifetime is managed by Signal.
+// It will destructed when Signal destructed.
 struct SignalSlotSharedState {
     // The type of Signal Handler
     using Handler = util::move_only_function<void(SignalType, Signal*)>;
@@ -130,7 +143,6 @@ struct SignalSlotSharedState {
         static inline Handler emittedTag;
     };
     static bool isMultiTriggerSignal(SignalType type) {
-        constexpr uint64_t MinMultiTriggerSignal = 1ull << 32;
         return type >= MinMultiTriggerSignal;
     }
     SignalSlotSharedState(SignalType filter)
@@ -162,6 +174,16 @@ struct SignalSlotSharedState {
     std::atomic<SignalType> _filter;
     SignalSlotSharedState* _next;
 };
+}  // namespace detail
+
+// `Slot` is used to receive signals for an asynchronous task. We can create a
+// signal through factory methods and bind multiple `Slot`s to the same
+// `Signal`. When a `Signal` is triggered, all `Slot`s will receive the
+// corresponding signal. When construct Slot, we should bing it to a signal and
+// extend the signal's life-time by own a shared_ptr of signal. Since each
+// asynchronous task should own its own `Slot`, slot objects are not
+// thread-safe. We prohibit the concurrent invocation of the public interface of
+// the same `Slot`.
 
 class Slot {
     friend class Signal;
@@ -169,13 +191,12 @@ class Slot {
 public:
     // regist a slot to signal
     Slot(Signal* signal, SignalType filter = SignalType::All)
-        : _signal(signal->shared_from_this()) {
-        signal->registSlot(this, filter);
-    };
+        : _signal(signal->shared_from_this()),
+          _node(signal->registSlot(filter)){};
     Slot(const Slot&) = delete;
 
 public:
-    // Register a signal handler. Returns false if the cancellation signal has
+    // Register a signal handler. Returns false if the signal has
     // already been triggered(and signal can't trigger twice).
     template <typename... Args>
     [[nodiscard]] bool emplace(SignalType type, Args&&... args) {
@@ -184,24 +205,25 @@ public:
         logicAssert(std::popcount(static_cast<uint64_t>(type)) == 1,
                     "It's not allow to emplace for multiple signals");
         // trigger-once signal has already been triggered
-        if (!SignalSlotSharedState::isMultiTriggerSignal(type) &&
+        if (!detail::SignalSlotSharedState::isMultiTriggerSignal(type) &&
             (signal()->state() & type)) {
             return false;
         }
-        auto handler = std::make_unique<SignalSlotSharedState::Handler>(
+        auto handler = std::make_unique<detail::SignalSlotSharedState::Handler>(
             std::forward<Args>(args)...);
         auto oldHandlerPtr = loadHandler<true>(type);
         auto oldHandler = oldHandlerPtr->load(std::memory_order_acquire);
-        if (oldHandler == &SignalSlotSharedState::HandlerManager::emittedTag) {
+        if (oldHandler ==
+            &detail::SignalSlotSharedState::HandlerManager::emittedTag) {
             return false;
         }
         auto new_handler = handler.release();
         if (!oldHandlerPtr->compare_exchange_strong(
                 oldHandler, new_handler, std::memory_order_release)) {
-            // if slot is canceled and new emplace handler doesn't exec, return
+            // if slot is triggered and new emplace handler doesn't exec, return
             // false
             assert(oldHandler ==
-                   &SignalSlotSharedState::HandlerManager::emittedTag);
+                   &detail::SignalSlotSharedState::HandlerManager::emittedTag);
             delete new_handler;
             return false;
         }
@@ -218,14 +240,15 @@ public:
             return false;
         }
         auto oldHandler = oldHandlerPtr->load(std::memory_order_acquire);
-        if (oldHandler == &SignalSlotSharedState::HandlerManager::emittedTag ||
+        if (oldHandler ==
+                &detail::SignalSlotSharedState::HandlerManager::emittedTag ||
             oldHandler == nullptr) {
             return false;
         }
         if (!oldHandlerPtr->compare_exchange_strong(
                 oldHandler, nullptr, std::memory_order_release)) {
             assert(oldHandler ==
-                   &SignalSlotSharedState::HandlerManager::emittedTag);
+                   &detail::SignalSlotSharedState::HandlerManager::emittedTag);
             return false;
         }
         delete oldHandler;
@@ -236,14 +259,14 @@ public:
         friend class Slot;
 
     public:
-        ~FilterGuard() noexcept { _slot->_node->setFilter(_oldFilter); }
+        ~FilterGuard() noexcept { _slot->_node.setFilter(_oldFilter); }
 
     private:
         FilterGuard(Slot* slot, SignalType newFilter) noexcept
             : _slot(slot), _oldFilter(_slot->getFilter()) {
             auto filter = static_cast<uint64_t>(_oldFilter) &
                           static_cast<uint64_t>(newFilter);
-            _slot->_node->setFilter(static_cast<SignalType>(filter));
+            _slot->_node.setFilter(static_cast<SignalType>(filter));
         }
         Slot* _slot;
         SignalType _oldFilter;
@@ -258,16 +281,16 @@ public:
         return FilterGuard{this, filter};
     }
     // Set the current scope's filter.
-    void setFilter(SignalType filter) noexcept { _node->setFilter(filter); }
+    void setFilter(SignalType filter) noexcept { _node.setFilter(filter); }
 
     // Get the current scope's filter.
-    SignalType getFilter() const noexcept { return _node->getFilter(); }
+    SignalType getFilter() const noexcept { return _node.getFilter(); }
 
-    // Check whether the filtered cancellation signal has emitted.
+    // Check whether the filtered signal has emitted.
     // if return true, the signal has emitted(but handler may hasn't execute
     // now)
     bool hasTriggered(SignalType type) const noexcept {
-        return _node->triggered(
+        return _node.triggered(
             static_cast<SignalType>(signal()->state() & type));
     }
     bool canceled() const noexcept {
@@ -280,31 +303,33 @@ public:
     // coroutine with the signal.
     Signal* signal() const noexcept { return _signal.get(); }
 
-    // bind a sub signal to this slot. all triggered signal will transfer to
+    // bind a chained signal to this slot. all triggered signal will transfer to
     // this chainedSignal.
-    void chainedSignal(Signal* subSignal) {
-        if (subSignal == nullptr) {
-            _node->_chainedSignalHandler = nullptr;
+    void chainedSignal(Signal* chainedSignal) {
+        if (chainedSignal == nullptr) {
+            _node._chainedSignalHandler = nullptr;
             return;
         }
 
-        _node->_chainedSignalHandler.store(
-            new SignalSlotSharedState::ChainedSignalHandler(
-                [subSignal = subSignal->weak_from_this()](SignalType type) {
-                    if (auto signal = subSignal.lock(); signal != nullptr) {
+        _node._chainedSignalHandler.store(
+            new detail::SignalSlotSharedState::ChainedSignalHandler(
+                [chainedSignal =
+                     chainedSignal->weak_from_this()](SignalType type) {
+                    if (auto signal = chainedSignal.lock(); signal != nullptr) {
                         signal->emit(type);
                     }
                 }),
             std::memory_order_release);
     }
     ~Slot() {
-        delete _node->_chainedSignalHandler.exchange(nullptr,
-                                                     std::memory_order_release);
+        delete _node._chainedSignalHandler.exchange(nullptr,
+                                                    std::memory_order_release);
     }
 
 private:
     template <bool should_emplace>
-    std::atomic<SignalSlotSharedState::Handler*>* loadHandler(SignalType type) {
+    std::atomic<detail::SignalSlotSharedState::Handler*>* loadHandler(
+        SignalType type) {
         uint8_t index = std::countr_zero(static_cast<uint64_t>(type));
         if (auto iter = _handlerTables.find(index);
             iter != _handlerTables.end()) {
@@ -314,21 +339,22 @@ private:
             return nullptr;
         } else {
             auto handlerManager =
-                _node->_handlerManager.load(std::memory_order_acquire);
-            auto newManager = new SignalSlotSharedState::HandlerManager(
+                _node._handlerManager.load(std::memory_order_acquire);
+            auto newManager = new detail::SignalSlotSharedState::HandlerManager(
                 index, handlerManager);
             // It's ok here, write only has once thread
-            _node->_handlerManager.store(newManager, std::memory_order_release);
+            _node._handlerManager.store(newManager, std::memory_order_release);
             _handlerTables.emplace(index, &newManager->_handler);
             return &newManager->_handler;
         }
     }
 
     // TODO: may be flatmap better?
-    std::unordered_map<uint8_t, std::atomic<SignalSlotSharedState::Handler*>*>
+    std::unordered_map<uint8_t,
+                       std::atomic<detail::SignalSlotSharedState::Handler*>*>
         _handlerTables;
     std::shared_ptr<Signal> _signal;
-    SignalSlotSharedState* _node;
+    detail::SignalSlotSharedState& _node;
 };
 
 class SignalException : public std::runtime_error {
@@ -375,7 +401,7 @@ struct signalHelper {
     SignalType _sign;
 };
 
-inline void SignalSlotSharedState::invoke(
+inline void detail::SignalSlotSharedState::invoke(
     SignalType type, SignalType signal, Signal* self,
     std::atomic<SignalSlotSharedState::Handler*>& handlerPtr) {
     if (!isMultiTriggerSignal(type)) {
@@ -394,7 +420,8 @@ inline void SignalSlotSharedState::invoke(
     }
 }
 
-inline void SignalSlotSharedState::operator()(SignalType type, Signal* self) {
+inline void detail::SignalSlotSharedState::operator()(SignalType type,
+                                                      Signal* self) {
     uint64_t state = type & _filter.load(std::memory_order_acquire);
     auto handlerManager = _handlerManager.load(std::memory_order_acquire);
     if (auto* handler = _chainedSignalHandler.load(std::memory_order_acquire);
@@ -413,7 +440,7 @@ inline void SignalSlotSharedState::operator()(SignalType type, Signal* self) {
     }
 }
 
-inline SignalSlotSharedState::~SignalSlotSharedState() {
+inline detail::SignalSlotSharedState::~SignalSlotSharedState() {
     if (auto manager = _handlerManager.load(std::memory_order_acquire);
         manager) {
         manager->releaseNodes();
@@ -424,7 +451,7 @@ inline SignalType Signal::emit(SignalType state) noexcept {
     if (state != SignalType::None) {
         SignalType vaildSignal = UpdateState(_state, state);
         if (vaildSignal) {
-            for (SignalSlotSharedState* node =
+            for (detail::SignalSlotSharedState* node =
                      _slotsHead.load(std::memory_order_acquire);
                  node != nullptr; node = node->_next) {
                 (*node)(vaildSignal, this);
@@ -435,15 +462,15 @@ inline SignalType Signal::emit(SignalType state) noexcept {
     return SignalType::None;
 }
 
-inline void Signal::registSlot(Slot* slot, SignalType filter) {
+inline detail::SignalSlotSharedState& Signal::registSlot(SignalType filter) {
     auto next_node = _slotsHead.load(std::memory_order_acquire);
-    auto* node = new SignalSlotSharedState{filter};
+    auto* node = new detail::SignalSlotSharedState{filter};
     node->_next = next_node;
     while (!_slotsHead.compare_exchange_weak(node->_next, node,
                                              std::memory_order_release,
                                              std::memory_order_relaxed))
         ;
-    slot->_node = node;
+    return *node;
 }
 
 inline Signal::~Signal() {
@@ -453,13 +480,13 @@ inline Signal::~Signal() {
     }
 }
 
-inline SignalSlotSharedState::HandlerManager::~HandlerManager() {
+inline detail::SignalSlotSharedState::HandlerManager::~HandlerManager() {
     auto handler = _handler.load(std::memory_order_acquire);
     if (handler != &HandlerManager::emittedTag) {
         delete _handler;
     }
 }
 
-};  // namespace async_simple
+}  // namespace async_simple
 
 #endif  // ASYNC_SIMPLE_SIGNAL_H

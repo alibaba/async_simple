@@ -42,13 +42,13 @@ public:
 
     [[nodiscard]] CoroHandle<> down(size_t n = 1) {
         std::size_t oldCount;
-        return down(&oldCount, n);
+        return down(oldCount, n);
     }
-    [[nodiscard]] CoroHandle<> down(size_t* oldCount, std::size_t n = 1) {
+    [[nodiscard]] CoroHandle<> down(size_t& oldCount, std::size_t n) {
         // read acquire and write release, _awaitingCoro store can not be
         // reordered after this barrier
-        *oldCount = _count.fetch_sub(n, std::memory_order_acq_rel);
-        if (*oldCount == 1) {
+        oldCount = _count.fetch_sub(n, std::memory_order_acq_rel);
+        if (oldCount == 1) {
             auto awaitingCoro = _awaitingCoro;
             _awaitingCoro = nullptr;
             return awaitingCoro;

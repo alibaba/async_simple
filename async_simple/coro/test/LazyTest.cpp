@@ -1363,9 +1363,9 @@ struct mylocal : public LazyLocalBase {
     inline static char tag;
 };
 
-auto my_sleep_impl = [](std::chrono::milliseconds ms, SignalType expected_type,
-                        bool should_cancel = true,
-                        bool should_check_type = true) -> Lazy<bool> {
+Lazy<bool> my_sleep_impl(std::chrono::milliseconds ms, SignalType expected_type,
+                         bool should_cancel = true,
+                         bool should_check_type = true) {
     bool cancel = false;
     auto l = co_await CurrentLazyLocals<mylocal>{};
     EXPECT_TRUE(l->getSlot() != nullptr);
@@ -1398,9 +1398,8 @@ auto my_sleep_impl = [](std::chrono::milliseconds ms, SignalType expected_type,
     co_return cancel;
 };
 
-auto my_sleep = [](std::chrono::milliseconds ms, SignalType expected_type,
-                   bool should_cancel = true,
-                   bool should_check_type = true) -> Lazy<bool> {
+Lazy<bool> my_sleep(std::chrono::milliseconds ms, SignalType expected_type,
+                    bool should_cancel = true, bool should_check_type = true) {
     return my_sleep_impl(ms, expected_type, should_cancel, should_check_type)
         .setLazyLocal<mylocal>(std::string{"hello"});
 };
