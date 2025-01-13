@@ -360,7 +360,7 @@ TEST_F(LazyTest, testYieldCancel) {
             EXPECT_EQ(result.hasError(), true);
             p.set_value();
         });
-    signal->emit(SignalType::terminate);
+    signal->emit(SignalType::Terminate);
     p.get_future().wait();
 }
 
@@ -1373,7 +1373,7 @@ auto my_sleep_impl = [](std::chrono::milliseconds ms, SignalType expected_type,
     try {
         co_await async_simple::coro::sleep(ms);
     } catch (const async_simple::SignalException& err) {
-        assert(err.value() == async_simple::terminate);
+        assert(err.value() == async_simple::Terminate);
         std::cout << err.what() + ",ms:"s + std::to_string(ms / 1ms)
                   << std::endl;
         cancel = true;
@@ -1410,12 +1410,12 @@ TEST_F(LazyTest, testCollectAnyVariadicWithCancel) {
 
     []() -> Lazy<void> {
         auto slot = co_await CurrentSlot{};
-        auto result = co_await collectAny<SignalType::all>(
-            collectAny<SignalType::terminate>(my_sleep(500ms, SignalType::all),
-                                              my_sleep(100s, SignalType::all)),
-            collectAny<SignalType::terminate>(
-                my_sleep(10ms, SignalType::terminate, false),
-                my_sleep(5s, SignalType::terminate, true, false)));
+        auto result = co_await collectAny<SignalType::All>(
+            collectAny<SignalType::Terminate>(my_sleep(500ms, SignalType::All),
+                                              my_sleep(100s, SignalType::All)),
+            collectAny<SignalType::Terminate>(
+                my_sleep(10ms, SignalType::Terminate, false),
+                my_sleep(5s, SignalType::Terminate, true, false)));
         EXPECT_EQ(result.index(), 1);
         auto slot2 = co_await CurrentSlot{};
         EXPECT_EQ(slot, slot2);
@@ -1425,13 +1425,13 @@ TEST_F(LazyTest, testCollectAnyVariadicWithCancel) {
 
     []() -> Lazy<void> {
         auto slot = co_await CurrentSlot{};
-        auto result = co_await collectAny<SignalType::none>(
-            collectAny<SignalType::terminate>(
-                my_sleep(100ms, SignalType::none, false),
-                my_sleep(100s, SignalType::terminate)),
-            collectAny<SignalType::none>(
-                my_sleep(10ms, SignalType::none, false),
-                my_sleep(200ms, SignalType::none, false)));
+        auto result = co_await collectAny<SignalType::None>(
+            collectAny<SignalType::Terminate>(
+                my_sleep(100ms, SignalType::None, false),
+                my_sleep(100s, SignalType::Terminate)),
+            collectAny<SignalType::None>(
+                my_sleep(10ms, SignalType::None, false),
+                my_sleep(200ms, SignalType::None, false)));
         EXPECT_EQ(result.index(), 1);
         auto slot2 = co_await CurrentSlot{};
         EXPECT_EQ(slot, slot2);
@@ -1440,12 +1440,12 @@ TEST_F(LazyTest, testCollectAnyVariadicWithCancel) {
                 .detach();
     []() -> Lazy<void> {
         auto slot = co_await CurrentSlot{};
-        auto result = co_await collectAny<SignalType::terminate>(
-            collectAny<SignalType::none>(my_sleep(100ms, SignalType::terminate),
-                                         my_sleep(100s, SignalType::terminate)),
-            collectAny<SignalType::none>(
-                my_sleep(10ms, SignalType::none, false),
-                my_sleep(200ms, SignalType::terminate)));
+        auto result = co_await collectAny<SignalType::Terminate>(
+            collectAny<SignalType::None>(my_sleep(100ms, SignalType::Terminate),
+                                         my_sleep(100s, SignalType::Terminate)),
+            collectAny<SignalType::None>(
+                my_sleep(10ms, SignalType::None, false),
+                my_sleep(200ms, SignalType::Terminate)));
         EXPECT_EQ(result.index(), 1);
         auto slot2 = co_await CurrentSlot{};
         EXPECT_EQ(slot, slot2);
@@ -1461,14 +1461,14 @@ TEST_F(LazyTest, testCollectAnyWithCancel) {
     []() -> Lazy<void> {
         auto slot = co_await CurrentSlot{};
         std::vector<Lazy<bool>> v1, v2;
-        v1.push_back(my_sleep(500ms, SignalType::all));
-        v1.push_back(my_sleep(100s, SignalType::all));
-        v2.push_back(my_sleep(10ms, SignalType::terminate, false));
-        v2.push_back(my_sleep(5s, SignalType::terminate, true, false));
+        v1.push_back(my_sleep(500ms, SignalType::All));
+        v1.push_back(my_sleep(100s, SignalType::All));
+        v2.push_back(my_sleep(10ms, SignalType::Terminate, false));
+        v2.push_back(my_sleep(5s, SignalType::Terminate, true, false));
         std::vector<Lazy<detail::CollectAnyResult<bool>>> v3;
-        v3.push_back(collectAny<SignalType::terminate>(std::move(v1)));
-        v3.push_back(collectAny<SignalType::terminate>(std::move(v2)));
-        auto result = co_await collectAny<SignalType::all>(std::move(v3));
+        v3.push_back(collectAny<SignalType::Terminate>(std::move(v1)));
+        v3.push_back(collectAny<SignalType::Terminate>(std::move(v2)));
+        auto result = co_await collectAny<SignalType::All>(std::move(v3));
         EXPECT_EQ(result.index(), 1);
         auto slot2 = co_await CurrentSlot{};
         EXPECT_EQ(slot, slot2);
@@ -1478,14 +1478,14 @@ TEST_F(LazyTest, testCollectAnyWithCancel) {
     []() -> Lazy<void> {
         auto slot = co_await CurrentSlot{};
         std::vector<Lazy<bool>> v1, v2;
-        v1.push_back(my_sleep(100ms, SignalType::none, false));
-        v1.push_back(my_sleep(100s, SignalType::terminate));
-        v2.push_back(my_sleep(10ms, SignalType::none, false));
-        v2.push_back(my_sleep(200ms, SignalType::none, false));
+        v1.push_back(my_sleep(100ms, SignalType::None, false));
+        v1.push_back(my_sleep(100s, SignalType::Terminate));
+        v2.push_back(my_sleep(10ms, SignalType::None, false));
+        v2.push_back(my_sleep(200ms, SignalType::None, false));
         std::vector<Lazy<detail::CollectAnyResult<bool>>> v3;
-        v3.push_back(collectAny<SignalType::terminate>(std::move(v1)));
-        v3.push_back(collectAny<SignalType::none>(std::move(v2)));
-        auto result = co_await collectAny<SignalType::none>(std::move(v3));
+        v3.push_back(collectAny<SignalType::Terminate>(std::move(v1)));
+        v3.push_back(collectAny<SignalType::None>(std::move(v2)));
+        auto result = co_await collectAny<SignalType::None>(std::move(v3));
         EXPECT_EQ(result.index(), 1);
         auto slot2 = co_await CurrentSlot{};
         EXPECT_EQ(slot, slot2);
@@ -1495,14 +1495,14 @@ TEST_F(LazyTest, testCollectAnyWithCancel) {
     []() -> Lazy<void> {
         auto slot = co_await CurrentSlot{};
         std::vector<Lazy<bool>> v1, v2;
-        v1.push_back(my_sleep(100ms, SignalType::terminate));
-        v1.push_back(my_sleep(100s, SignalType::terminate));
-        v2.push_back(my_sleep(10ms, SignalType::none, false));
-        v2.push_back(my_sleep(200ms, SignalType::terminate));
+        v1.push_back(my_sleep(100ms, SignalType::Terminate));
+        v1.push_back(my_sleep(100s, SignalType::Terminate));
+        v2.push_back(my_sleep(10ms, SignalType::None, false));
+        v2.push_back(my_sleep(200ms, SignalType::Terminate));
         std::vector<Lazy<detail::CollectAnyResult<bool>>> v3;
-        v3.push_back(collectAny<SignalType::terminate>(std::move(v1)));
-        v3.push_back(collectAny<SignalType::none>(std::move(v2)));
-        auto result = co_await collectAny<SignalType::terminate>(std::move(v3));
+        v3.push_back(collectAny<SignalType::Terminate>(std::move(v1)));
+        v3.push_back(collectAny<SignalType::None>(std::move(v2)));
+        auto result = co_await collectAny<SignalType::Terminate>(std::move(v3));
         EXPECT_EQ(result.index(), 1);
         auto slot2 = co_await CurrentSlot{};
         EXPECT_EQ(slot, slot2);
@@ -1516,13 +1516,13 @@ TEST_F(LazyTest, testCollectAllVaradicWithCancel) {
     executors::SimpleExecutor e1(10);
     syncAwait([]() -> Lazy<void> {
         auto slot = co_await CurrentSlot{};
-        auto result = co_await collectAll<SignalType::none>(
-            collectAll<SignalType::all>(
-                my_sleep(100ms, SignalType::none, false),
-                my_sleep(100s, SignalType::all)),
-            collectAll<SignalType::terminate>(
-                my_sleep(10ms, SignalType::terminate, false),
-                my_sleep(200ms, SignalType::terminate)));
+        auto result = co_await collectAll<SignalType::None>(
+            collectAll<SignalType::All>(
+                my_sleep(100ms, SignalType::None, false),
+                my_sleep(100s, SignalType::All)),
+            collectAll<SignalType::Terminate>(
+                my_sleep(10ms, SignalType::Terminate, false),
+                my_sleep(200ms, SignalType::Terminate)));
         EXPECT_EQ(std::get<0>(std::get<0>(result).value()).value(), false);
         EXPECT_EQ(std::get<1>(std::get<0>(result).value()).value(), true);
         EXPECT_EQ(std::get<0>(std::get<1>(result).value()).value(), false);
@@ -1533,13 +1533,13 @@ TEST_F(LazyTest, testCollectAllVaradicWithCancel) {
                           .via(&e1));
     syncAwait([]() -> Lazy<void> {
         auto slot = co_await CurrentSlot{};
-        auto result = co_await collectAll<SignalType::none>(
-            collectAll<SignalType::all>(
-                my_sleep(100ms, SignalType::none, false),
-                my_sleep(100s, SignalType::all)),
-            collectAll<SignalType::terminate>(
-                my_sleep(10ms, SignalType::terminate, false),
-                my_sleep(200ms, SignalType::terminate)));
+        auto result = co_await collectAll<SignalType::None>(
+            collectAll<SignalType::All>(
+                my_sleep(100ms, SignalType::None, false),
+                my_sleep(100s, SignalType::All)),
+            collectAll<SignalType::Terminate>(
+                my_sleep(10ms, SignalType::Terminate, false),
+                my_sleep(200ms, SignalType::Terminate)));
         EXPECT_EQ(std::get<0>(std::get<0>(result).value()).value(), false);
         EXPECT_EQ(std::get<1>(std::get<0>(result).value()).value(), true);
         EXPECT_EQ(std::get<0>(std::get<1>(result).value()).value(), false);
@@ -1555,14 +1555,14 @@ TEST_F(LazyTest, testCollectAllWithCancel) {
     syncAwait([]() -> Lazy<void> {
         auto slot = co_await CurrentSlot{};
         std::vector<Lazy<bool>> v1, v2;
-        v1.push_back(my_sleep(100ms, SignalType::none, false));
-        v1.push_back(my_sleep(100s, SignalType::all));
-        v2.push_back(my_sleep(10ms, SignalType::terminate, false));
-        v2.push_back(my_sleep(200ms, SignalType::terminate));
+        v1.push_back(my_sleep(100ms, SignalType::None, false));
+        v1.push_back(my_sleep(100s, SignalType::All));
+        v2.push_back(my_sleep(10ms, SignalType::Terminate, false));
+        v2.push_back(my_sleep(200ms, SignalType::Terminate));
         std::vector<Lazy<std::vector<Try<bool>>>> v3;
-        v3.push_back(collectAll<SignalType::all>(std::move(v1)));
-        v3.push_back(collectAll<SignalType::terminate>(std::move(v2)));
-        auto result = co_await collectAll<SignalType::none>(std::move(v3));
+        v3.push_back(collectAll<SignalType::All>(std::move(v1)));
+        v3.push_back(collectAll<SignalType::Terminate>(std::move(v2)));
+        auto result = co_await collectAll<SignalType::None>(std::move(v3));
         EXPECT_EQ(result[0].value()[0].value(), false);
         EXPECT_EQ(result[0].value()[1].value(), true);
         EXPECT_EQ(result[1].value()[0].value(), false);
@@ -1574,14 +1574,14 @@ TEST_F(LazyTest, testCollectAllWithCancel) {
     syncAwait([]() -> Lazy<void> {
         auto slot = co_await CurrentSlot{};
         std::vector<Lazy<bool>> v1, v2;
-        v1.push_back(my_sleep(500ms, SignalType::terminate, true, false));
-        v1.push_back(my_sleep(100s, SignalType::terminate, true, false));
-        v2.push_back(my_sleep(10ms, SignalType::none, false));
-        v2.push_back(my_sleep(100ms, SignalType::none, false));
+        v1.push_back(my_sleep(500ms, SignalType::Terminate, true, false));
+        v1.push_back(my_sleep(100s, SignalType::Terminate, true, false));
+        v2.push_back(my_sleep(10ms, SignalType::None, false));
+        v2.push_back(my_sleep(100ms, SignalType::None, false));
         std::vector<Lazy<std::vector<Try<bool>>>> v3;
-        v3.push_back(collectAll<SignalType::all>(std::move(v1)));
-        v3.push_back(collectAll<SignalType::none>(std::move(v2)));
-        auto result = co_await collectAll<SignalType::terminate>(std::move(v3));
+        v3.push_back(collectAll<SignalType::All>(std::move(v1)));
+        v3.push_back(collectAll<SignalType::None>(std::move(v2)));
+        auto result = co_await collectAll<SignalType::Terminate>(std::move(v3));
         EXPECT_EQ(result[0].value()[0].value(), true);
         EXPECT_EQ(result[0].value()[1].value(), true);
         EXPECT_EQ(result[1].value()[0].value(), false);
@@ -2018,10 +2018,10 @@ TEST_F(LazyTest, testForbiddenCancel) {
             EXPECT_NE(slot, nullptr);
             co_await std::move(f);
             EXPECT_TRUE(slot->canceled());
-            EXPECT_EQ(slot->signal()->state(), SignalType::terminate);
+            EXPECT_EQ(slot->signal()->state(), SignalType::Terminate);
         };
         lazy(p.getFuture()).setLazyLocal(signal.get()).via(&e).detach();
-        signal->emit(SignalType::terminate);
+        signal->emit(SignalType::Terminate);
         p.setValue();
     }
     {
@@ -2038,7 +2038,7 @@ TEST_F(LazyTest, testForbiddenCancel) {
             EXPECT_EQ(slot, nullptr);
         };
         lazy(p.getFuture()).setLazyLocal(signal.get()).via(&e).detach();
-        signal->emit(SignalType::terminate);
+        signal->emit(SignalType::Terminate);
         p.setValue();
     }
 }

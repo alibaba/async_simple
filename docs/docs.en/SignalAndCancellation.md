@@ -1,37 +1,37 @@
-We often need to cancel other asynchronous tasks related to a specific asynchronous task once it finishes. For example, we might want an IO request to terminate promptly if it times out. `async-simple`, based on a collaborative signal-slot model, provides a general, thread-safe, and efficient mechanism for canceling asynchronous tasks. It also supports structured task cancellation.
+In many cases, we need to cancel some asynchronous tasks associated with another task once it completes. For example, we may want to terminate an IO request when it times out. `async-simple` provides a universal, thread-safe, and efficient asynchronous task cancellation mechanism based on a cooperative signal-slot model and supports structured task cancellation.
 
 ## Signal and Slot
 
-`async-simple` provides the following signal types:
+`async-simple` offers the following signal types, with each bit representing a specific signal:
 
 ```cpp
 enum class SignalType : uint64_t {
     none = 0,
-    // The lower 32 bits can only trigger once.
-    terminal = 0b1,                   // The lowest bit represents the termination signal.
-                                      // 2-16 bits are reserved for async-simple.
-                                      // 17-32 bits are for user-defined extensions.
-    // The upper 32 bits can be triggered multiple times (the signal handler can be called multiple times).
-                                      // 33-48 bits are reserved for async-simple.
-                                      // 49-64 bits are for user-defined extensions.
-    all = 0xffff'ffff'ffff'ffff,      // Default filtering level (does not filter any signals)
+    // The lower 32 bits of a signal can only be triggered once.
+    terminal = 0b1,                   // The lowest 1 bit represents the termination signal.
+                                      // Bits 2-16 are reserved for async-simple.
+                                      // Bits 17-32 are for user-defined extensions.
+    // The upper 32 bits of a signal can be triggered multiple times (the signal handler can be called multiple times).
+                                      // Bits 33-48 are reserved for async-simple.
+                                      // Bits 49-64 are for user-defined extensions.
+    all = 0xffff'ffff'ffff'ffff,      // Default filtering level (no signal filtering)
 };
 ```
 
-The `Signal` type is used to initiate a signal, while the `Slot` is used to receive signals. We can create a signal using a factory method and bind multiple slots to the same signal. When the signal is triggered, all slots will receive the signal.
+The `Signal` type is used to issue a signal, while `Slot` is used to receive signals. We can create a signal through factory methods and bind multiple `Slot`s to the same `Signal`. When a `Signal` is triggered, all `Slot`s will receive the corresponding signal.
 
-The simplest approach is to manually check if a signal has been triggered:
+The simplest method is to manually check if a signal has been triggered:
 
 ```cpp
-// Create a signal using a factory method
+// Create a Signal through factory methods
 std::shared_ptr<Signal> signal = Signal::create();
 std::vector<std::future<void>> works;
-for (int i = 0; i < 10; ++i) {
-  // Create a slot for each asynchronous task
+for (int i=0;i<10;++i) {
+  // Create a Slot for each asynchronous task
   auto slot = std::make_unique<Slot>(signal.get());
-  // Asynchronously execute the task
-  std::async(std::launch::async, [slot = std::move(slot)] {
-      // Manually poll the cancellation status
+  // Execute the task asynchronously
+  std::async(std::launch::async, [slot=std::move(slot)] {
+      // Manually poll cancellation status
       while (!slot->hasTriggered(SignalType::terminate)) {
         // ...
       }
@@ -41,36 +41,36 @@ for (int i = 0; i < 10; ++i) {
 // ...
 // Submit a cancellation signal
 signal->emit(SignalType::terminate);
-for (auto &e: works)
+for (auto &e:works)
   e.get();
 ```
 
-In addition to directly checking the cancellation status, we can register signal handling functions in the slot to receive signals. The signature of a signal handling function should be `void(SignalType, Signal*)`. The first parameter `SignalType` represents the type of signal successfully triggered after filtering, and the second parameter is a pointer to the signal.
+Apart from directly checking the cancellation status, we can register signal handlers in a `Slot` to receive signals. The signature for a signal handler should be `void(SignalType, Signal*)`. The first parameter, `SignalType`, represents the signal type successfully triggered after filtering, and the second parameter is a pointer to the signal.
 
 Note:
-1. Signal handling functions should not block. When the `emit()` function is called and a signal is triggered, the program traverses all signal handling functions bound to the signal and executes them immediately.
-2. Pay attention to thread safety: the signal handling function will be executed by the thread calling `emit()`, and handling functions for signals higher than 32 might be executed concurrently by multiple threads.
-3. Signal handling functions should not hold on to the signal bound to the slot, as it may cause memory leaks of the signal. Access the signal through the `Signal*` parameter instead.
+1. Signal handlers should not block. When the `emit()` function is called and a signal is triggered, the program will immediately traverse and execute the signal handlers bound to the `Signal`.
+2. Be cautious of thread safety: Signal handlers will be executed by the thread calling `emit()`, and signal handlers for signals above the 32nd bit might be executed concurrently by multiple threads.
+3. Signal handlers should not hold the signal bound to the slot, as it would cause a memory leak. Users should access the signal via the `Signal*` parameter.
 
-For example, the following code uses a signal callback function to cancel a sleep.
+For example, the following code cancels a sleep operation through a signal callback function:
 
 ```cpp
-// Create a signal using a factory method
+// Create a Signal through factory methods
 std::shared_ptr<Signal> signal = Signal::create();
 std::vector<std::future<void>> works;
-for (int i = 0; i < 10; ++i) {
+for (int i=0;i<10;++i) {
   // Create a slot for each asynchronous task
   auto slot = std::make_unique<Slot>(signal.get());
-  // Asynchronously execute the task
-  std::async(std::launch::async, [slot = std::move(slot)] {
+  // Execute the task asynchronously
+  std::async(std::launch::async, [slot=std::move(slot)] {
       std::unique_ptr<std::promise<void>> p;
       auto f = p->get_future();
-      bool ok = slot->emplace(SignalType::terminate, // Represents the bit that triggers the callback function, this enum can have only one bit set to 1, if the signal bit is 1, the callback function will be triggered.
-          [p = std::move(p)](SignalType, Signal*) {
+      bool ok = slot->emplace(SignalType::terminate, // The bit position representing the callback function to be triggered. This enum should have exactly one bit set to 1. If the signal submitted has this bit set to 1, the callback function will be triggered.
+          [p=std::move(p)](SignalType, Signal*){
           p->set_value();
       });
       if (ok) { // If the cancellation signal has not been triggered
-          f.wait_for(1s * (rand() + 1)); // Unless the cancellation signal is triggered, continue sleeping for some time.
+          f.wait_for(1s*(rand()+1)); // Sleep for a while unless the cancellation signal is triggered.
       }
       slot->clear(); // Clear the callback function
       if (slot->signal()) { // If the slot is bound to a signal
@@ -80,55 +80,70 @@ for (int i = 0; i < 10; ++i) {
   });
 }
 // ...
-// When the first asynchronous timed task completes, other tasks will also end.
-for (auto &e: works)
+// Once the first asynchronous sleep task ends, other tasks will be terminated together.
+for (auto &e:works)
   e.get();
 ```
 
-In the above code, we can obtain a pointer to the signal by calling the slot's `signal()` function. We ensure that the pointer returned by this function is always legal, as the signal's lifecycle is automatically extended until the last bound slot is destructed.
+In the above code, by calling the `Slot`'s `signal()` function, we can get a pointer to the `Signal`. We ensure that the pointer returned by this function is always valid because the lifecycle of the `Signal` is automatically extended until the last bound slot is destructed.
 
-The code above may call the `emit()` function multiple times to attempt to trigger the cancellation signal; `emit()` will return the signal triggered successfully each time.
+The above code may call the `emit` function multiple times to attempt to trigger the cancellation signal. The `emit` call will return the successfully triggered signal.
 
 ```cpp
 class Signal
     : public std::enable_shared_from_this<Signal> {
 public:
-    // Submit a signal and return this request's successfully triggered signals, thread-safe.
+    // Submit a signal (allows submitting multiple signals at once) and returns the successfully triggered signals in the current request. Thread-safe.
     SignalType emit(SignalType state) noexcept;
-    // Get the current cancellation signal, thread-safe.
+    // Get the current signal, thread-safe.
     SignalType state() const noexcept;
-    // The unique method to create a signal, returns a shared_ptr.
+    // Factory method to create a signal, returns a shared_ptr of the signal. Thread-safe.
     static std::shared_ptr<Signal> create();
 };
 ```
 
-All operations of `Signal` are thread-safe. However, since each asynchronous task should hold its own `Slot`, the slot object is not thread-safe. Users are prohibited from calling the public interface of the same `Slot` concurrently.
+All operations on `Signal` are thread-safe. However, since each asynchronous task should own its own `Slot`, slot objects are not thread-safe. We prohibit the concurrent invocation of the public interface of the same `Slot`.
 
 ```cpp
 class Slot {
-    // Bind the signal to the slot. A signal filter level can be specified; if the cancellation signal type & filter is 0, the signal will not trigger.
+    // Bind `Signal` with `Slot` together. Allows specifying the signal filter level. If the result of the submitted signal type AND filter is zero, the signal will not be triggered.
     Slot(Signal* signal,
                      SignalType filter = SignalType::all);
-    // Register a signal handling function. Users can register the signal handling function multiple times; the second registration overwrites the previous one.
-    // SignalType: Represents the bit that this signal handling function will respond to. This enum can have only one bit set to 1; if the signal bit is 1, the callback function will be triggered.
-    // Returns false: The cancellation signal has already been triggered.
+    // Register a signal handler. Users can register signal handlers multiple times, and the second registration will override the previous handler.
+    // SignalType: Represents the bit position to which this signal handler responds. This enum should have exactly one bit set to 1. If the submitted signal has this bit set to 1, the callback function will be triggered.
+    // Returns false: Indicates that the cancellation signal has already been triggered.
     template <typename... Args>
     [[nodiscard]] bool emplace(SignalType type, Args&&... args);
-    // Clears the signal handling function. If false is returned, it means the signal handling function has been executed, or the signal has not been registered.
+    // Clear the signal handler. If returns false, it means the signal handler has already been executed or never been registered.
     bool clear();
-    // Filter signals within the specified scope; if the cancellation signal type & filter is 0, the signal type will not be triggered in this scope.
-    // Nested filter addition is allowed.
+    // Filter signals within the specified scope. If the cancellation signal type & filter is zero, the signal type will not be triggered within that scope.
+    // Allows nested addition of filters.
     [[nodiscard]] FilterGuard setScopedFilter(SignalType filter);
-    // Get the filter of the current scope
+    // Get the current scope's filter
     SignalType getFilter();
-    // Determines whether a signal is in the triggered state (will return false if filtered).
+    // Determine if the signal is in a triggered state (returns false if filtered).
     bool hasTriggered(SignalType) const noexcept;
-    // This function returns the signal corresponding to the slot. If the cancellation signal was triggered before constructing the slot, this function returns nullptr. Otherwise, it always returns a valid signal pointer. This is because the slot owns the corresponding signal. To extend the lifespan of the signal, call signal()->shared_from_this(), or you can use the signal to start a new coroutine.
+    // This function returns the `Signal` corresponding to the `Slot`. If the signal was triggered before constructing the slot, this function returns nullptr. Otherwise, it always returns a valid `Signal` pointer. This is because the slot holds ownership of the corresponding signal. To extend the signal's lifecycle, you can call signal()->shared_from_this(), or use the signal to start a new coroutine.
     Signal* signal() const noexcept;
 };
 ```
 
-We can also provide more contextual information for signal handling functions by inheriting the signal:
+We can chain multiple `Signal`s together. When a particular `Signal` is triggered, the signal will be forwarded to other chained child `Signal`s.
+
+```cpp
+std::shared_ptr<Signal> signal = Signal::create();
+auto slot = std::make_unique<Slot>(signal.get());
+std::shared_ptr<Signal> chainedSignal = Signal::create();
+slot->addChainedSignal(chainedSignal);
+signal->emit(SignalType::terminate);
+assert(chainedSignal->state()==SignalType::terminate);
+// The signal will be forwarded to chainedSignal
+// However, the signals triggered by chainedSignal will not be forwarded to signal
+chainedSignal->emit(static_cast<SignalType>(0b10));
+assert(signal->state()!=static_cast<SignalType>(0b10));
+```
+
+We can also extend `Signal` to provide more context information to signal handlers:
 
 ```cpp
 class MySignal : public Signal {
@@ -143,28 +158,28 @@ slot->emplace([](SignalType type, Signal* signal) {
   auto mySignal = dynamic_cast<MySignal*>(signal);
   std::cout << "myState:" << mySignal->myState << std::endl;
 });
-mySignal->myState = 1;
+mySignal->myState=1;
 mySignal->emit(SignalType::terminate);
 ```
 
-## Stackless Coroutine Support
+## Support for Stackless Coroutines
 
-The above slot and signal are relatively low-level general APIs, adaptable to various asynchronous scenarios. In the `Lazy` stackless coroutine library of `async-simple`, a series of high-level encapsulations are provided, allowing users to achieve structured concurrent task cancellation without worrying about details.
+The above slot and signal mechanism is a low-level universal API that adapts to various asynchronous scenarios. `async-simple`'s `Lazy` stackless coroutine library provides a series of advanced encapsulations, allowing users to perform structured concurrent task cancellation without worrying about the details.
 
-### collect Functions and Structured Concurrency
+### collect functions and structured concurrency
 
-In general user code, we recommend using `collectAny` and `collectAll` to implement structured concurrent task cancellation.
+In general user code, we recommend using `collectAny` and `collectAll` to perform structured concurrency task cancellation.
 
 #### collectAny
 
-`collectAny` can execute multiple coroutines concurrently and wait for the first coroutine to return. `collectAny` will automatically bind these coroutines to a cancellation signal and send a cancellation signal to other coroutines that have not completed execution when the first coroutine finishes, thus ending these tasks.
+`collectAny` can concurrently execute multiple coroutines and waits for the first coroutine to return. It will automatically bind these coroutines to a cancellation signal and, upon the first coroutine's completion, send a cancellation signal to terminate any ongoing tasks.
 
-For example, here is a code that uses `collectAny` to implement general timeout handling logic. If `async_read()` does not return within 1 second, `sleep_1s()` will return first and cancel `async_read()`.
+For example, the following code implements a general timeout handling logic using `collectAny`. If `async_read()` does not return within 1 second, `sleep_1s()` will return first and cancel `async_read()`.
 
 ```cpp
 Lazy<void> sleep_1s();
 Lazy<std::string> async_read();
-auto res = co_await collectAny<SignalType::terminate>(async_read(), sleep_1s());
+auto res = co_await collectAny<SignalType::terminate>(async_read(),sleep_1s());
 if (std::get<res>() == 1) { // timed out!
   // ...
 }
@@ -173,85 +188,82 @@ else {
 }
 ```
 
-`collectAny` supports users sending different cancellation signals. By default, the cancellation signal sent is `SignalType::none`, which means the `async_read()` task will not be canceled and will continue execution if it completes later. To cancel other tasks when `collectAny` finishes, you can choose to send the signal `SignalType::terminate`.
+`collectAny` supports sending different cancellation signals. By default, it sends the `SignalType::none` signal, which means `async_read()` will not be canceled and will continue to execute. If you want `collectAny` to cancel other tasks upon completion, you can choose to send the `SignalType::terminate` signal.
 
 ```cpp
 Lazy<void> work1();
 Lazy<void> work2();
-auto res = co_await collectAny<SignalType::none>(async_read(), sleep_1s());
+auto res = co_await collectAny<SignalType::none>(work1(), work2());
 if (std::get<res>() == 0) { 
-  // work1 finished, work2 will still working
+  // work1 finished, work2 will still be working
 }
 else { 
-  // work2 finished, work1 will still working
+  // work2 finished, work1 will still be working
 }
 ```
 
 #### collectAll
 
-Similar to `collectAny`, `collectAll` can also send a signal when the first task ends (it does not send a signal by default).
+Similar to `collectAny`, `collectAll` can send a signal when the first task ends. (Default behavior is no signal)
 
 ```cpp
 Lazy<int> work1();
 Lazy<std::string> work2();
 // work1(), work2() all finished, no cancel
-auto res = co_await collectAll(work1(), work2());
+auto res = co_await collectAll(work1(),work2());
 // work1(), work2() all finished, the later work will be canceled by SignalType::terminate
-auto res = co_await collectAll<SignalType::terminate>(work1(), work2());
+auto res = co_await collectAll<SignalType::terminate>(work1(),work2());
 ```
 
-Unlike `collectAny`, `collectAll` waits for coroutines to complete execution and retrieves their return values. This simplifies the lifecycle of asynchronous tasks on one hand, and on the other, if the cancellation signal fails to terminate the tasks, `collectAll` ensures all tasks finish executing.
+Unlike `collectAny`, `collectAll` waits for all coroutines to complete and retrieves their return values. This simplifies the lifecycle of asynchronous tasks, and if the cancellation signal fails to stop a task, `collectAll` will wait for the remaining tasks to finish.
 
 ```cpp
 http_client client;
-// Unlike collectAny, we don't need to extend the lifecycle of the client by reference counting, as collectAll guarantees the http_client::connect coroutine will return.
+// Unlike `collectAny`, we do not need to manually extend the lifecycle of `client` because `collectAll` guarantees that the `http_client::connect` coroutine will return.
 auto res = co_await collectAll<SignalType::terminate>(client.connect("localhost:8080"), sleep(1s));
-// If no cancellation signal is sent, collectAll will execute until 1 second has passed and the client completes the connection.
+// If no cancellation signal is sent, `collectAll` will continue to execute until the sleep time of one second elapses and the client completes the connection.
 auto res = co_await collectAll(client.connect("localhost:8080"), sleep(1s));
 ```
 
-### Passing and Retrieving Signals and Slots
+### Passing and retrieving signals and slots
 
-A `Lazy` can hold a `Slot`. When you want to bind a cancellation signal to an asynchronous task, just bind the signal at the start of the task via `Lazy<T>::setLazyLocal`, and it will be passed along through `co_await`. Note that a signal can only be bound once.
+A `Lazy` can hold a `Slot`. When binding a cancellation signal to an asynchronous task, all that's needed at the beginning of the task is to bind the signal through `Lazy<T>::setLazyLocal`; it will be passed throughout the call chain via `co_await`. Note that a signal can only be bound once.
 
-You can get a pointer to the `Slot` by calling `co_await CurrentSlot{}`, and calling `co_await ForbidSignal{}` will unbind the coroutine call chain from the cancellation signal, thus preventing subsequent tasks from being terminated. This action will destruct the corresponding `Slot` object, and subsequent calls to `co_await CurrentSlot{}` will return nullptr.
+You can get a pointer to the `Slot` by calling `co_await CurrentSlot{}`, and call `co_await ForbidSignal{}` to unbind the coroutine call chain from the cancellation signal, preventing subsequent tasks from being interrupted. This will destruct the corresponding `Slot` object, and calling `co_await CurrentSlot{}` afterwards will return nullptr.
 
 ```cpp
 Lazy<void> subTask() {
     Slot* slot = co_await CurrentSlot{};
-    assert(slot != nullptr);
+    assert(slot!=nullptr);
     co_await ForbidSignal{};
-    // The slot is illegal now.
+    // slot is now invalid.
     assert(co_await CurrentSlot{} == nullptr);
     co_return;
 }
-
 Lazy<void> Task() {
     Slot* slot = co_await CurrentSlot{};
-    assert(slot != nullptr);
+    assert(slot!=nullptr);
     co_await subTask();
     assert(co_await CurrentSlot{} == nullptr);
     co_return;
 }
-
 auto signal = Signal::create();
 syncAwait(Task().setLazyLocal(signal.get()).via(ex));
 ```
 
-### Supported Cancelable Objects and Functions
+### Objects and functions that support cancellation and signal forwarding
 
-In addition to manually checking if a cancellation signal has been triggered, many potentially suspended functions in `async-simple` support cancellation operations.
+In addition to manually checking for triggered cancellation signals, many potentially suspendable functions in `async-simple` support cancellation operations. Additionally, `collect*` functions support forwarding signals received externally to coroutines initiated by `collect*`.
 
-The following objects and functions support cancellation operations, where the coroutine responding to the signal may throw the `async_simple::SignalException` exception, and calling `value()` should return the signal type (for cancellation operations, it is `async_simple::terminate`).
+The following objects and functions support cancellation operations. Coroutines responding to signals may throw the `async_simple::SignalException` exception, and calling `value()` should return the signal type (for cancellation operations, this is `async_simple::terminate`).
+Also, the following IO functions will automatically insert two checkpoints to check if the task has been canceled during the suspension/resumption of the coroutine.
 
-Additionally, the following IO functions automatically insert two checkpoints to determine whether the task has been canceled while suspending/resuming the coroutine.
+1. `CollectAny`: Forwards signals to all subtasks. If a cancellation signal is received, an exception is thrown and it returns immediately.
+2. `CollectAll`: Forwards signals to all subtasks. Even if a cancellation signal is received, it waits for all subtasks to complete before normally returning.
+3. `Yield/SpinLock`: Throws an exception if canceled. Currently, canceling tasks queued in the scheduler is not supported.
+4. `Sleep`: Depends on whether the scheduler overrides the virtual function `void schedule(Func func, Duration dur, uint64_t schedule_info, Slot *slot = nullptr)` and correctly implements the cancellation functionality. If not overridden, the default implementation supports canceling Sleep.
 
-1. `CollectAny`: When canceled, it forwards the signal to all subtasks and throws an exception immediately.
-2. `CollectAll`: When canceled, it forwards the signal to all subtasks, then waits for all subtasks to complete before returning normally.
-3. `Yield/SpinLock`: If canceled, it throws an exception. Currently, it does not support canceling tasks queued in the scheduler.
-4. `Sleep`: This depends on whether the scheduler overrides the virtual function `void schedule(Func func, Duration dur, uint64_t schedule_info, Slot *slot = nullptr)` and correctly implements the cancellation feature. If the function is not overridden, the default implementation supports canceling sleep.
-
-The following IO objects and functions do not yet support cancellation operations and need to be improved in the future:
+The following IO objects and functions do not yet support cancellation operations and await further improvements:
 1. `Mutex`
 2. `ConditionVariable`
 3. `SharedMutex`
@@ -259,15 +271,14 @@ The following IO objects and functions do not yet support cancellation operation
 5. `Promise/Future`
 6. `CountingSemaphore`
 
-### How Custom Awaiter Supports Cancellation
+### Supporting cancellation in custom Awaiters
 
-When implementing custom IO functions, users also need to adapt to support cancellation functionality. `async-simple` provides helper functions like `signal_await{terminate}.ready()`, `signal_await{terminate}.suspend()`, and `signal_await{terminate}.resume()` to simplify user code.
+When implementing your own IO functions, it's necessary to adapt and support cancellation functionality. `async-simple` provides `signalHelper{terminate}.hasCanceled()` (for use in the coroutine's `await_ready()`), `signalHelper{terminate}.tryEmplace()` (for use in the coroutine's `await_suspend()`), and `signalHelper{terminate}.checkHasCanceled()` (for use in the coroutine's `await_resume()`) to simplify user code.
 
-Below is an example demonstrating how to wrap an asynchronous timer as a coroutine-based Sleep function with cancellation support:
+Below is an example implementation of a coroutine Sleep function based on an asynchronous timer, which supports interruption by a cancellation signal:
 
 ```cpp
 using Duration = std::chrono::milliseconds;
-
 class TimeAwaiter {
 public:
     TimeAwaiter(Duration dur, Slot *slot)
@@ -275,29 +286,29 @@ public:
 
 public:
     bool await_ready() const noexcept { 
-      // check if canceled before suspend (if canceled, call await_resume() immediately)
-      return signal_await{terminate}.ready(_slot); 
+      // Check if canceled before suspension (if canceled, the coroutine will immediately call await_resume())
+      return signalHelper{terminate}.hasCanceled(_slot); 
     }
 
     void await_suspend(std::coroutine_handle<> handle) {
-        _asyncTimer.sleep_for(_dur, [](auto&&) {
+        _asyncTimer.sleep_for(_dur, [handle](auto&&){
           handle.resume();
         })
-        bool hasnt_canceled = signal_await{terminate}.suspend(
-            slot, [this](SignalType, Signal*) {
+        bool hasnt_canceled = signalHelper{terminate}.tryEmplace(
+            _slot, [this](SignalType, Signal*) {
                 _asyncTimer.cancel();
             });
-        if (!hasnt_canceled) { // has canceled
+        if (!hasnt_canceled) { // If canceled
           _asyncTimer.cancel();
         }
     }
 
-    // check if canceled after suspend (if canceled, throw exception), if not canceled, clear slot function.
+    // Check if canceled after suspension (if canceled, throw SignalException). If not canceled, clear slot function.
     void await_resume() { 
-      signal_await{terminate}.resume(_slot); 
+      signalHelper{terminate}.checkHasCanceled(_slot); 
     }
 
-    // helper function to speed-up Lazy co_await (it will ignore lazy's executor)
+    // Helper function to speed up Lazy co_await (it will ignore the lazy's executor)
     auto coAwait(Executor *) {
         return *this;
     }
@@ -308,13 +319,13 @@ private:
     Slot *_slot;
 };
 
-// throw exception if canceled.
+// Throw SignalException if canceled.
 template <typename Rep, typename Period>
-Lazy<void> my_sleep(Duration dur) {
-    co_return co_await TimeAwaiter{dur, co_await CurrentSlot{}};
+Lazy<void> my_sleep(Duratio dur) {
+    co_return co_await TimeAwaiter{dur,co_await CurrentSlot{}};
 }
 ```
 
-## Stackful Coroutine Support
+## Support for Stackful Coroutines
 
-Stackful coroutines do not yet have special support for cancellation and need to be improved in the future.
+Stackful coroutines currently do not have special support for cancellation and await further improvements.

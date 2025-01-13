@@ -112,7 +112,7 @@ public:
         YieldAwaiter(Executor* executor, Slot* slot)
             : _executor(executor), _slot(slot) {}
         bool await_ready() const noexcept {
-            return signal_await{terminate}.ready(_slot);
+            return signalHelper{Terminate}.hasCanceled(_slot);
         }
         template <typename PromiseType>
         void await_suspend(std::coroutine_handle<PromiseType> handle) {
@@ -130,7 +130,7 @@ public:
                 static_cast<uint64_t>(Executor::Priority::YIELD));
         }
         void await_resume() const {
-            signal_await{terminate}.resume(
+            signalHelper{Terminate}.checkHasCanceled(
                 _slot, "async_simple::Yield/SpinLock is canceled!");
         }
 

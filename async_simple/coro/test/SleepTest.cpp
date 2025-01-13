@@ -134,10 +134,10 @@ Lazy<void> cancelSleep() {
         } catch (const async_simple::SignalException& err) {
             ++cnt;
             cancel_flag = true;
-            EXPECT_TRUE(err.value() == async_simple::terminate);
+            EXPECT_TRUE(err.value() == async_simple::Terminate);
         }
         auto slot = co_await async_simple::coro::CurrentSlot{};
-        auto ok = slot->signal()->emit(SignalType::terminate);
+        auto ok = slot->signal()->emit(SignalType::Terminate);
         if (ok) {
             std::cout << "Coro " << i << " emit cancel work" << std::endl;
         } else {

@@ -180,7 +180,7 @@ protected:
         std::thread([this, func = std::move(func), dur, slot]() {
             auto promise = std::make_unique<std::promise<void>>();
             auto future = promise->get_future();
-            bool hasnt_canceled = signal_await{terminate}.suspend(
+            bool hasnt_canceled = signalHelper{Terminate}.tryEmplace(
                 slot, [p = std::move(promise)](SignalType, Signal *) {
                     p->set_value();
                 });
@@ -203,7 +203,7 @@ public:
 
 public:
     bool await_ready() const noexcept {
-        return signal_await{terminate}.ready(_slot);
+        return signalHelper{Terminate}.hasCanceled(_slot);
     }
 
     template <typename PromiseType>
@@ -211,8 +211,8 @@ public:
         _ex->schedule(std::move(continuation), _dur, _schedule_info, _slot);
     }
     void await_resume() {
-        signal_await{terminate}.resume(_slot,
-                                       "async_simple's timer is canceled!");
+        signalHelper{Terminate}.checkHasCanceled(
+            _slot, "async_simple's timer is canceled!");
     }
 
 private:

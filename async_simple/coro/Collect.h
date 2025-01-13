@@ -144,7 +144,7 @@ struct CollectAnyAwaiter {
           _input(std::move(other._input)) {}
 
     bool await_ready() const noexcept {
-        return _input.empty() || signal_await{terminate}.ready(_slot);
+        return _input.empty() || signalHelper{Terminate}.hasCanceled(_slot);
     }
 
     bool await_suspend(std::coroutine_handle<> continuation) {
@@ -161,8 +161,8 @@ struct CollectAnyAwaiter {
         auto event = std::make_shared<detail::CountEvent>(input.size() + 1);
         _signal = Signal::create();
         if (_slot)
-            _slot->addSubSignal(_signal.get());
-        if (!signal_await{terminate}.suspend(
+            _slot->chainedSignal(_signal.get());
+        if (!signalHelper{Terminate}.tryEmplace(
                 _slot, [c = continuation, e = event, size = input.size()](
                            SignalType type, Signal*) mutable {
                     auto count = e->downCount();
@@ -198,8 +198,8 @@ struct CollectAnyAwaiter {
         return true;
     }
     auto await_resume() {
-        signal_await{terminate}.resume(_slot,
-                                       "async_simple::CollectAny is canceled!");
+        signalHelper{Terminate}.checkHasCanceled(
+            _slot, "async_simple::CollectAny is canceled!");
         if (_result == nullptr) {
             return ResultType{};
         }
@@ -242,7 +242,7 @@ struct CollectAnyVariadicAwaiter {
           _result(std::move(other._result)) {}
 
     bool await_ready() const noexcept {
-        return signal_await{terminate}.ready(_slot);
+        return signalHelper{Terminate}.hasCanceled(_slot);
     }
 
     template <size_t... index>
@@ -262,8 +262,8 @@ struct CollectAnyVariadicAwaiter {
             std::tuple_size<InputType>() + 1);
         _signal = Signal::create();
         if (_slot)
-            _slot->addSubSignal(_signal.get());
-        if (!signal_await{terminate}.suspend(
+            _slot->chainedSignal(_signal.get());
+        if (!signalHelper{Terminate}.tryEmplace(
                 _slot, [c = continuation, e = event](SignalType type,
                                                      Signal*) mutable {
                     auto count = e->downCount();
@@ -307,8 +307,8 @@ struct CollectAnyVariadicAwaiter {
     }
 
     auto await_resume() {
-        signal_await{terminate}.resume(_slot,
-                                       "async_simple::CollectAny is canceled!");
+        signalHelper{Terminate}.checkHasCanceled(
+            _slot, "async_simple::CollectAny is canceled!");
         return std::move(*_result);
     }
 
@@ -383,7 +383,7 @@ struct CollectAllAwaiter {
                 .promise();
         _signal = Signal::create();
         if (_slot)
-            _slot->addSubSignal(_signal.get());
+            _slot->chainedSignal(_signal.get());
 
         auto executor = promise_type._executor;
         for (size_t i = 0; i < _input.size(); ++i) {
@@ -550,7 +550,7 @@ struct CollectAllVariadicAwaiter {
                             std::coroutine_handle<> continuation) {
         _signal = Signal::create();
         if (_slot)
-            _slot->addSubSignal(_signal.get());
+            _slot->chainedSignal(_signal.get());
 
         auto promise_type =
             std::coroutine_handle<LazyPromiseBase>::from_address(
@@ -671,7 +671,7 @@ inline auto CollectAnyVariadicImpl(Slot* slot, SignalType SignalType,
 
 }  // namespace detail
 
-template <SignalType SignalType = SignalType::none, typename T,
+template <SignalType SignalType = SignalType::None, typename T,
           template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>>
 inline Lazy<detail::CollectAnyResult<typename LazyType<T>::ValueType>>
@@ -681,7 +681,7 @@ collectAny(std::vector<LazyType<T>, IAlloc>&& input) {
                                               std::move(input));
 }
 
-template <SignalType SignalType = SignalType::none,
+template <SignalType SignalType = SignalType::None,
           template <typename> typename LazyType, typename... Ts>
 inline Lazy<std::variant<Try<Ts>...>> collectAny(LazyType<Ts>... awaitables) {
     static_assert(sizeof...(Ts), "collectAny need at least one param!");
@@ -693,7 +693,7 @@ inline Lazy<std::variant<Try<Ts>...>> collectAny(LazyType<Ts>... awaitables) {
 // The collectAll() function can be used to co_await on a vector of LazyType
 // tasks in **one thread**,and producing a vector of Try values containing each
 // of the results.
-template <SignalType SignalType = SignalType::none, typename T,
+template <SignalType SignalType = SignalType::None, typename T,
           template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>,
           typename OAlloc = std::allocator<Try<T>>>
@@ -708,7 +708,7 @@ collectAll(std::vector<LazyType<T>, IAlloc>&& input,
 // Like the collectAll() function above, The collectAllPara() function can be
 // used to concurrently co_await on a vector LazyType tasks in executor,and
 // producing a vector of Try values containing each of the results.
-template <SignalType SignalType = SignalType::none, typename T,
+template <SignalType SignalType = SignalType::None, typename T,
           template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>,
           typename OAlloc = std::allocator<Try<T>>>
@@ -723,7 +723,7 @@ collectAllPara(std::vector<LazyType<T>, IAlloc>&& input,
 // This collectAll function can be used to co_await on some different kinds of
 // LazyType tasks in one thread,and producing a tuple of Try values containing
 // each of the results.
-template <SignalType SignalType = SignalType::none,
+template <SignalType SignalType = SignalType::None,
           template <typename> typename LazyType, typename... Ts>
 // The temporary object's life-time which binding to reference(inputs) won't
 // be extended to next time of coroutine resume. Just Copy inputs to avoid
@@ -739,7 +739,7 @@ inline Lazy<std::tuple<Try<typename LazyType<Ts>::ValueType>...>> collectAll(
 // Like the collectAll() function above, This collectAllPara() function can be
 // used to concurrently co_await on some different kinds of LazyType tasks in
 // executor,and producing a tuple of Try values containing each of the results.
-template <SignalType SignalType = SignalType::none,
+template <SignalType SignalType = SignalType::None,
           template <typename> typename LazyType, typename... Ts>
 inline Lazy<std::tuple<Try<typename LazyType<Ts>::ValueType>...>>
 collectAllPara(LazyType<Ts>... inputs) {
@@ -753,7 +753,7 @@ collectAllPara(LazyType<Ts>... inputs) {
 // 'maxConcurrency' of these input tasks to be awaited in one thread. yield is
 // true: yield collectAllWindowedPara from thread when a 'maxConcurrency' of
 // tasks is done.
-template <SignalType SignalType = SignalType::none, typename T,
+template <SignalType SignalType = SignalType::None, typename T,
           template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>,
           typename OAlloc = std::allocator<Try<T>>>
@@ -772,7 +772,7 @@ collectAllWindowed(size_t maxConcurrency,
 // point in time.
 // yield is true: yield collectAllWindowedPara from thread when a
 // 'maxConcurrency' of tasks is done.
-template <SignalType SignalType = SignalType::none, typename T,
+template <SignalType SignalType = SignalType::None, typename T,
           template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>,
           typename OAlloc = std::allocator<Try<T>>>

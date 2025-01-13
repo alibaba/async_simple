@@ -57,7 +57,7 @@ void moveSlotFromContinuation(LazyLocalBase* nowLocal, LazyLocalBase* preLocal);
 class LazyLocalBase {
 protected:
     LazyLocalBase(char* typeinfo, Signal* signal = nullptr,
-                  SignalType type = SignalType::all)
+                  SignalType type = SignalType::All)
         : _typeinfo(typeinfo) {
         assert(typeinfo != nullptr);
     };
@@ -69,7 +69,7 @@ public:
 
     void forbidSignal() noexcept { _slot = nullptr; }
     virtual ~LazyLocalBase(){};
-    LazyLocalBase(Signal* signal, SignalType type = SignalType::all)
+    LazyLocalBase(Signal* signal, SignalType type = SignalType::All)
         : _typeinfo(nullptr), _slot(std::make_unique<Slot>(signal, type)) {}
     friend void detail::moveSlotFromContinuation(LazyLocalBase* nowLocal,
                                                  LazyLocalBase* preLocal);

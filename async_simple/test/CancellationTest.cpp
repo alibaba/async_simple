@@ -44,12 +44,12 @@ TEST_F(CancellationTest, testSimpleCancellation) {
         return slot->signal()->state();
     });
     EXPECT_EQ(signal->state() != 0, false);
-    EXPECT_EQ(signal->emit(SignalType::terminate), true);
+    EXPECT_EQ(signal->emit(SignalType::Terminate), true);
     EXPECT_EQ(signal->state() != 0, true);
-    EXPECT_EQ(result.get(), SignalType::terminate);
+    EXPECT_EQ(result.get(), SignalType::Terminate);
     EXPECT_EQ(slot->canceled(), true);
-    EXPECT_EQ(slot->signal()->state(), SignalType::terminate);
-    EXPECT_EQ(signal->state(), SignalType::terminate);
+    EXPECT_EQ(slot->signal()->state(), SignalType::Terminate);
+    EXPECT_EQ(signal->state(), SignalType::Terminate);
 }
 
 TEST_F(CancellationTest, testCancellationWithNoneType) {
@@ -65,13 +65,13 @@ TEST_F(CancellationTest, testCancellationWithNoneType) {
         }
         return 1;
     });
-    signal->emit(SignalType::none);
+    signal->emit(SignalType::None);
     std::this_thread::sleep_for(10ms);
     flag = 1;
     EXPECT_EQ(result.get(), 0);
     EXPECT_EQ(slot->canceled(), false);
-    EXPECT_EQ(slot->signal()->state(), SignalType::none);
-    EXPECT_EQ(signal->state(), SignalType::none);
+    EXPECT_EQ(slot->signal()->state(), SignalType::None);
+    EXPECT_EQ(signal->state(), SignalType::None);
 }
 
 TEST_F(CancellationTest, testCancellationWithSlotFilter) {
@@ -88,13 +88,13 @@ TEST_F(CancellationTest, testCancellationWithSlotFilter) {
         }
         return 1;
     });
-    signal->emit(SignalType::terminate);
+    signal->emit(SignalType::Terminate);
     std::this_thread::sleep_for(10ms);
     flag = 1;
     EXPECT_EQ(result.get(), 0);
     EXPECT_EQ(slot->canceled(), false);
-    EXPECT_EQ(slot->signal()->state(), SignalType::terminate);
-    EXPECT_EQ(signal->state(), SignalType::terminate);
+    EXPECT_EQ(slot->signal()->state(), SignalType::Terminate);
+    EXPECT_EQ(signal->state(), SignalType::Terminate);
 }
 
 TEST_F(CancellationTest, testMultiSlotsCancellationCallback) {
@@ -104,12 +104,12 @@ TEST_F(CancellationTest, testMultiSlotsCancellationCallback) {
     for (int i = 0; i < 100; ++i) {
         slots.emplace_back(std::make_unique<Slot>(signal.get()));
         [[maybe_unused]] auto _ = slots.back()->emplace(
-            SignalType::terminate, [&j](SignalType type, Signal*) mutable {
-                EXPECT_EQ(type, SignalType::terminate);
+            SignalType::Terminate, [&j](SignalType type, Signal*) mutable {
+                EXPECT_EQ(type, SignalType::Terminate);
                 j++;
             });
     }
-    signal->emit(SignalType::terminate);
+    signal->emit(SignalType::Terminate);
     EXPECT_EQ(j, 100);
 }
 
@@ -120,9 +120,9 @@ TEST_F(CancellationTest, testMultiSlotsCancellation) {
     for (int i = 0; i < 100; ++i) {
         slots.emplace_back(std::make_unique<Slot>(signal.get()));
         [[maybe_unused]] auto _ = slots.back()->emplace(
-            SignalType::terminate, [&j](SignalType, Signal*) mutable { j++; });
+            SignalType::Terminate, [&j](SignalType, Signal*) mutable { j++; });
     }
-    signal->emit(SignalType::terminate);
+    signal->emit(SignalType::Terminate);
     EXPECT_EQ(j, 100);
 }
 
@@ -131,13 +131,13 @@ TEST_F(CancellationTest, testMultiSlotsCancellationWithFilter) {
         auto signal = Signal::create();
         std::vector<std::unique_ptr<Slot>> slots;
         int j = 0;
-        SignalType expected_type = SignalType::terminate;
+        SignalType expected_type = SignalType::Terminate;
         for (int i = 0; i < 100; ++i) {
             slots.emplace_back(std::make_unique<Slot>(
                 signal.get(),
-                (i % 4) ? (SignalType::all) : static_cast<SignalType>(0b110)));
+                (i % 4) ? (SignalType::All) : static_cast<SignalType>(0b110)));
             [[maybe_unused]] auto _ = slots.back()->emplace(
-                SignalType::terminate,
+                SignalType::Terminate,
                 [&j, &expected_type](SignalType type, Signal*) mutable {
                     j++;
                     EXPECT_EQ(type, expected_type);
@@ -155,7 +155,7 @@ TEST_F(CancellationTest, testMultiSlotsCancellationWithFilter) {
         SignalType expected_type = static_cast<SignalType>(0b11);
         for (int i = 0; i < 100; ++i) {
             auto filter =
-                (i % 4) ? (SignalType::all) : static_cast<SignalType>(0b1);
+                (i % 4) ? (SignalType::All) : static_cast<SignalType>(0b1);
             slots.emplace_back(std::make_unique<Slot>(signal.get(), filter));
             [[maybe_unused]] auto _ = slots.back()->emplace(
                 static_cast<SignalType>(0b1),
@@ -174,9 +174,9 @@ TEST_F(CancellationTest, testScopeFilterGuard) {
         auto signal = Signal::create();
         auto slot = std::make_unique<Slot>(signal.get());
         [[maybe_unused]] auto _ =
-            slot->emplace(SignalType::terminate,
+            slot->emplace(SignalType::Terminate,
                           [](SignalType type, Signal*) { EXPECT_TRUE(true); });
-        signal->emit(SignalType::terminate);
+        signal->emit(SignalType::Terminate);
         {
             auto guard = slot->setScopedFilter(static_cast<SignalType>(1));
             EXPECT_TRUE(slot->canceled());
@@ -187,12 +187,12 @@ TEST_F(CancellationTest, testScopeFilterGuard) {
         auto signal = Signal::create();
         auto slot = std::make_unique<Slot>(signal.get());
         [[maybe_unused]] auto _ =
-            slot->emplace(SignalType::terminate,
+            slot->emplace(SignalType::Terminate,
                           [](SignalType type, Signal*) { EXPECT_TRUE(false); });
         {
             auto guard = slot->setScopedFilter(static_cast<SignalType>(0b10));
-            signal->emit(SignalType::terminate);
-            EXPECT_TRUE(slot->signal()->state() == SignalType::terminate);
+            signal->emit(SignalType::Terminate);
+            EXPECT_TRUE(slot->signal()->state() == SignalType::Terminate);
             EXPECT_TRUE(slot->canceled() == false);
         }
         EXPECT_TRUE(slot->canceled());
@@ -201,11 +201,11 @@ TEST_F(CancellationTest, testScopeFilterGuard) {
         auto signal = Signal::create();
         auto slot = std::make_unique<Slot>(signal.get());
         [[maybe_unused]] auto _ =
-            slot->emplace(SignalType::terminate,
+            slot->emplace(SignalType::Terminate,
                           [](SignalType type, Signal*) { EXPECT_TRUE(true); });
         {
-            auto guard = slot->setScopedFilter(SignalType::all);
-            signal->emit(SignalType::terminate);
+            auto guard = slot->setScopedFilter(SignalType::All);
+            signal->emit(SignalType::Terminate);
             EXPECT_TRUE(slot->canceled());
         }
         EXPECT_TRUE(slot->canceled());
@@ -217,7 +217,7 @@ TEST_F(CancellationTest, testScopeFilterGuardNested) {
         auto signal = Signal::create();
         auto slot = std::make_unique<Slot>(signal.get());
         [[maybe_unused]] auto _ =
-            slot->emplace(SignalType::terminate,
+            slot->emplace(SignalType::Terminate,
                           [](SignalType type, Signal*) { EXPECT_TRUE(true); });
         {
             auto guard = slot->setScopedFilter(static_cast<SignalType>(0b111));
@@ -232,14 +232,14 @@ TEST_F(CancellationTest, testScopeFilterGuardNested) {
             EXPECT_EQ(slot->getFilter(), static_cast<SignalType>(0b111));
             EXPECT_EQ(slot->hasTriggered(static_cast<SignalType>(0b100)), true);
         }
-        EXPECT_EQ(slot->getFilter(), SignalType::all);
+        EXPECT_EQ(slot->getFilter(), SignalType::All);
         EXPECT_EQ(slot->hasTriggered(static_cast<SignalType>(0b100)), true);
     }
     {
         auto signal = Signal::create();
         auto slot = std::make_unique<Slot>(signal.get());
         [[maybe_unused]] auto _ =
-            slot->emplace(SignalType::terminate,
+            slot->emplace(SignalType::Terminate,
                           [](SignalType type, Signal*) { EXPECT_TRUE(false); });
         {
             auto guard = slot->setScopedFilter(static_cast<SignalType>(0b111));
@@ -253,7 +253,7 @@ TEST_F(CancellationTest, testScopeFilterGuardNested) {
             EXPECT_EQ(slot->getFilter(), static_cast<SignalType>(0b111));
             EXPECT_EQ(slot->canceled(), true);
         }
-        EXPECT_EQ(slot->getFilter(), SignalType::all);
+        EXPECT_EQ(slot->getFilter(), SignalType::All);
         EXPECT_EQ(slot->canceled(), true);
     }
 }
@@ -268,13 +268,13 @@ TEST_F(CancellationTest, testMultiThreadEmit) {
         for (int i = 0; i < 1000; ++i) {
             slots.emplace_back(std::make_unique<Slot>(signal.get()));
             [[maybe_unused]] bool _ = slots.back()->emplace(
-                SignalType::terminate, [&j](SignalType type, Signal*) { ++j; });
+                SignalType::Terminate, [&j](SignalType type, Signal*) { ++j; });
         };
         for (int i = 0; i < 100; ++i)
             res.emplace_back(std::async([&]() {
                 while (!start_flag)
                     std::this_thread::yield();
-                return signal->emit(SignalType::terminate);
+                return signal->emit(SignalType::Terminate);
             }));
         start_flag = true;
         int cnt = 0;
@@ -285,7 +285,7 @@ TEST_F(CancellationTest, testMultiThreadEmit) {
             }
         };
         EXPECT_EQ(cnt, 1);
-        EXPECT_EQ(signal->state(), SignalType::terminate);
+        EXPECT_EQ(signal->state(), SignalType::Terminate);
         EXPECT_EQ(j, 1000);
     }
 }
@@ -300,7 +300,7 @@ TEST_F(CancellationTest, testMultiThreadEmitDifferentSignal) {
         for (int i = 0; i < 1000; ++i) {
             slots.emplace_back(std::make_unique<Slot>(signal.get()));
             [[maybe_unused]] bool _ = slots.back()->emplace(
-                SignalType::terminate,
+                SignalType::Terminate,
                 [&j](SignalType type, Signal*) { ++j[0]; });
             _ = slots.back()->emplace(
                 static_cast<SignalType>(0b10),
@@ -359,7 +359,7 @@ TEST_F(CancellationTest, testMultiThreadEmitWhenEmplace) {
                         std::this_thread::yield();
                     slots[i] = std::make_unique<Slot>(signal.get());
                     bool ok = slots[i]->emplace(
-                        SignalType::terminate,
+                        SignalType::Terminate,
                         [&j](SignalType type, Signal*) { ++j; });
                     if (!ok) {
                         EXPECT_TRUE(slots[i]->canceled());
@@ -378,7 +378,7 @@ TEST_F(CancellationTest, testMultiThreadEmitWhenEmplace) {
             res.emplace_back(std::async([&]() {
                 while (!start_flag)
                     std::this_thread::yield();
-                return static_cast<bool>(signal->emit(SignalType::terminate));
+                return static_cast<bool>(signal->emit(SignalType::Terminate));
             }));
         start_flag = true;
         int cnt = 0;
@@ -389,7 +389,7 @@ TEST_F(CancellationTest, testMultiThreadEmitWhenEmplace) {
             }
         };
         EXPECT_EQ(cnt, 1);
-        EXPECT_EQ(signal->state(), SignalType::terminate);
+        EXPECT_EQ(signal->state(), SignalType::Terminate);
         std::cout << "trigger slot cnt: " << j << std::endl;
         EXPECT_GT(j, 0);
         EXPECT_LE(j, 100);
@@ -406,24 +406,24 @@ TEST_F(CancellationTest, testMultiThreadEmitWhenSetScopedFilter) {
         works.emplace_back([slot, &cnter, &cnter2, &start_flag,
                             &start_flag2]() {
             auto ok = slot->emplace(
-                SignalType::terminate,
+                SignalType::Terminate,
                 [&cnter2](SignalType type, Signal*) { ++cnter2; });
             EXPECT_TRUE(ok);
             start_flag2++;
             while (!start_flag) {
                 std::this_thread::yield();
             }
-            auto guard = slot->setScopedFilter(SignalType::none);
-            ok = slot->emplace(SignalType::terminate,
+            auto guard = slot->setScopedFilter(SignalType::None);
+            ok = slot->emplace(SignalType::Terminate,
                                [&cnter](SignalType type, Signal*) { ++cnter; });
-            slot->clear(SignalType::terminate);
+            slot->clear(SignalType::Terminate);
         });
         works.emplace_back([signal, &start_flag, &start_flag2]() {
             start_flag2++;
             while (!start_flag) {
                 std::this_thread::yield();
             }
-            signal->emit(SignalType::terminate);
+            signal->emit(SignalType::Terminate);
         });
     }
     while (start_flag2 < 200) {
@@ -441,14 +441,14 @@ TEST_F(CancellationTest, testMultiThreadEmitWhenSetScopedFilter) {
 TEST_F(CancellationTest, testRegistSignalAfterCancellation) {
     {
         auto signal = Signal::create();
-        signal->emit(SignalType::terminate);
+        signal->emit(SignalType::Terminate);
         Slot s{signal.get()};
         EXPECT_FALSE(
-            s.emplace(SignalType::terminate, [](SignalType, Signal*) {}));
-        EXPECT_FALSE(s.clear(SignalType::terminate));
-        EXPECT_FALSE(s.clear(SignalType::terminate));
-        auto guard = s.setScopedFilter(SignalType::terminate);
-        EXPECT_EQ(s.getFilter(), SignalType::terminate);
+            s.emplace(SignalType::Terminate, [](SignalType, Signal*) {}));
+        EXPECT_FALSE(s.clear(SignalType::Terminate));
+        EXPECT_FALSE(s.clear(SignalType::Terminate));
+        auto guard = s.setScopedFilter(SignalType::Terminate);
+        EXPECT_EQ(s.getFilter(), SignalType::Terminate);
     }
 }
 
@@ -463,12 +463,12 @@ TEST_F(CancellationTest, testDerivedSignal) {
     auto mySignal = Signal::create<MySignal>();
     auto slot = std::make_unique<Slot>(mySignal.get());
     [[maybe_unused]] auto _ = slot->emplace(
-        SignalType::terminate, [](SignalType type, Signal* signal) {
+        SignalType::Terminate, [](SignalType type, Signal* signal) {
             auto mySignal = dynamic_cast<MySignal*>(signal);
             EXPECT_NE(mySignal, nullptr);
             EXPECT_EQ(mySignal->myState, 1);
         });
     mySignal->myState = 1;
-    mySignal->emit(SignalType::terminate);
+    mySignal->emit(SignalType::Terminate);
 }
 }  // namespace async_simple
