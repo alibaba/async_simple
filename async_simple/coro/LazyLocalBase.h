@@ -17,13 +17,23 @@
 #define ASYNC_SIMPLE_CORO_LAZYLOCALBASE_H
 
 #ifndef ASYNC_SIMPLE_USE_MODULES
+
 #include <cassert>
 #include <cstdint>
+#include <memory>
 #include <type_traits>
 #include <utility>
+
+#include "async_simple/Common.h"
+#include "async_simple/Signal.h"
+
 #endif  // ASYNC_SIMPLE_USE_MODULES
 namespace async_simple::coro {
+class LazyLocalBase;
+namespace detail {
 
+void moveSlotFromContinuation(LazyLocalBase* nowLocal, LazyLocalBase* preLocal);
+}
 // User can derived user-defined class from Lazy Local variable to implement
 // user-define lazy local value by implement static function T::classof(const
 // LazyLocalBase*).
@@ -46,17 +56,27 @@ namespace async_simple::coro {
 // };
 class LazyLocalBase {
 protected:
-    LazyLocalBase(char* typeinfo) : _typeinfo(typeinfo) {
+    LazyLocalBase(char* typeinfo, Signal* signal = nullptr,
+                  SignalType type = SignalType::All)
+        : _typeinfo(typeinfo) {
         assert(typeinfo != nullptr);
     };
 
 public:
+    LazyLocalBase(LazyLocalBase&&) = default;
     const char* getTypeTag() const noexcept { return _typeinfo; }
-    LazyLocalBase() : _typeinfo(nullptr) {}
+    Slot* getSlot() const noexcept { return _slot.get(); }
+
+    void forbidSignal() noexcept { _slot = nullptr; }
     virtual ~LazyLocalBase(){};
+    LazyLocalBase(Signal* signal, SignalType type = SignalType::All)
+        : _typeinfo(nullptr), _slot(std::make_unique<Slot>(signal, type)) {}
+    friend void detail::moveSlotFromContinuation(LazyLocalBase* nowLocal,
+                                                 LazyLocalBase* preLocal);
 
 protected:
     char* _typeinfo;
+    std::unique_ptr<Slot> _slot;
 };
 
 template <typename T>

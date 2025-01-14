@@ -76,6 +76,15 @@ struct ReadyAwaiter {
     T _value;
 };
 
+template <>
+struct ReadyAwaiter<void> {
+    ReadyAwaiter() {}
+
+    bool await_ready() const noexcept { return true; }
+    void await_suspend(CoroHandle<>) const noexcept {}
+    void await_resume() noexcept { return; }
+};
+
 }  // namespace coro
 }  // namespace async_simple
 

@@ -20,16 +20,18 @@
 #include <array>
 #include <exception>
 #include <memory>
-#include <optional>
+#include <system_error>
 #include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
 #include "async_simple/Common.h"
+#include "async_simple/Signal.h"
 #include "async_simple/Try.h"
 #include "async_simple/Unit.h"
 #include "async_simple/coro/CountEvent.h"
 #include "async_simple/coro/Lazy.h"
+#include "async_simple/coro/LazyLocalBase.h"
 #include "async_simple/experimental/coroutine.h"
 
 #endif  // ASYNC_SIMPLE_USE_MODULES
@@ -51,12 +53,17 @@ namespace detail {
 template <typename T>
 struct CollectAnyResult {
     CollectAnyResult() : _idx(static_cast<size_t>(-1)), _value() {}
-    CollectAnyResult(size_t idx, std::add_rvalue_reference_t<T> value) requires(
-        !std::is_void_v<T>)
+    CollectAnyResult(size_t idx, std::add_rvalue_reference_t<T> value)
         : _idx(idx), _value(std::move(value)) {}
 
     CollectAnyResult(const CollectAnyResult&) = delete;
     CollectAnyResult& operator=(const CollectAnyResult&) = delete;
+    CollectAnyResult& operator=(CollectAnyResult&& other) {
+        _idx = std::move(other._idx);
+        _value = std::move(other._value);
+        other._idx = static_cast<size_t>(-1);
+        return *this;
+    }
     CollectAnyResult(CollectAnyResult&& other)
         : _idx(std::move(other._idx)), _value(std::move(other._value)) {
         other._idx = static_cast<size_t>(-1);
@@ -87,178 +94,123 @@ struct CollectAnyResult {
 #endif
 };
 
-template <typename LazyType, typename InAlloc, typename Callback = Unit>
+template <>
+struct CollectAnyResult<void> {
+    CollectAnyResult() : _idx(static_cast<size_t>(-1)), _value() {}
+    CollectAnyResult(size_t idx) : _idx(idx) {}
+
+    CollectAnyResult(const CollectAnyResult&) = delete;
+    CollectAnyResult& operator=(const CollectAnyResult&) = delete;
+    CollectAnyResult& operator=(CollectAnyResult&& other) {
+        _idx = std::move(other._idx);
+        _value = std::move(other._value);
+        other._idx = static_cast<size_t>(-1);
+        return *this;
+    }
+    CollectAnyResult(CollectAnyResult&& other)
+        : _idx(std::move(other._idx)), _value(std::move(other._value)) {
+        other._idx = static_cast<size_t>(-1);
+    }
+
+    size_t _idx;
+    Try<void> _value;
+
+    size_t index() const { return _idx; }
+
+    bool hasError() const { return _value.hasError(); }
+    // Require hasError() == true. Otherwise it is UB to call
+    // this method.
+    std::exception_ptr getException() const { return _value.getException(); }
+};
+
+template <typename LazyType, typename InAlloc>
 struct CollectAnyAwaiter {
     using ValueType = typename LazyType::ValueType;
     using ResultType = CollectAnyResult<ValueType>;
 
-    CollectAnyAwaiter(std::vector<LazyType, InAlloc>&& input)
-        : _input(std::move(input)), _result(nullptr) {}
-
-    CollectAnyAwaiter(std::vector<LazyType, InAlloc>&& input, Callback callback)
-        : _input(std::move(input)),
+    CollectAnyAwaiter(Slot* slot, SignalType SignalType,
+                      std::vector<LazyType, InAlloc>&& input)
+        : _slot(slot),
+          _SignalType(SignalType),
           _result(nullptr),
-          _callback(std::move(callback)) {}
+          _input(std::move(input)) {}
 
     CollectAnyAwaiter(const CollectAnyAwaiter&) = delete;
     CollectAnyAwaiter& operator=(const CollectAnyAwaiter&) = delete;
     CollectAnyAwaiter(CollectAnyAwaiter&& other)
-        : _input(std::move(other._input)),
+        : _slot(other._slot),
+          _SignalType(other._SignalType),
           _result(std::move(other._result)),
-          _callback(std::move(other._callback)) {}
+          _input(std::move(other._input)) {}
 
     bool await_ready() const noexcept {
-        return _input.empty() ||
-               (_result && _result->_idx != static_cast<size_t>(-1));
+        return _input.empty() || signalHelper{Terminate}.hasCanceled(_slot);
     }
 
-    void await_suspend(std::coroutine_handle<> continuation) {
+    bool await_suspend(std::coroutine_handle<> continuation) {
         auto promise_type =
             std::coroutine_handle<LazyPromiseBase>::from_address(
                 continuation.address())
                 .promise();
-        auto executor = promise_type._executor;
-        // we should take care of input's life-time after resume.
-        std::vector<LazyType, InAlloc> input(std::move(_input));
-        // Make local copies to shared_ptr to avoid deleting objects too early
-        // if any coroutine finishes before this function.
-        auto result = std::make_shared<ResultType>();
-        auto event = std::make_shared<detail::CountEvent>(input.size());
-        auto callback = std::move(_callback);
 
-        _result = result;
-        for (size_t i = 0;
-             i < input.size() && (result->_idx == static_cast<size_t>(-1));
-             ++i) {
+        auto executor = promise_type._executor;
+
+        // Make local copies to shared_ptr to avoid deleting objects too early
+        // if coroutine resume before this function.
+        auto input = std::move(_input);
+        auto event = std::make_shared<detail::CountEvent>(input.size() + 1);
+        _signal = Signal::create();
+        if (_slot)
+            _slot->chainedSignal(_signal.get());
+        if (!signalHelper{Terminate}.tryEmplace(
+                _slot, [c = continuation, e = event, size = input.size()](
+                           SignalType type, Signal*) mutable {
+                    auto count = e->downCount();
+                    if (count > size + 1) {
+                        c.resume();
+                    }
+                })) {  // has canceled
+            return false;
+        }
+
+        for (size_t i = 0; i < input.size(); ++i) {
             if (!input[i]._coro.promise()._executor) {
                 input[i]._coro.promise()._executor = executor;
             }
-
-            if constexpr (std::is_same_v<Callback, Unit>) {
-                (void)callback;
-                input[i].start([i, size = input.size(), r = result,
-                                c = continuation,
-                                e = event](Try<ValueType>&& result) mutable {
+            std::unique_ptr<LazyLocalBase> local;
+            local = std::make_unique<LazyLocalBase>(_signal.get());
+            input[i]._coro.promise()._lazy_local = local.get();
+            input[i].start(
+                [this, i, size = input.size(), c = continuation, e = event,
+                 local = std::move(local)](Try<ValueType>&& result) mutable {
                     assert(e != nullptr);
                     auto count = e->downCount();
-                    if (count == size + 1) {
-                        r->_idx = i;
-                        r->_value = std::move(result);
+                    // n+1: n coro + 1 cancel handler
+                    if (count > size + 1) {
+                        _result = std::make_unique<ResultType>();
+                        _result->_idx = i;
+                        _result->_value = std::move(result);
+                        _signal->emit(_SignalType);
                         c.resume();
                     }
                 });
-            } else {
-                input[i].start([i, size = input.size(), r = result,
-                                c = continuation, e = event,
-                                callback](Try<ValueType>&& result) mutable {
-                    assert(e != nullptr);
-                    auto count = e->downCount();
-                    if (count == size + 1) {
-                        r->_idx = i;
-                        (*callback)(i, std::move(result));
-                        c.resume();
-                    }
-                });
-            }
         }  // end for
+        return true;
     }
     auto await_resume() {
-        if constexpr (std::is_same_v<Callback, Unit>) {
-            assert(_result != nullptr);
-            return std::move(*_result);
-        } else {
-            return _result->index();
+        signalHelper{Terminate}.checkHasCanceled(
+            _slot, "async_simple::CollectAny is canceled!");
+        if (_result == nullptr) {
+            return ResultType{};
         }
+        return std::move(*_result);
     }
 
+    Slot* _slot;
+    SignalType _SignalType;
+    std::unique_ptr<ResultType> _result;
     std::vector<LazyType, InAlloc> _input;
-    std::shared_ptr<ResultType> _result;
-    [[no_unique_address]] Callback _callback;
-};
-
-template <typename... Ts>
-struct CollectAnyVariadicPairAwaiter {
-    using InputType = std::tuple<Ts...>;
-
-    CollectAnyVariadicPairAwaiter(Ts&&... inputs)
-        : _input(std::move(inputs)...), _result(nullptr) {}
-
-    CollectAnyVariadicPairAwaiter(InputType&& inputs)
-        : _input(std::move(inputs)), _result(nullptr) {}
-
-    CollectAnyVariadicPairAwaiter(const CollectAnyVariadicPairAwaiter&) =
-        delete;
-    CollectAnyVariadicPairAwaiter& operator=(
-        const CollectAnyVariadicPairAwaiter&) = delete;
-    CollectAnyVariadicPairAwaiter(CollectAnyVariadicPairAwaiter&& other)
-        : _input(std::move(other._input)), _result(std::move(other._result)) {}
-
-    bool await_ready() const noexcept {
-        return _result && _result->has_value();
-    }
-
-    void await_suspend(std::coroutine_handle<> continuation) {
-        auto promise_type =
-            std::coroutine_handle<LazyPromiseBase>::from_address(
-                continuation.address())
-                .promise();
-        auto executor = promise_type._executor;
-        auto event =
-            std::make_shared<detail::CountEvent>(std::tuple_size<InputType>());
-        auto result = std::make_shared<std::optional<size_t>>();
-        _result = result;
-
-        auto input = std::move(_input);
-
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            (
-                [&](auto& lazy, auto& callback) {
-                    if (result->has_value()) {
-                        return;
-                    }
-
-                    if (!lazy._coro.promise()._executor) {
-                        lazy._coro.promise()._executor = executor;
-                    }
-
-                    lazy.start(
-                        [result, event, continuation,
-                         callback = std::move(callback)](auto&& res) mutable {
-                            auto count = event->downCount();
-                            if (count == std::tuple_size<InputType>() + 1) {
-                                callback(std::move(res));
-                                *result = I;
-                                continuation.resume();
-                            }
-                        });
-                }(std::get<0>(std::get<I>(input)),
-                  std::get<1>(std::get<I>(input))),
-                ...);
-        }
-        (std::make_index_sequence<sizeof...(Ts)>());
-    }
-
-    auto await_resume() {
-        assert(_result != nullptr);
-        return std::move(_result->value());
-    }
-
-    std::tuple<Ts...> _input;
-    std::shared_ptr<std::optional<size_t>> _result;
-};
-
-template <typename... Ts>
-struct SimpleCollectAnyVariadicPairAwaiter {
-    using InputType = std::tuple<Ts...>;
-
-    InputType _inputs;
-
-    SimpleCollectAnyVariadicPairAwaiter(Ts&&... inputs)
-        : _inputs(std::move(inputs)...) {}
-
-    auto coAwait(Executor* ex) {
-        return CollectAnyVariadicPairAwaiter(std::move(_inputs));
-    }
+    std::shared_ptr<Signal> _signal;
 };
 
 template <template <typename> typename LazyType, typename... Ts>
@@ -266,26 +218,35 @@ struct CollectAnyVariadicAwaiter {
     using ResultType = std::variant<Try<Ts>...>;
     using InputType = std::tuple<LazyType<Ts>...>;
 
-    CollectAnyVariadicAwaiter(LazyType<Ts>&&... inputs)
-        : _input(std::make_unique<InputType>(std::move(inputs)...)),
+    CollectAnyVariadicAwaiter(Slot* slot, SignalType SignalType,
+                              LazyType<Ts>&&... inputs)
+        : _slot(slot),
+          _SignalType(SignalType),
+          _input(std::make_unique<InputType>(std::move(inputs)...)),
           _result(nullptr) {}
 
-    CollectAnyVariadicAwaiter(InputType&& inputs)
-        : _input(std::make_unique<InputType>(std::move(inputs))),
+    CollectAnyVariadicAwaiter(Slot* slot, SignalType SignalType,
+                              InputType&& inputs)
+        : _slot(slot),
+          _SignalType(SignalType),
+          _input(std::make_unique<InputType>(std::move(inputs))),
           _result(nullptr) {}
 
     CollectAnyVariadicAwaiter(const CollectAnyVariadicAwaiter&) = delete;
     CollectAnyVariadicAwaiter& operator=(const CollectAnyVariadicAwaiter&) =
         delete;
     CollectAnyVariadicAwaiter(CollectAnyVariadicAwaiter&& other)
-        : _input(std::move(other._input)), _result(std::move(other._result)) {}
+        : _slot(other._slot),
+          _SignalType(other._SignalType),
+          _input(std::move(other._input)),
+          _result(std::move(other._result)) {}
 
     bool await_ready() const noexcept {
-        return _result && _result->has_value();
+        return signalHelper{Terminate}.hasCanceled(_slot);
     }
 
     template <size_t... index>
-    void await_suspend_impl(std::index_sequence<index...>,
+    bool await_suspend_impl(std::index_sequence<index...>,
                             std::coroutine_handle<> continuation) {
         auto promise_type =
             std::coroutine_handle<LazyPromiseBase>::from_address(
@@ -293,77 +254,88 @@ struct CollectAnyVariadicAwaiter {
                 .promise();
         auto executor = promise_type._executor;
 
+        // Make local copies to avoid deleting objects too early
+        // if coroutine resume before this function.
         auto input = std::move(_input);
-        // Make local copies to shared_ptr to avoid deleting objects too early
-        // if any coroutine finishes before this function.
-        auto result = std::make_shared<std::optional<ResultType>>();
-        auto event =
-            std::make_shared<detail::CountEvent>(std::tuple_size<InputType>());
 
-        _result = result;
-
+        auto event = std::make_shared<detail::CountEvent>(
+            std::tuple_size<InputType>() + 1);
+        _signal = Signal::create();
+        if (_slot)
+            _slot->chainedSignal(_signal.get());
+        if (!signalHelper{Terminate}.tryEmplace(
+                _slot, [c = continuation, e = event](SignalType type,
+                                                     Signal*) mutable {
+                    auto count = e->downCount();
+                    if (count > std::tuple_size<InputType>() + 1) {
+                        c.resume();
+                    }
+                })) {  // has canceled
+            return false;
+        }
         (
             [&]() {
-                if (result->has_value()) {
-                    return;
+                auto& element = std::get<index>(*input);
+                if (!element._coro.promise()._executor) {
+                    element._coro.promise()._executor = executor;
                 }
-                if (!std::get<index>(*input)._coro.promise()._executor) {
-                    std::get<index>(*input)._coro.promise()._executor =
-                        executor;
-                }
-                std::get<index>(*input).start(
-                    [r = result, c = continuation,
-                     e = event](std::variant_alternative_t<index, ResultType>&&
-                                    res) mutable {
-                        assert(e != nullptr);
+                std::unique_ptr<LazyLocalBase> local;
+                local = std::make_unique<LazyLocalBase>(_signal.get());
+                element._coro.promise()._lazy_local = local.get();
+                element.start(
+                    [this, c = continuation, e = event,
+                     local = std::move(local)](
+                        std::variant_alternative_t<index, ResultType>&&
+                            res) mutable {
                         auto count = e->downCount();
-                        if (count == std::tuple_size<InputType>() + 1) {
-                            *r = ResultType{std::in_place_index_t<index>(),
-                                            std::move(res)};
+                        // n+1: n coro + 1 cancel handler
+                        if (count > std::tuple_size<InputType>() + 1) {
+                            _result = std::make_unique<ResultType>(
+                                std::in_place_index_t<index>(), std::move(res));
+                            _signal->emit(_SignalType);
                             c.resume();
                         }
                     });
             }(),
             ...);
+        return true;
     }
 
-    void await_suspend(std::coroutine_handle<> continuation) {
-        await_suspend_impl(std::make_index_sequence<sizeof...(Ts)>{},
-                           std::move(continuation));
+    bool await_suspend(std::coroutine_handle<> continuation) {
+        return await_suspend_impl(std::make_index_sequence<sizeof...(Ts)>{},
+                                  std::move(continuation));
     }
 
     auto await_resume() {
-        assert(_result != nullptr);
-        return std::move(_result->value());
+        signalHelper{Terminate}.checkHasCanceled(
+            _slot, "async_simple::CollectAny is canceled!");
+        return std::move(*_result);
     }
 
+    async_simple::Slot* _slot;
+    SignalType _SignalType;
     std::unique_ptr<std::tuple<LazyType<Ts>...>> _input;
-    std::shared_ptr<std::optional<ResultType>> _result;
+    std::unique_ptr<ResultType> _result;
+    std::shared_ptr<Signal> _signal;
 };
 
-template <typename T, typename InAlloc, typename Callback = Unit>
+template <typename T, typename InAlloc>
 struct SimpleCollectAnyAwaitable {
     using ValueType = T;
     using LazyType = Lazy<T>;
     using VectorType = std::vector<LazyType, InAlloc>;
 
+    async_simple::Slot* _slot;
+    SignalType _SignalType;
     VectorType _input;
-    [[no_unique_address]] Callback _callback;
 
-    SimpleCollectAnyAwaitable(std::vector<LazyType, InAlloc>&& input)
-        : _input(std::move(input)) {}
-
-    SimpleCollectAnyAwaitable(std::vector<LazyType, InAlloc>&& input,
-                              Callback callback)
-        : _input(std::move(input)), _callback(std::move(callback)) {}
+    SimpleCollectAnyAwaitable(async_simple::Slot* slot, SignalType SignalType,
+                              std::vector<LazyType, InAlloc>&& input)
+        : _slot(slot), _SignalType(SignalType), _input(std::move(input)) {}
 
     auto coAwait(Executor* ex) {
-        if constexpr (std::is_same_v<Callback, Unit>) {
-            return CollectAnyAwaiter<LazyType, InAlloc>(std::move(_input));
-        } else {
-            return CollectAnyAwaiter<LazyType, InAlloc, Callback>(
-                std::move(_input), std::move(_callback));
-        }
+        return CollectAnyAwaiter<LazyType, InAlloc>(_slot, _SignalType,
+                                                    std::move(_input));
     }
 };
 
@@ -371,13 +343,17 @@ template <template <typename> typename LazyType, typename... Ts>
 struct SimpleCollectAnyVariadicAwaiter {
     using InputType = std::tuple<LazyType<Ts>...>;
 
+    Slot* _slot;
+    SignalType _SignalType;
     InputType _inputs;
 
-    SimpleCollectAnyVariadicAwaiter(LazyType<Ts>&&... inputs)
-        : _inputs(std::move(inputs)...) {}
+    SimpleCollectAnyVariadicAwaiter(Slot* slot, SignalType SignalType,
+                                    LazyType<Ts>&&... inputs)
+        : _slot(slot), _SignalType(SignalType), _inputs(std::move(inputs)...) {}
 
     auto coAwait(Executor* ex) {
-        return CollectAnyVariadicAwaiter(std::move(_inputs));
+        return CollectAnyVariadicAwaiter<LazyType, Ts...>(_slot, _SignalType,
+                                                          std::move(_inputs));
     }
 };
 
@@ -385,8 +361,13 @@ template <class Container, typename OAlloc, bool Para = false>
 struct CollectAllAwaiter {
     using ValueType = typename Container::value_type::ValueType;
 
-    CollectAllAwaiter(Container&& input, OAlloc outAlloc)
-        : _input(std::move(input)), _output(outAlloc), _event(_input.size()) {
+    CollectAllAwaiter(Slot* slot, SignalType SignalType, Container&& input,
+                      OAlloc outAlloc)
+        : _slot(slot),
+          _SignalType(SignalType),
+          _input(std::move(input)),
+          _output(outAlloc),
+          _event(_input.size()) {
         _output.resize(_input.size());
     }
     CollectAllAwaiter(CollectAllAwaiter&& other) = default;
@@ -400,16 +381,28 @@ struct CollectAllAwaiter {
             std::coroutine_handle<LazyPromiseBase>::from_address(
                 continuation.address())
                 .promise();
+        _signal = Signal::create();
+        if (_slot)
+            _slot->chainedSignal(_signal.get());
+
         auto executor = promise_type._executor;
         for (size_t i = 0; i < _input.size(); ++i) {
             auto& exec = _input[i]._coro.promise()._executor;
             if (exec == nullptr) {
                 exec = executor;
             }
-            auto&& func = [this, i]() {
-                _input[i].start([this, i](Try<ValueType>&& result) {
+            std::unique_ptr<LazyLocalBase> local;
+            local = std::make_unique<LazyLocalBase>(_signal.get());
+            _input[i]._coro.promise()._lazy_local = local.get();
+            auto&& func = [this, i, local = std::move(local)]() mutable {
+                _input[i].start([this, i, local = std::move(local)](
+                                    Try<ValueType>&& result) {
                     _output[i] = std::move(result);
-                    auto awaitingCoro = _event.down();
+                    std::size_t oldCount;
+                    auto awaitingCoro = _event.down(oldCount, 1);
+                    if (oldCount == _input.size()) {
+                        _signal->emit(_SignalType);
+                    }
                     if (awaitingCoro) {
                         awaitingCoro.resume();
                     }
@@ -418,7 +411,7 @@ struct CollectAllAwaiter {
             if (Para == true && _input.size() > 1) {
                 if (exec != nullptr)
                     AS_LIKELY {
-                        exec->schedule(func);
+                        exec->schedule_move_only(std::move(func));
                         continue;
                     }
             }
@@ -432,22 +425,31 @@ struct CollectAllAwaiter {
     }
     inline auto await_resume() { return std::move(_output); }
 
+    Slot* _slot;
+    SignalType _SignalType;
     Container _input;
     std::vector<Try<ValueType>, OAlloc> _output;
     detail::CountEvent _event;
+    std::shared_ptr<Signal> _signal;
 };  // CollectAllAwaiter
 
 template <class Container, typename OAlloc, bool Para = false>
 struct SimpleCollectAllAwaitable {
+    Slot* _slot;
+    SignalType _SignalType;
     Container _input;
     OAlloc _out_alloc;
 
-    SimpleCollectAllAwaitable(Container&& input, OAlloc out_alloc)
-        : _input(std::move(input)), _out_alloc(out_alloc) {}
+    SimpleCollectAllAwaitable(Slot* slot, SignalType SignalType,
+                              Container&& input, OAlloc out_alloc)
+        : _slot(slot),
+          _SignalType(SignalType),
+          _input(std::move(input)),
+          _out_alloc(out_alloc) {}
 
     auto coAwait(Executor* ex) {
-        return CollectAllAwaiter<Container, OAlloc, Para>(std::move(_input),
-                                                          _out_alloc);
+        return CollectAllAwaiter<Container, OAlloc, Para>(
+            _slot, _SignalType, std::move(_input), _out_alloc);
     }
 };  // SimpleCollectAllAwaitable
 
@@ -464,19 +466,21 @@ struct is_lazy<Lazy<T>> : std::true_type {};
 template <bool Para, class Container,
           typename T = typename Container::value_type::ValueType,
           typename OAlloc = std::allocator<Try<T>>>
-inline auto collectAllImpl(Container input, OAlloc out_alloc = OAlloc()) {
+inline auto collectAllImpl(Slot* slot, SignalType SignalType, Container input,
+                           OAlloc out_alloc = OAlloc()) {
     using LazyType = typename Container::value_type;
     using AT = std::conditional_t<
         is_lazy<LazyType>::value,
         detail::SimpleCollectAllAwaitable<Container, OAlloc, Para>,
         detail::CollectAllAwaiter<Container, OAlloc, Para>>;
-    return AT(std::move(input), out_alloc);
+    return AT(slot, SignalType, std::move(input), out_alloc);
 }
 
 template <bool Para, class Container,
           typename T = typename Container::value_type::ValueType,
           typename OAlloc = std::allocator<Try<T>>>
-inline auto collectAllWindowedImpl(size_t maxConcurrency,
+inline auto collectAllWindowedImpl(Slot* slot, SignalType SignalType,
+                                   size_t maxConcurrency,
                                    bool yield /*yield between two batchs*/,
                                    Container input, OAlloc out_alloc = OAlloc())
     -> Lazy<std::vector<Try<T>, OAlloc>> {
@@ -492,7 +496,7 @@ inline auto collectAllWindowedImpl(size_t maxConcurrency,
     // input_size <= maxConcurrency size;
     // act just like CollectAll.
     if (maxConcurrency == 0 || input_size <= maxConcurrency) {
-        co_return co_await AT(std::move(input), out_alloc);
+        co_return co_await AT(slot, SignalType, std::move(input), out_alloc);
     }
     size_t start = 0;
     while (start < input_size) {
@@ -503,7 +507,8 @@ inline auto collectAllWindowedImpl(size_t maxConcurrency,
             std::make_move_iterator(input.begin() + start),
             std::make_move_iterator(input.begin() + end));
         start = end;
-        for (auto& t : co_await AT(std::move(tmp_group), out_alloc)) {
+        for (auto& t :
+             co_await AT(slot, SignalType, std::move(tmp_group), out_alloc)) {
             output.push_back(std::move(t));
         }
         if (yield) {
@@ -520,25 +525,38 @@ struct CollectAllVariadicAwaiter {
     using ResultType = std::tuple<Try<Ts>...>;
     using InputType = std::tuple<LazyType<Ts>...>;
 
-    CollectAllVariadicAwaiter(LazyType<Ts>&&... inputs)
-        : _inputs(std::move(inputs)...), _event(sizeof...(Ts)) {}
-    CollectAllVariadicAwaiter(InputType&& inputs)
-        : _inputs(std::move(inputs)), _event(sizeof...(Ts)) {}
+    CollectAllVariadicAwaiter(Slot* slot, SignalType SignalType,
+                              LazyType<Ts>&&... inputs)
+        : _slot(slot),
+          _SignalType(SignalType),
+          _inputs(std::move(inputs)...),
+          _event(sizeof...(Ts)) {}
+    CollectAllVariadicAwaiter(Slot* slot, SignalType SignalType,
+                              InputType&& inputs)
+        : _slot(slot),
+          _SignalType(SignalType),
+          _inputs(std::move(inputs)),
+          _event(sizeof...(Ts)) {}
 
     CollectAllVariadicAwaiter(const CollectAllVariadicAwaiter&) = delete;
     CollectAllVariadicAwaiter& operator=(const CollectAllVariadicAwaiter&) =
         delete;
     CollectAllVariadicAwaiter(CollectAllVariadicAwaiter&&) = default;
 
-    bool await_ready() const noexcept { return false; }
+    constexpr bool await_ready() const noexcept { return false; }
 
     template <size_t... index>
     void await_suspend_impl(std::index_sequence<index...>,
                             std::coroutine_handle<> continuation) {
+        _signal = Signal::create();
+        if (_slot)
+            _slot->chainedSignal(_signal.get());
+
         auto promise_type =
             std::coroutine_handle<LazyPromiseBase>::from_address(
                 continuation.address())
                 .promise();
+
         auto executor = promise_type._executor;
 
         _event.setAwaitingCoro(continuation);
@@ -550,10 +568,19 @@ struct CollectAllVariadicAwaiter {
                 if (exec == nullptr) {
                     exec = executor;
                 }
-                auto func = [&]() {
-                    lazy.start([&](auto&& res) {
+                std::unique_ptr<LazyLocalBase> local;
+                local = std::make_unique<LazyLocalBase>(_signal.get());
+                lazy._coro.promise()._lazy_local = local.get();
+                auto func = [&, local = std::move(local)]() mutable {
+                    lazy.start([&, local = std::move(local), this](auto&& res) {
                         result = std::move(res);
-                        if (auto awaitingCoro = _event.down(); awaitingCoro) {
+
+                        std::size_t oldCount;
+                        auto awaitingCoro = _event.down(oldCount, 1);
+                        if (oldCount == sizeof...(Ts)) {
+                            _signal->emit(_SignalType);
+                        }
+                        if (awaitingCoro) {
                             awaitingCoro.resume();
                         }
                     });
@@ -561,7 +588,7 @@ struct CollectAllVariadicAwaiter {
 
                 if constexpr (Para == true && sizeof...(Ts) > 1) {
                     if (exec != nullptr)
-                        AS_LIKELY { exec->schedule(std::move(func)); }
+                        AS_LIKELY { exec->schedule_move_only(std::move(func)); }
                     else
                         AS_UNLIKELY { func(); }
                 } else {
@@ -582,153 +609,162 @@ struct CollectAllVariadicAwaiter {
 
     auto await_resume() { return std::move(_results); }
 
+    Slot* _slot;
+    SignalType _SignalType;
     InputType _inputs;
     ResultType _results;
     detail::CountEvent _event;
+    std::shared_ptr<Signal> _signal;
 };
 
 template <bool Para, template <typename> typename LazyType, typename... Ts>
 struct SimpleCollectAllVariadicAwaiter {
     using InputType = std::tuple<LazyType<Ts>...>;
 
-    SimpleCollectAllVariadicAwaiter(LazyType<Ts>&&... inputs)
-        : _input(std::move(inputs)...) {}
+    SimpleCollectAllVariadicAwaiter(Slot* slot, SignalType SignalType,
+                                    LazyType<Ts>&&... inputs)
+        : _slot(slot), _SignalType(SignalType), _input(std::move(inputs)...) {}
 
     auto coAwait(Executor* ex) {
         return CollectAllVariadicAwaiter<Para, LazyType, Ts...>(
-            std::move(_input));
+            _slot, _SignalType, std::move(_input));
     }
 
+    Slot* _slot;
+    SignalType _SignalType;
     InputType _input;
 };
 
 template <bool Para, template <typename> typename LazyType, typename... Ts>
-inline auto collectAllVariadicImpl(LazyType<Ts>&&... awaitables) {
+inline auto collectAllVariadicImpl(Slot* slot, SignalType SignalType,
+                                   LazyType<Ts>&&... awaitables) {
     static_assert(sizeof...(Ts) > 0);
     using AT = std::conditional_t<
         is_lazy<LazyType<void>>::value,
         SimpleCollectAllVariadicAwaiter<Para, LazyType, Ts...>,
         CollectAllVariadicAwaiter<Para, LazyType, Ts...>>;
-    return AT(std::move(awaitables)...);
+    return AT(slot, SignalType, std::move(awaitables)...);
 }
 
 // collectAny
 template <typename T, template <typename> typename LazyType,
-          typename IAlloc = std::allocator<LazyType<T>>,
-          typename Callback = Unit>
-inline auto collectAnyImpl(std::vector<LazyType<T>, IAlloc> input,
-                           Callback callback = {}) {
-    using AT = std::conditional_t<
-        std::is_same_v<LazyType<T>, Lazy<T>>,
-        detail::SimpleCollectAnyAwaitable<T, IAlloc, Callback>,
-        detail::CollectAnyAwaiter<LazyType<T>, IAlloc, Callback>>;
-    return AT(std::move(input), std::move(callback));
+          typename IAlloc = std::allocator<LazyType<T>>>
+inline auto collectAnyImpl(Slot* slot, SignalType SignalType,
+                           std::vector<LazyType<T>, IAlloc> input) {
+    using AT =
+        std::conditional_t<std::is_same_v<LazyType<T>, Lazy<T>>,
+                           detail::SimpleCollectAnyAwaitable<T, IAlloc>,
+                           detail::CollectAnyAwaiter<LazyType<T>, IAlloc>>;
+    return AT(slot, SignalType, std::move(input));
 }
 
 // collectAnyVariadic
 template <template <typename> typename LazyType, typename... Ts>
-inline auto CollectAnyVariadicImpl(LazyType<Ts>&&... inputs) {
+inline auto CollectAnyVariadicImpl(Slot* slot, SignalType SignalType,
+                                   LazyType<Ts>&&... inputs) {
     using AT =
         std::conditional_t<is_lazy<LazyType<void>>::value,
                            SimpleCollectAnyVariadicAwaiter<LazyType, Ts...>,
                            CollectAnyVariadicAwaiter<LazyType, Ts...>>;
-    return AT(std::move(inputs)...);
+    return AT(slot, SignalType, std::move(inputs)...);
 }
 
-// collectAnyVariadicPair
-template <typename T, typename... Ts>
-inline auto CollectAnyVariadicPairImpl(T&& input, Ts&&... inputs) {
-    using U = std::tuple_element_t<0, std::remove_cvref_t<T>>;
-    using AT = std::conditional_t<is_lazy<U>::value,
-                                  SimpleCollectAnyVariadicPairAwaiter<T, Ts...>,
-                                  CollectAnyVariadicPairAwaiter<T, Ts...>>;
-    return AT(std::move(input), std::move(inputs)...);
-}
 }  // namespace detail
 
-template <typename T, template <typename> typename LazyType,
+template <SignalType SignalType = SignalType::None, typename T,
+          template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>>
-inline auto collectAny(std::vector<LazyType<T>, IAlloc>&& input) {
-    return detail::collectAnyImpl(std::move(input));
+inline Lazy<detail::CollectAnyResult<typename LazyType<T>::ValueType>>
+collectAny(std::vector<LazyType<T>, IAlloc>&& input) {
+    auto slot = co_await CurrentSlot{};
+    co_return co_await detail::collectAnyImpl(slot, SignalType,
+                                              std::move(input));
 }
 
-template <typename T, template <typename> typename LazyType,
-          typename IAlloc = std::allocator<LazyType<T>>, typename Callback>
-inline auto collectAny(std::vector<LazyType<T>, IAlloc>&& input,
-                       Callback callback) {
-    auto cb = std::make_shared<Callback>(std::move(callback));
-    return detail::collectAnyImpl(std::move(input), std::move(cb));
-}
-
-template <template <typename> typename LazyType, typename... Ts>
-inline auto collectAny(LazyType<Ts>... awaitables) {
+template <SignalType SignalType = SignalType::None,
+          template <typename> typename LazyType, typename... Ts>
+inline Lazy<std::variant<Try<Ts>...>> collectAny(LazyType<Ts>... awaitables) {
     static_assert(sizeof...(Ts), "collectAny need at least one param!");
-    return detail::CollectAnyVariadicImpl(std::move(awaitables)...);
-}
-
-// collectAny with std::pair<Lazy, CallbackFunction>
-template <typename... Ts>
-inline auto collectAny(Ts&&... inputs) {
-    static_assert(sizeof...(Ts), "collectAny need at least one param!");
-    return detail::CollectAnyVariadicPairImpl(std::move(inputs)...);
+    auto slot = co_await CurrentSlot{};
+    co_return co_await detail::CollectAnyVariadicImpl(slot, SignalType,
+                                                      std::move(awaitables)...);
 }
 
 // The collectAll() function can be used to co_await on a vector of LazyType
 // tasks in **one thread**,and producing a vector of Try values containing each
 // of the results.
-template <typename T, template <typename> typename LazyType,
+template <SignalType SignalType = SignalType::None, typename T,
+          template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>,
           typename OAlloc = std::allocator<Try<T>>>
-inline auto collectAll(std::vector<LazyType<T>, IAlloc>&& input,
-                       OAlloc out_alloc = OAlloc()) {
-    return detail::collectAllImpl<false>(std::move(input), out_alloc);
+inline Lazy<std::vector<Try<typename LazyType<T>::ValueType>, OAlloc>>
+collectAll(std::vector<LazyType<T>, IAlloc>&& input,
+           OAlloc out_alloc = OAlloc()) {
+    auto slot = co_await CurrentSlot{};
+    co_return co_await detail::collectAllImpl<false>(
+        slot, SignalType, std::move(input), out_alloc);
 }
 
 // Like the collectAll() function above, The collectAllPara() function can be
 // used to concurrently co_await on a vector LazyType tasks in executor,and
 // producing a vector of Try values containing each of the results.
-template <typename T, template <typename> typename LazyType,
+template <SignalType SignalType = SignalType::None, typename T,
+          template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>,
           typename OAlloc = std::allocator<Try<T>>>
-inline auto collectAllPara(std::vector<LazyType<T>, IAlloc>&& input,
-                           OAlloc out_alloc = OAlloc()) {
-    return detail::collectAllImpl<true>(std::move(input), out_alloc);
+inline Lazy<std::vector<Try<typename LazyType<T>::ValueType>, OAlloc>>
+collectAllPara(std::vector<LazyType<T>, IAlloc>&& input,
+               OAlloc out_alloc = OAlloc()) {
+    auto slot = co_await CurrentSlot{};
+    co_return co_await detail::collectAllImpl<true>(
+        slot, SignalType, std::move(input), out_alloc);
 }
 
 // This collectAll function can be used to co_await on some different kinds of
 // LazyType tasks in one thread,and producing a tuple of Try values containing
 // each of the results.
-template <template <typename> typename LazyType, typename... Ts>
+template <SignalType SignalType = SignalType::None,
+          template <typename> typename LazyType, typename... Ts>
 // The temporary object's life-time which binding to reference(inputs) won't
 // be extended to next time of coroutine resume. Just Copy inputs to avoid
 // crash.
-inline auto collectAll(LazyType<Ts>... inputs) {
+inline Lazy<std::tuple<Try<typename LazyType<Ts>::ValueType>...>> collectAll(
+    LazyType<Ts>... inputs) {
     static_assert(sizeof...(Ts), "collectAll need at least one param!");
-    return detail::collectAllVariadicImpl<false>(std::move(inputs)...);
+    auto slot = co_await CurrentSlot{};
+    co_return co_await detail::collectAllVariadicImpl<false>(
+        slot, SignalType, std::move(inputs)...);
 }
 
 // Like the collectAll() function above, This collectAllPara() function can be
 // used to concurrently co_await on some different kinds of LazyType tasks in
 // executor,and producing a tuple of Try values containing each of the results.
-template <template <typename> typename LazyType, typename... Ts>
-inline auto collectAllPara(LazyType<Ts>... inputs) {
+template <SignalType SignalType = SignalType::None,
+          template <typename> typename LazyType, typename... Ts>
+inline Lazy<std::tuple<Try<typename LazyType<Ts>::ValueType>...>>
+collectAllPara(LazyType<Ts>... inputs) {
     static_assert(sizeof...(Ts), "collectAllPara need at least one param!");
-    return detail::collectAllVariadicImpl<true>(std::move(inputs)...);
+    auto slot = co_await CurrentSlot{};
+    co_return co_await detail::collectAllVariadicImpl<true>(
+        slot, SignalType, std::move(inputs)...);
 }
 
 // Await each of the input LazyType tasks in the vector, allowing at most
 // 'maxConcurrency' of these input tasks to be awaited in one thread. yield is
 // true: yield collectAllWindowedPara from thread when a 'maxConcurrency' of
 // tasks is done.
-template <typename T, template <typename> typename LazyType,
+template <SignalType SignalType = SignalType::None, typename T,
+          template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>,
           typename OAlloc = std::allocator<Try<T>>>
-inline auto collectAllWindowed(size_t maxConcurrency,
-                               bool yield /*yield between two batchs*/,
-                               std::vector<LazyType<T>, IAlloc>&& input,
-                               OAlloc out_alloc = OAlloc()) {
-    return detail::collectAllWindowedImpl<true>(maxConcurrency, yield,
-                                                std::move(input), out_alloc);
+inline Lazy<std::vector<Try<typename LazyType<T>::ValueType>, OAlloc>>
+collectAllWindowed(size_t maxConcurrency,
+                   bool yield /*yield between two batchs*/,
+                   std::vector<LazyType<T>, IAlloc>&& input,
+                   OAlloc out_alloc = OAlloc()) {
+    auto slot = co_await CurrentSlot{};
+    co_return co_await detail::collectAllWindowedImpl<true>(
+        slot, SignalType, maxConcurrency, yield, std::move(input), out_alloc);
 }
 
 // Await each of the input LazyType tasks in the vector, allowing at most
@@ -736,15 +772,18 @@ inline auto collectAllWindowed(size_t maxConcurrency,
 // point in time.
 // yield is true: yield collectAllWindowedPara from thread when a
 // 'maxConcurrency' of tasks is done.
-template <typename T, template <typename> typename LazyType,
+template <SignalType SignalType = SignalType::None, typename T,
+          template <typename> typename LazyType,
           typename IAlloc = std::allocator<LazyType<T>>,
           typename OAlloc = std::allocator<Try<T>>>
-inline auto collectAllWindowedPara(size_t maxConcurrency,
-                                   bool yield /*yield between two batchs*/,
-                                   std::vector<LazyType<T>, IAlloc>&& input,
-                                   OAlloc out_alloc = OAlloc()) {
-    return detail::collectAllWindowedImpl<false>(maxConcurrency, yield,
-                                                 std::move(input), out_alloc);
+inline Lazy<std::vector<Try<typename LazyType<T>::ValueType>, OAlloc>>
+collectAllWindowedPara(size_t maxConcurrency,
+                       bool yield /*yield between two batchs*/,
+                       std::vector<LazyType<T>, IAlloc>&& input,
+                       OAlloc out_alloc = OAlloc()) {
+    auto slot = co_await CurrentSlot{};
+    co_return co_await detail::collectAllWindowedImpl<false>(
+        slot, SignalType, maxConcurrency, yield, std::move(input), out_alloc);
 }
 
 }  // namespace coro
