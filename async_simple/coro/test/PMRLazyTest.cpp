@@ -42,7 +42,7 @@ TEST_F(PMRLazyTest, testStdAllocator) {
 
 #if __has_include(<memory_resource>)
 TEST_F(PMRLazyTest, testPMRAllocator) {
-    std::array<std::byte, 1024> stack_buffer;
+    std::array<std::byte, 1024> stack_buffer {};
     std::pmr::monotonic_buffer_resource stack_memory_resource(
         stack_buffer.data(), stack_buffer.size());
     std::pmr::polymorphic_allocator stack_allocator(&stack_memory_resource);
