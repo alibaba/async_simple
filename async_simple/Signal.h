@@ -28,6 +28,7 @@
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
+#include <string>
 
 #include "async_simple/Common.h"
 #include "util/move_only_function.h"
