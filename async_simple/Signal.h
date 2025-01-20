@@ -24,6 +24,7 @@
 #include <bit>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <system_error>
 #include <type_traits>
 #include <unordered_map>

@@ -159,9 +159,9 @@ struct CollectAnyAwaiter {
         // if coroutine resume before this function.
         auto input = std::move(_input);
         auto event = std::make_shared<detail::CountEvent>(input.size() + 1);
-        _signal = Signal::create();
+        auto signal = Signal::create();
         if (_slot)
-            _slot->chainedSignal(_signal.get());
+            _slot->chainedSignal(signal.get());
         if (!signalHelper{Terminate}.tryEmplace(
                 _slot, [c = continuation, e = event, size = input.size()](
                            SignalType type, Signal*) mutable {
@@ -178,7 +178,7 @@ struct CollectAnyAwaiter {
                 input[i]._coro.promise()._executor = executor;
             }
             std::unique_ptr<LazyLocalBase> local;
-            local = std::make_unique<LazyLocalBase>(_signal.get());
+            local = std::make_unique<LazyLocalBase>(signal.get());
             input[i]._coro.promise()._lazy_local = local.get();
             input[i].start(
                 [this, i, size = input.size(), c = continuation, e = event,
@@ -190,7 +190,9 @@ struct CollectAnyAwaiter {
                         _result = std::make_unique<ResultType>();
                         _result->_idx = i;
                         _result->_value = std::move(result);
-                        _signal->emit(_SignalType);
+                        if (auto ptr = local->getSlot(); ptr) {
+                            ptr->signal()->emit(_SignalType);
+                        }
                         c.resume();
                     }
                 });
@@ -210,7 +212,6 @@ struct CollectAnyAwaiter {
     SignalType _SignalType;
     std::unique_ptr<ResultType> _result;
     std::vector<LazyType, InAlloc> _input;
-    std::shared_ptr<Signal> _signal;
 };
 
 template <template <typename> typename LazyType, typename... Ts>
@@ -260,9 +261,9 @@ struct CollectAnyVariadicAwaiter {
 
         auto event = std::make_shared<detail::CountEvent>(
             std::tuple_size<InputType>() + 1);
-        _signal = Signal::create();
+        auto signal = Signal::create();
         if (_slot)
-            _slot->chainedSignal(_signal.get());
+            _slot->chainedSignal(signal.get());
         if (!signalHelper{Terminate}.tryEmplace(
                 _slot, [c = continuation, e = event](SignalType type,
                                                      Signal*) mutable {
@@ -280,7 +281,7 @@ struct CollectAnyVariadicAwaiter {
                     element._coro.promise()._executor = executor;
                 }
                 std::unique_ptr<LazyLocalBase> local;
-                local = std::make_unique<LazyLocalBase>(_signal.get());
+                local = std::make_unique<LazyLocalBase>(signal.get());
                 element._coro.promise()._lazy_local = local.get();
                 element.start(
                     [this, c = continuation, e = event,
@@ -292,7 +293,9 @@ struct CollectAnyVariadicAwaiter {
                         if (count > std::tuple_size<InputType>() + 1) {
                             _result = std::make_unique<ResultType>(
                                 std::in_place_index_t<index>(), std::move(res));
-                            _signal->emit(_SignalType);
+                            if (auto ptr = local->getSlot(); ptr) {
+                                ptr->signal()->emit(_SignalType);
+                            }
                             c.resume();
                         }
                     });
@@ -316,7 +319,6 @@ struct CollectAnyVariadicAwaiter {
     SignalType _SignalType;
     std::unique_ptr<std::tuple<LazyType<Ts>...>> _input;
     std::unique_ptr<ResultType> _result;
-    std::shared_ptr<Signal> _signal;
 };
 
 template <typename T, typename InAlloc>
@@ -399,9 +401,12 @@ struct CollectAllAwaiter {
                                     Try<ValueType>&& result) {
                     _output[i] = std::move(result);
                     std::size_t oldCount;
+                    auto size = _input.size();
+                    auto signal = _signal;
+                    auto signalType = _SignalType;
                     auto awaitingCoro = _event.down(oldCount, 1);
-                    if (oldCount == _input.size()) {
-                        _signal->emit(_SignalType);
+                    if (oldCount == size) {
+                        signal->emit(signalType);
                     }
                     if (awaitingCoro) {
                         awaitingCoro.resume();
@@ -574,11 +579,12 @@ struct CollectAllVariadicAwaiter {
                 auto func = [&, local = std::move(local)]() mutable {
                     lazy.start([&, local = std::move(local), this](auto&& res) {
                         result = std::move(res);
-
                         std::size_t oldCount;
+                        auto signal = _signal;
+                        auto signalType = _SignalType;
                         auto awaitingCoro = _event.down(oldCount, 1);
                         if (oldCount == sizeof...(Ts)) {
-                            _signal->emit(_SignalType);
+                            signal->emit(signalType);
                         }
                         if (awaitingCoro) {
                             awaitingCoro.resume();
