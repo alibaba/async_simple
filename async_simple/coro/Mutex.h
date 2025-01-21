@@ -25,6 +25,7 @@
 
 #ifndef ASYNC_SIMPLE_USE_MODULES
 #include <atomic>
+#include <cassert>
 #include <mutex>
 #include "async_simple/experimental/coroutine.h"
 

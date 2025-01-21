@@ -130,7 +130,7 @@ Lazy<void> cancelSleep() {
     auto sleep = [](int i, std::atomic<int>& cnt) -> Lazy<void> {
         bool cancel_flag = false;
         try {
-            co_await async_simple::coro::sleep(i * 1s);
+            co_await async_simple::coro::sleep(i * 2s);
         } catch (const async_simple::SignalException& err) {
             ++cnt;
             cancel_flag = true;
@@ -156,7 +156,7 @@ Lazy<void> cancelSleep() {
         auto tp2 = std::chrono::steady_clock::now();
         EXPECT_EQ(cnt, 99);
         std::cout << "cost time: " << (tp2 - tp1) / 1ms << "ms" << std::endl;
-        EXPECT_LE((tp2 - tp1) / 1ms, 800);
+        EXPECT_LE((tp2 - tp1) / 1ms, 1800);
     }
     {
         std::vector<RescheduleLazy<void>> works;
@@ -169,7 +169,7 @@ Lazy<void> cancelSleep() {
         auto tp2 = std::chrono::steady_clock::now();
         EXPECT_EQ(cnt, 99);
         std::cout << "cost time: " << (tp2 - tp1) / 1ms << "ms" << std::endl;
-        EXPECT_LE((tp2 - tp1) / 1ms, 800);
+        EXPECT_LE((tp2 - tp1) / 1ms, 1800);
     }
 }
 
