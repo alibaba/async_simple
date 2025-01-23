@@ -205,14 +205,17 @@ public:
                       "we dont allow emplace an empty signal handler");
         logicAssert(std::popcount(static_cast<uint64_t>(type)) == 1,
                     "It's not allow to emplace for multiple signals");
-        // trigger-once signal has already been triggered
+        auto handler = std::make_unique<detail::SignalSlotSharedState::Handler>(
+            std::forward<Args>(args)...);
+        auto oldHandlerPtr = loadHandler<true>(type);
+        // check trigger-once signal has already been triggered
+        // if signal has already been triggered, return false
         if (!detail::SignalSlotSharedState::isMultiTriggerSignal(type) &&
             (signal()->state() & type)) {
             return false;
         }
-        auto handler = std::make_unique<detail::SignalSlotSharedState::Handler>(
-            std::forward<Args>(args)...);
-        auto oldHandlerPtr = loadHandler<true>(type);
+        // if signal triggered later, we will found it by atomic handler CAS
+        // failed.
         auto oldHandler = oldHandlerPtr->load(std::memory_order_acquire);
         if (oldHandler ==
             &detail::SignalSlotSharedState::HandlerManager::emittedTag) {

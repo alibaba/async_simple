@@ -166,7 +166,7 @@ struct CollectAnyAwaiter {
                 _slot, [c = continuation, e = event, size = input.size()](
                            SignalType type, Signal*) mutable {
                     auto count = e->downCount();
-                    if (count > size + 1) {
+                    if (count == size + 1) {
                         c.resume();
                     }
                 })) {  // has canceled
@@ -186,7 +186,7 @@ struct CollectAnyAwaiter {
                     assert(e != nullptr);
                     auto count = e->downCount();
                     // n+1: n coro + 1 cancel handler
-                    if (count > size + 1) {
+                    if (count == size + 1) {
                         _result = std::make_unique<ResultType>();
                         _result->_idx = i;
                         _result->_value = std::move(result);
@@ -268,7 +268,7 @@ struct CollectAnyVariadicAwaiter {
                 _slot, [c = continuation, e = event](SignalType type,
                                                      Signal*) mutable {
                     auto count = e->downCount();
-                    if (count > std::tuple_size<InputType>() + 1) {
+                    if (count == std::tuple_size<InputType>() + 1) {
                         c.resume();
                     }
                 })) {  // has canceled
@@ -290,7 +290,7 @@ struct CollectAnyVariadicAwaiter {
                             res) mutable {
                         auto count = e->downCount();
                         // n+1: n coro + 1 cancel handler
-                        if (count > std::tuple_size<InputType>() + 1) {
+                        if (count == std::tuple_size<InputType>() + 1) {
                             _result = std::make_unique<ResultType>(
                                 std::in_place_index_t<index>(), std::move(res));
                             if (auto ptr = local->getSlot(); ptr) {
@@ -388,7 +388,10 @@ struct CollectAllAwaiter {
             _slot->chainedSignal(_signal.get());
 
         auto executor = promise_type._executor;
-        for (size_t i = 0; i < _input.size(); ++i) {
+
+        _event.setAwaitingCoro(continuation);
+        auto size = _input.size();
+        for (size_t i = 0; i < size; ++i) {
             auto& exec = _input[i]._coro.promise()._executor;
             if (exec == nullptr) {
                 exec = executor;
@@ -421,11 +424,6 @@ struct CollectAllAwaiter {
                     }
             }
             func();
-        }
-        _event.setAwaitingCoro(continuation);
-        auto awaitingCoro = _event.down();
-        if (awaitingCoro) {
-            awaitingCoro.resume();
         }
     }
     inline auto await_resume() { return std::move(_output); }
@@ -602,10 +600,6 @@ struct CollectAllVariadicAwaiter {
                 }
             }(std::get<index>(_inputs), std::get<index>(_results)),
             ...);
-
-        if (auto awaitingCoro = _event.down(); awaitingCoro) {
-            awaitingCoro.resume();
-        }
     }
 
     void await_suspend(std::coroutine_handle<> continuation) {
