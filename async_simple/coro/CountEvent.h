@@ -34,7 +34,7 @@ namespace detail {
 // The last 'down' will resume the awaiting coroutine on this event.
 class CountEvent {
 public:
-    CountEvent(size_t count) : _count(count + 1) {}
+    CountEvent(size_t count) : _count(count) {}
     CountEvent(const CountEvent&) = delete;
     CountEvent(CountEvent&& other)
         : _count(other._count.exchange(0, std::memory_order_relaxed)),
