@@ -43,18 +43,26 @@
 #endif  // __SANITIZE_ADDRESS__
 #endif  // __GNUC__
 
+#if __has_cpp_attribute(clang::coro_only_destroy_when_complete)
+#define CORO_ONLY_DESTROY_WHEN_DONE [[clang::coro_only_destroy_when_complete]]
+#else
 #if defined(__alibaba_clang__) && \
     __has_cpp_attribute(ACC::coro_only_destroy_when_complete)
 #define CORO_ONLY_DESTROY_WHEN_DONE [[ACC::coro_only_destroy_when_complete]]
 #else
 #define CORO_ONLY_DESTROY_WHEN_DONE
 #endif
+#endif
 
+#if __has_cpp_attribute(clang::coro_await_elidable)
+#define ELIDEABLE_AFTER_AWAIT [[clang::coro_await_elidable]]
+#else
 #if defined(__alibaba_clang__) && \
     __has_cpp_attribute(ACC::elideable_after_await)
 #define ELIDEABLE_AFTER_AWAIT [[ACC::elideable_after_await]]
 #else
 #define ELIDEABLE_AFTER_AWAIT
+#endif
 #endif
 
 #endif
