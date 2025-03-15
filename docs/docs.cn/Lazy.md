@@ -394,7 +394,7 @@ Lazy<> foo() {
 
 如果 colletAll 的所有参数都是 Lazy  而非 RescheduleLazy，那么 collectAll 会单线程地执行每个 Lazy。
 有两个办法可以解决这个问题：
-- 为所以参数绑定 Lazy 使其成为 RescheduleLazy。
+- 为所有参数绑定 Executor 使其成为 RescheduleLazy。
 - 使用 collectAllPara。
 
 使用 collectAllPara 需要注意其所在协程必须要绑定调度器，否则依然是单线程执行所有 Lazy。
