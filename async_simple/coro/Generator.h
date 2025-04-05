@@ -331,8 +331,6 @@ private:
         std::conditional_t<std::is_void_v<V>, std::remove_cvref_t<Ref>, V>;
     using reference = std::conditional_t<std::is_void_v<V>, Ref&&, Ref>;
 
-    class iterator;
-
     // clang-format off
     static_assert(
         std::same_as<std::remove_cvref_t<value>, value> &&
@@ -349,6 +347,7 @@ private:
 
 public:
     class promise_type;
+    class iterator;
 
     using Handle = std::coroutine_handle<promise_type>;
     using yielded = std::conditional_t<std::is_reference_v<reference>,
@@ -537,7 +536,7 @@ public:
     using value_type = value;
     using difference_type = std::ptrdiff_t;
 
-    explicit iterator(Handle coro) noexcept : _coro(coro) {}
+    explicit iterator(Handle coro = nullptr) noexcept : _coro(coro) {}
     ~iterator() {
         if (_coro) {
             if (!_coro.done()) {
@@ -553,6 +552,7 @@ public:
     iterator& operator=(iterator&& rhs) {
         logicAssert(!_coro, "Should not own a coroutine handle");
         _coro = std::exchange(rhs._coro, nullptr);
+        return *this;
     }
 
     explicit operator bool() const noexcept { return _coro && !_coro.done(); }
@@ -578,6 +578,16 @@ public:
     }
 
     void operator++(int) { ++(*this); }
+
+    void destroy() {
+        if (_coro) {
+            if (!_coro.done()) {
+                // TODO: error log
+            }
+            _coro.destroy();
+            _coro = nullptr;
+        }
+    }
 
 private:
     Handle _coro = nullptr;
