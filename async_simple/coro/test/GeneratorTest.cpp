@@ -403,6 +403,62 @@ TEST_F(GeneratorTest, testNoCopyClass) {
     }
 }
 
+TEST_F(GeneratorTest, testIteratorStandalone) {
+    
+    {
+        auto lambda = []() -> Generator<size_t> {
+            co_yield 0;
+            co_yield 1;
+            co_yield 2;
+        };
+        Generator<size_t>::iterator it = lambda().begin();
+        EXPECT_EQ(*it, 0);
+        ++it;
+        EXPECT_EQ(*it, 1);
+        ++it;
+        EXPECT_EQ(*it, 2);
+        EXPECT_FALSE(it);   
+    }
+    {
+        struct trace {
+            bool& ok;
+            trace(bool& ok_):ok(ok_) {
+                ok = true;
+            }
+            ~trace() {
+                ok = false;
+            }
+        };
+        bool ok = true;
+        {
+            auto lambda = [&]() -> Generator<size_t> {
+                trace t(ok);
+                co_yield 0;
+                co_yield 1;
+                co_yield 2;
+            };
+            auto it = lambda().begin();
+            EXPECT_TRUE(it);
+            EXPECT_TRUE(ok);
+            // it destroy -> lambda coro destroy -> ~trace -> ok = false
+        }
+        EXPECT_FALSE(ok);
+        {
+            auto lambda = [&]() -> Generator<size_t> {
+                trace t(ok);
+                co_yield 0;
+                co_yield 1;
+                co_yield 2;
+            };
+            auto it = lambda().begin();
+            EXPECT_TRUE(it);
+            EXPECT_TRUE(ok);
+            it.destroy();   // lambda coro destroy -> ~trace -> ok = false
+            EXPECT_FALSE(ok);
+        }
+    }
+}
+
 }  // namespace async_simple::coro
 
 #endif  // SKIP_GENERATOR_TEST
