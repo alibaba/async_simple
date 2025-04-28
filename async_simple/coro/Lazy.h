@@ -16,10 +16,11 @@
 #ifndef ASYNC_SIMPLE_CORO_LAZY_H
 #define ASYNC_SIMPLE_CORO_LAZY_H
 
-#include <system_error>
+
 #ifndef ASYNC_SIMPLE_USE_MODULES
 
 #include <cstddef>
+#include <system_error>
 #include <cstdio>
 #include <exception>
 #include <memory>

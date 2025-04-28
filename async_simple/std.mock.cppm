@@ -17,6 +17,7 @@ module;
 #include <exception>
 #include <fstream>
 #include <functional>
+#include <future>
 #include <iostream>
 #include <iterator>
 #include <limits>
@@ -1854,6 +1855,13 @@ using std::operator<=>;
 using std::operator<<;
 using std::hash;
 }  // namespace std
+
+export namespace std {
+using std::popcount;
+using std::countr_zero;
+using std::promise;
+using std::unordered_map;
+}
 
 #if defined(__GLIBCXX__) || defined(__GLIBCPP__)
 export namespace __gnu_cxx {

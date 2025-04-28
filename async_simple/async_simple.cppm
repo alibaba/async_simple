@@ -15,10 +15,15 @@ module;
 #include <stdio.h>
 #include <cassert>
 #include <climits>
+#include <cstdint>
 #include <version>
 
 #ifdef __linux__
 #include <sched.h>
+#endif
+
+#if __has_include(<libaio.h>) && !defined(ASYNC_SIMPLE_HAS_NOT_AIO)
+#include <libaio.h>
 #endif
 
 export module async_simple;
@@ -27,11 +32,13 @@ import std;
 export extern "C++" {
   #include "util/move_only_function.h"
   #include "coro/Traits.h"
-  #include "MoveWrapper.h"
-  #include "experimental/coroutine.h"
-  #include "Executor.h"
   #include "CommonMacros.h"
   #include "Common.h"
+  #include "MoveWrapper.h"
+  #include "experimental/coroutine.h"
+  #include "async_simple/Signal.h"
+  #include "Executor.h"
+  #include "async_simple/coro/LazyLocalBase.h"
   #include "Unit.h"
   #include "Try.h"
   #include "FutureState.h"
@@ -41,6 +48,9 @@ export extern "C++" {
   #include "Promise.h"
   #include "coro/DetachedCoroutine.h"
   #include "coro/ViaCoroutine.h"
+#if defined(__clang_major__)  && __clang_major__ >= 17
+  #include "coro/PromiseAllocator.h"
+#endif
   #include "coro/Lazy.h"
   #include "uthread/internal/thread_impl.h"
   #include "uthread/Await.h"
@@ -71,7 +81,6 @@ export extern "C++" {
   #include "coro/Semaphore.h"
   // There are some bugs in clang lower versions.
 #if defined(__clang_major__)  && __clang_major__ >= 17
-  #include "coro/PromiseAllocator.h"
   #include "coro/Generator.h"
 #endif
 }
