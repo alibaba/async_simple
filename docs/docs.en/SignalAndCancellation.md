@@ -40,7 +40,7 @@ for (int i=0;i<10;++i) {
 }
 // ...
 // Submit a cancellation signal
-signal->emit(SignalType::terminate);
+signal->emits(SignalType::terminate);
 for (auto &e:works)
   e.get();
 ```
@@ -48,8 +48,8 @@ for (auto &e:works)
 Apart from directly checking the cancellation status, we can register signal handlers in a `Slot` to receive signals. The signature for a signal handler should be `void(SignalType, Signal*)`. The first parameter, `SignalType`, represents the signal type successfully triggered after filtering, and the second parameter is a pointer to the signal.
 
 Note:
-1. Signal handlers should not block. When the `emit()` function is called and a signal is triggered, the program will immediately traverse and execute the signal handlers bound to the `Signal`.
-2. Be cautious of thread safety: Signal handlers will be executed by the thread calling `emit()`, and signal handlers for signals above the 32nd bit might be executed concurrently by multiple threads.
+1. Signal handlers should not block. When the `emits()` function is called and a signal is triggered, the program will immediately traverse and execute the signal handlers bound to the `Signal`.
+2. Be cautious of thread safety: Signal handlers will be executed by the thread calling `emits()`, and signal handlers for signals above the 32nd bit might be executed concurrently by multiple threads.
 3. Signal handlers should not hold the signal bound to the slot, as it would cause a memory leak. Users should access the signal via the `Signal*` parameter.
 
 For example, the following code cancels a sleep operation through a signal callback function:
@@ -74,7 +74,7 @@ for (int i=0;i<10;++i) {
       }
       slot->clear(); // Clear the callback function
       if (slot->signal()) { // If the slot is bound to a signal
-          slot->signal()->emit(SignalType::terminate); // Trigger the cancellation signal.
+          slot->signal()->emits(SignalType::terminate); // Trigger the cancellation signal.
       }
       return;
   });
@@ -94,7 +94,7 @@ class Signal
     : public std::enable_shared_from_this<Signal> {
 public:
     // Submit a signal (allows submitting multiple signals at once) and returns the successfully triggered signals in the current request. Thread-safe.
-    SignalType emit(SignalType state) noexcept;
+    SignalType emits(SignalType state) noexcept;
     // Get the current signal, thread-safe.
     SignalType state() const noexcept;
     // Factory method to create a signal, returns a shared_ptr of the signal. Thread-safe.
@@ -135,11 +135,11 @@ std::shared_ptr<Signal> signal = Signal::create();
 auto slot = std::make_unique<Slot>(signal.get());
 std::shared_ptr<Signal> chainedSignal = Signal::create();
 slot->addChainedSignal(chainedSignal);
-signal->emit(SignalType::terminate);
+signal->emits(SignalType::terminate);
 assert(chainedSignal->state()==SignalType::terminate);
 // The signal will be forwarded to chainedSignal
 // However, the signals triggered by chainedSignal will not be forwarded to signal
-chainedSignal->emit(static_cast<SignalType>(0b10));
+chainedSignal->emits(static_cast<SignalType>(0b10));
 assert(signal->state()!=static_cast<SignalType>(0b10));
 ```
 
@@ -159,7 +159,7 @@ slot->emplace([](SignalType type, Signal* signal) {
   std::cout << "myState:" << mySignal->myState << std::endl;
 });
 mySignal->myState=1;
-mySignal->emit(SignalType::terminate);
+mySignal->emits(SignalType::terminate);
 ```
 
 ## Support for Stackless Coroutines

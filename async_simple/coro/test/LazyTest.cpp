@@ -360,7 +360,7 @@ TEST_F(LazyTest, testYieldCancel) {
             EXPECT_EQ(result.hasError(), true);
             p.set_value();
         });
-    signal->emit(SignalType::Terminate);
+    signal->emits(SignalType::Terminate);
     p.get_future().wait();
 }
 
@@ -2020,7 +2020,7 @@ TEST_F(LazyTest, testForbiddenCancel) {
             EXPECT_EQ(slot->signal()->state(), SignalType::Terminate);
         };
         lazy(p.getFuture()).setLazyLocal(signal.get()).via(&e).detach();
-        signal->emit(SignalType::Terminate);
+        signal->emits(SignalType::Terminate);
         p.setValue();
     }
     {
@@ -2037,7 +2037,7 @@ TEST_F(LazyTest, testForbiddenCancel) {
             EXPECT_EQ(slot, nullptr);
         };
         lazy(p.getFuture()).setLazyLocal(signal.get()).via(&e).detach();
-        signal->emit(SignalType::Terminate);
+        signal->emits(SignalType::Terminate);
         p.setValue();
     }
 }

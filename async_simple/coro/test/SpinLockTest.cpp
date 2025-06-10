@@ -121,7 +121,7 @@ TEST_F(SpinLockTest, testSpinLockCancel) {
         auto signal = async_simple::Signal::create();
         std::promise<void> p;
         if (cancelFirst) {
-            signal->emit(SignalType::Terminate);
+            signal->emits(SignalType::Terminate);
         }
         std::move(lazy)
             .setLazyLocal(signal.get())
@@ -132,7 +132,7 @@ TEST_F(SpinLockTest, testSpinLockCancel) {
             });
         if (!cancelFirst) {
             std::this_thread::sleep_for(10ms);
-            signal->emit(SignalType::Terminate);
+            signal->emits(SignalType::Terminate);
         }
         p.get_future().wait();
     };
