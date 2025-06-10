@@ -191,7 +191,7 @@ struct CollectAnyAwaiter {
                         _result->_idx = i;
                         _result->_value = std::move(result);
                         if (auto ptr = local->getSlot(); ptr) {
-                            ptr->signal()->emit(_SignalType);
+                            ptr->signal()->emits(_SignalType);
                         }
                         c.resume();
                     }
@@ -294,7 +294,7 @@ struct CollectAnyVariadicAwaiter {
                             _result = std::make_unique<ResultType>(
                                 std::in_place_index_t<index>(), std::move(res));
                             if (auto ptr = local->getSlot(); ptr) {
-                                ptr->signal()->emit(_SignalType);
+                                ptr->signal()->emits(_SignalType);
                             }
                             c.resume();
                         }
@@ -409,7 +409,7 @@ struct CollectAllAwaiter {
                     auto signalType = _SignalType;
                     auto awaitingCoro = _event.down(oldCount, 1);
                     if (oldCount == size) {
-                        signal->emit(signalType);
+                        signal->emits(signalType);
                     }
                     if (awaitingCoro) {
                         awaitingCoro.resume();
@@ -582,7 +582,7 @@ struct CollectAllVariadicAwaiter {
                         auto signalType = _SignalType;
                         auto awaitingCoro = _event.down(oldCount, 1);
                         if (oldCount == sizeof...(Ts)) {
-                            signal->emit(signalType);
+                            signal->emits(signalType);
                         }
                         if (awaitingCoro) {
                             awaitingCoro.resume();

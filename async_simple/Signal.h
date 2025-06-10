@@ -95,7 +95,7 @@ public:
     // binding slots, then execute the slot callback functions. It will return
     // the signal which success triggered. If no signal success triggger, return
     // SignalType::none.
-    SignalType emit(SignalType state) noexcept;
+    SignalType emits(SignalType state) noexcept;
 
     // Return now signal type.
     SignalType state() const noexcept {
@@ -320,7 +320,7 @@ public:
                 [chainedSignal =
                      chainedSignal->weak_from_this()](SignalType type) {
                     if (auto signal = chainedSignal.lock(); signal != nullptr) {
-                        signal->emit(type);
+                        signal->emits(type);
                     }
                 }),
             std::memory_order_release);
@@ -451,7 +451,7 @@ inline detail::SignalSlotSharedState::~SignalSlotSharedState() {
     }
 }
 
-inline SignalType Signal::emit(SignalType state) noexcept {
+inline SignalType Signal::emits(SignalType state) noexcept {
     if (state != SignalType::None) {
         SignalType vaildSignal = UpdateState(_state, state);
         if (vaildSignal) {
