@@ -17,11 +17,14 @@
 #define ASYNC_SIMPLE_CORO_FUTURE_AWAITER_H
 
 #ifndef ASYNC_SIMPLE_USE_MODULES
+#include <atomic>
+#include <exception>
+#include <memory>
+#include <type_traits>
 #include "async_simple/Future.h"
+#include "async_simple/Signal.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/experimental/coroutine.h"
-
-#include <type_traits>
 
 #endif  // ASYNC_SIMPLE_USE_MODULES
 
@@ -31,17 +34,65 @@ namespace coro::detail {
 template <typename T>
 struct FutureAwaiter {
     Future<T> future_;
-
     bool await_ready() { return future_.hasResult(); }
 
     template <typename PromiseType>
-    void await_suspend(CoroHandle<PromiseType> continuation) {
+    bool await_suspend_cancellable(CoroHandle<PromiseType> continuation,
+                                   Executor* ex, Executor::Context ctx,
+                                   Slot* cancellationSlot) {
+        auto future = std::make_unique<Future<T>>(std::move(future_));
+        future_ = makeReadyFuture<T>(
+            std::make_exception_ptr(async_simple::SignalException(
+                SignalType::Terminate,
+                "FutureAwaiter is only allowed to be called by Lazy")));
+        auto state = std::make_shared<std::atomic<bool>>(true);
+
+        if (!signalHelper{Terminate}.tryEmplace(
+                cancellationSlot,
+                [continuation, ex, ctx, state](auto&&...) mutable {
+                    if (!state->exchange(false)) {
+                        return;
+                    }
+                    if (ex != nullptr) {
+                        ex->checkin(continuation, ctx);
+                    } else {
+                        continuation.resume();
+                    }
+                })) {
+            return false;
+        }
+        auto future_ptr = future.get();
+        future_ptr->setContinuation(
+            [this, continuation, ex, ctx, state = std::move(state),
+             future = std::move(future)](auto&&...) mutable {
+                if (!state->exchange(false)) {
+                    return;
+                }
+                this->future_ = std::move(*future);
+                if (ex != nullptr) {
+                    ex->checkin(continuation, ctx);
+                } else {
+                    continuation.resume();
+                }
+            });
+        return true;
+    }
+
+    template <typename PromiseType>
+    bool await_suspend(CoroHandle<PromiseType> continuation) {
         static_assert(std::is_base_of_v<LazyPromiseBase, PromiseType>,
                       "FutureAwaiter is only allowed to be called by Lazy");
         Executor* ex = continuation.promise()._executor;
         Executor::Context ctx = Executor::NULLCTX;
         if (ex != nullptr) {
             ctx = ex->checkout();
+        }
+        if (continuation.promise()._lazy_local) {
+            if (auto cancellationSlot =
+                    continuation.promise()._lazy_local->getSlot()) {
+                return await_suspend_cancellable(continuation, ex, ctx,
+                                                 cancellationSlot);
+            }
         }
         future_.setContinuation([continuation, ex, ctx](Try<T>&& t) mutable {
             if (ex != nullptr) {
@@ -50,6 +101,7 @@ struct FutureAwaiter {
                 continuation.resume();
             }
         });
+        return true;
     }
     auto await_resume() {
         if constexpr (!std::is_same_v<T, void>)

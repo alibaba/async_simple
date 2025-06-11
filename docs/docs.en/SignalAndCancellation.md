@@ -255,12 +255,12 @@ syncAwait(Task().setLazyLocal(signal.get()).via(ex));
 
 In addition to manually checking for triggered cancellation signals, many potentially suspendable functions in `async-simple` support cancellation operations. Additionally, `collect*` functions support forwarding signals received externally to coroutines initiated by `collect*`.
 
-The following objects and functions support cancellation operations. Coroutines responding to signals may throw the `async_simple::SignalException` exception, and calling `value()` should return the signal type (for cancellation operations, this is `async_simple::terminate`).
-Also, the following IO functions will automatically insert two checkpoints to check if the task has been canceled during the suspension/resumption of the coroutine.
+The following objects and functions support cancellation operations. Coroutines responding to signals may throw the `async_simple::SignalException` exception, and calling `value()` should return the signal type (for cancellation operations, this is `async_simple::terminate`). Also, they will automatically insert two checkpoints to check if the task has been canceled during the suspension/resumption of the coroutine.
 
 1. `CollectAny`: Forwards signals to all subtasks. If a cancellation signal is received, an exception is thrown and it returns immediately.
 2. `CollectAll`: Forwards signals to all subtasks. Even if a cancellation signal is received, it waits for all subtasks to complete before normally returning.
 3. `Yield/SpinLock`: Throws an exception if canceled. Currently, canceling tasks queued in the scheduler is not supported.
+3. `Future`: co_await a future could be canceled. It will return `Try<T>` which contains a exception.
 4. `Sleep`: Depends on whether the scheduler overrides the virtual function `void schedule(Func func, Duration dur, uint64_t schedule_info, Slot *slot = nullptr)` and correctly implements the cancellation functionality. If not overridden, the default implementation supports canceling Sleep.
 
 The following IO objects and functions do not yet support cancellation operations and await further improvements:
@@ -268,7 +268,6 @@ The following IO objects and functions do not yet support cancellation operation
 2. `ConditionVariable`
 3. `SharedMutex`
 4. `Latch`
-5. `Promise/Future`
 6. `CountingSemaphore`
 
 ### Supporting cancellation in custom Awaiters
