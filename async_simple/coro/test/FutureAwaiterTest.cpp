@@ -17,8 +17,11 @@
 #include <thread>
 
 #include "async_simple/Promise.h"
+#include "async_simple/Signal.h"
+#include "async_simple/coro/Collect.h"
 #include "async_simple/coro/FutureAwaiter.h"
 #include "async_simple/coro/Lazy.h"
+#include "async_simple/coro/Sleep.h"
 #include "async_simple/coro/SyncAwait.h"
 #include "async_simple/executors/SimpleExecutor.h"
 #include "async_simple/test/unittest.h"
@@ -74,6 +77,43 @@ TEST_F(FutureAwaiterTest, testWithFuture) {
         EXPECT_EQ(ex, &ex2);
     };
     syncAwait(lazy3().via(&ex2));
+}
+
+TEST_F(FutureAwaiterTest, testWithFutureCancel) {
+    async_simple::executors::SimpleExecutor ex1(2);
+    auto lazy = [&]() -> Lazy<> {
+        Promise<int> pr;
+        auto fut = pr.getFuture();
+        sum(1, 1, [pr = std::move(pr)](int val) mutable {
+            std::this_thread::sleep_for(std::chrono::seconds::max());
+            pr.setValue(val);
+        });
+        async_simple::SignalType type = None;
+        try {
+            co_await std::move(fut);
+        } catch (const async_simple::SignalException& e) {
+            type = e.value();
+        } catch (...) {
+        }
+        EXPECT_EQ(type, async_simple::Terminate);
+    };
+    syncAwait(collectAll<async_simple::Terminate>(
+        lazy().via(&ex1),
+        async_simple::coro::sleep(std::chrono::microseconds{10}).via(&ex1)));
+    auto lazy2 = [&]() -> Lazy<> {
+        Promise<int> pr;
+        auto fut = pr.getFuture();
+        sum(1, 1, [pr = std::move(pr)](int val) mutable { pr.setValue(val); });
+        int ret = 0;
+        try {
+            ret = co_await std::move(fut);
+        } catch (...) {
+        }
+        EXPECT_EQ(ret, 2);
+    };
+    syncAwait(collectAll<async_simple::Terminate>(
+        lazy2().via(&ex1),
+        async_simple::coro::sleep(std::chrono::seconds::max()).via(&ex1)));
 }
 
 namespace detail {
