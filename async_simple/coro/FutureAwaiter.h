@@ -44,9 +44,11 @@ struct FutureAwaiter {
         future_ = makeReadyFuture<T>(
             std::make_exception_ptr(async_simple::SignalException(
                 SignalType::Terminate,
-                "FutureAwaiter is only allowed to be called by Lazy")));
+                "FutureAwaiter is cancelled by signal")));
+        // Add thread fence, make sure future_ has being assigned before
+        // continuation or cancellation in arm.
+        std::atomic_thread_fence(std::memory_order_acq_rel);
         auto state = std::make_shared<std::atomic<bool>>(true);
-
         if (!signalHelper{Terminate}.tryEmplace(
                 cancellationSlot,
                 [continuation, ex, ctx, state](auto&&...) mutable {
@@ -116,8 +118,9 @@ auto operator co_await(Future<T>&& future) {
 }
 
 template <typename T>
-[[deprecated("Require an rvalue future.")]]
-auto operator co_await(T&& future) requires IsFuture<std::decay_t<T>>::value {
+[[deprecated("Require an rvalue future.")]] auto operator co_await(T&& future)
+    requires IsFuture<std::decay_t<T>>::value
+{
     return std::move(operator co_await(std::move(future)));
 }
 
