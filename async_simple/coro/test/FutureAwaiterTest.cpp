@@ -79,8 +79,6 @@ TEST_F(FutureAwaiterTest, testWithFuture) {
     syncAwait(lazy3().via(&ex2));
 }
 
-// The test fails in debug mode with internal CI. Disable it to keep the CI green.
-#if 0
 TEST_F(FutureAwaiterTest, testWithFutureCancel) {
     async_simple::executors::SimpleExecutor ex1(2);
     auto lazy = [&]() -> Lazy<> {
@@ -109,7 +107,8 @@ TEST_F(FutureAwaiterTest, testWithFutureCancel) {
         int ret = 0;
         try {
             ret = co_await std::move(fut);
-        } catch (...) {
+        } catch (const std::exception& e) {
+            std::cout << e.what() << std::endl;
         }
         EXPECT_EQ(ret, 2);
     };
@@ -117,7 +116,6 @@ TEST_F(FutureAwaiterTest, testWithFutureCancel) {
         lazy2().via(&ex1),
         async_simple::coro::sleep(std::chrono::seconds::max()).via(&ex1)));
 }
-#endif
 
 namespace detail {
 
