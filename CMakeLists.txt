@@ -82,6 +82,11 @@ else()
         list(APPEND CXX_FLAGS -Wno-maybe-uninitialized)
         list(APPEND CXX_FLAGS -Wno-uninitialized)
     endif()
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND
+       CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "20")
+        list(APPEND CXX_FLAGS -fno-coro-aligned-allocation)
+    endif()
 endif()
 
 set(IS_ACC OFF CACHE INTERNAL "Whether the current compiler is ACC")
