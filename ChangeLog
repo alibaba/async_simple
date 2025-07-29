@@ -1,3 +1,15 @@
+2025-7-29 Release Notes
+    * 1.4 Released
+    * Adjust compatibilities for Generator.
+    * Extend collect any to support callbacks.
+    * Allow user to customize the new/delete behaviour of Lazy's coroutine state
+    * Add schedule prority hint to avoid yield deadlock
+    * Add cancellation support
+    * Add [[nodiscard]] for spinlock
+    * Support Cancellation for FutureAwaiter
+    * Support to generate compile commands in cmake and bazel
+    * Support C++20 modules formally.
+
 2024-1-30 Release Notes
     * 1.3 Released
     * Avoid overwriting CMAKE_CXX_FLAGS.
