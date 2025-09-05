@@ -38,6 +38,7 @@ else()
 endif()
 
 if (ASYNC_SIMPLE_ENABLE_TESTS)
+    message(STATUS "going to find gtest")
     find_package(GTest)
 endif()
 

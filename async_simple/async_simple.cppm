@@ -84,3 +84,16 @@ export extern "C++" {
   #include "coro/Generator.h"
 #endif
 }
+
+export namespace std {
+  using std::coroutine_handle;
+  using std::coroutine_traits;
+  using std::operator==;
+  using std::operator<=>;
+  using std::hash;
+  using std::noop_coroutine;
+  using std::noop_coroutine_handle;
+  using std::noop_coroutine_promise;
+  using std::suspend_always;
+  using std::suspend_never;
+}  // namespace std
