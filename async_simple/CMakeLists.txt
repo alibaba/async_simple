@@ -103,7 +103,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/async_simple-config.cmake"
         DESTINATION share/async_simple)
 
 
-if (${ASYNC_SIMPLE_ENABLE_TESTS})
+if (ASYNC_SIMPLE_ENABLE_TESTS)
   add_subdirectory(test)
   add_subdirectory(util/test)
   add_subdirectory(coro/test)

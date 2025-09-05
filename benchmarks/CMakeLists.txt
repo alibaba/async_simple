@@ -18,6 +18,6 @@ endif()
 add_executable(benchmarking ${BENCHMARK_SRCS})
 target_link_libraries(benchmarking ${BENCHMARK_LIBRARIES} async_simple)
 
-if(NOT ${ASYNC_SIMPLE_DISABLE_AIO} AND LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
+if(NOT ASYNC_SIMPLE_DISABLE_AIO AND LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
   target_link_libraries(benchmarking ${LIBAIO_LIBRARIES})
 endif()

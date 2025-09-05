@@ -14,7 +14,7 @@ endif()
 add_executable(ReadFiles ReadFiles.cpp)
 target_link_libraries(ReadFiles async_simple)
 
-if(NOT ${ASYNC_SIMPLE_DISABLE_AIO} AND LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
+if(NOT ASYNC_SIMPLE_DISABLE_AIO AND LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
   target_link_libraries(ReadFiles ${LIBAIO_LIBRARIES})
 endif()
 
