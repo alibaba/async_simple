@@ -54,6 +54,12 @@
 #endif
 #endif
 
+#if defined(ASYNC_SIMPLE_USE_MODULES) && defined(__clang__) && \
+    (__clang_major__ >= 20 && __clang_major__ < 22)
+// When ASYNC_SIMPLE_USE_MODULES is defined and clang version is between 20 and 22,
+// do not define ELIDEABLE_AFTER_AWAIT due to a bug in clang.
+#define ELIDEABLE_AFTER_AWAIT
+#else
 #if __has_cpp_attribute(clang::coro_await_elidable)
 #define ELIDEABLE_AFTER_AWAIT [[clang::coro_await_elidable]]
 #else
@@ -62,6 +68,7 @@
 #define ELIDEABLE_AFTER_AWAIT [[ACC::elideable_after_await]]
 #else
 #define ELIDEABLE_AFTER_AWAIT
+#endif
 #endif
 #endif
 
