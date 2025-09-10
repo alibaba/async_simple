@@ -58,13 +58,20 @@ concept HasGlobalCoAwaitOperator = requires(T&& awaitable) {
 #endif
 
 template <typename Awaitable>
-auto getAwaiter(Awaitable&& awaitable) {
+auto getAwaitable(Awaitable&& awaitable) {
+    return std::forward<Awaitable>(awaitable);
+}
+
+template <typename Awaitable>
+decltype(auto) getAwaiter(Awaitable&& awaitable) {
     if constexpr (HasMemberCoAwaitOperator<Awaitable>)
         return std::forward<Awaitable>(awaitable).operator co_await();
     else if constexpr (HasGlobalCoAwaitOperator<Awaitable>)
         return operator co_await(std::forward<Awaitable>(awaitable));
+    else if constexpr (std::is_lvalue_reference_v<Awaitable>)
+        return awaitable;
     else
-        return std::forward<Awaitable>(awaitable);
+        return getAwaitable(std::forward<Awaitable>(awaitable));
 }
 
 }  // namespace detail

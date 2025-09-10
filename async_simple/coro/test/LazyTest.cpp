@@ -431,6 +431,29 @@ TEST_F(LazyTest, testNoCopy) {
     ASSERT_EQ(10, syncAwait(coro0()).val);
 }
 
+TEST_F(LazyTest, testNoCopyAwaiter) {
+    struct NoCopyAwaiter {
+        auto &coAwait(Executor *ex) { return *this; }
+        NoCopyAwaiter() = default;
+        NoCopyAwaiter(const NoCopyAwaiter &) = delete;
+        NoCopyAwaiter &operator=(const NoCopyAwaiter &) = delete;
+        NoCopyAwaiter(NoCopyAwaiter &&) = delete;
+        NoCopyAwaiter &operator=(NoCopyAwaiter &&) = delete;
+        bool await_ready() const noexcept { return false; }
+        auto await_suspend(std::coroutine_handle<> continuation) noexcept {
+            return continuation;
+        }
+        int await_resume() noexcept { return 10; }
+    };
+
+    auto test = []() -> Lazy<int> {
+        auto awaiter = NoCopyAwaiter();
+        auto ret = co_await awaiter;
+        co_return ret;
+    };
+    ASSERT_EQ(10, syncAwait(test()));
+}
+
 TEST_F(LazyTest, testDetachedCoroutine) {
     std::atomic<int> value = 0;
     auto test = [&]() -> Lazy<> {

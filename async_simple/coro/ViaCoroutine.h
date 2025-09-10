@@ -173,7 +173,7 @@ struct [[nodiscard]] ViaAsyncAwaiter {
 // ReadyAwaiter instead. It would be much cheaper in case we `co_await
 // normal_function()`;
 template <typename Awaitable>
-inline auto coAwait(Executor* ex, Awaitable&& awaitable) {
+inline decltype(auto) coAwait(Executor* ex, Awaitable&& awaitable) {
     if constexpr (detail::HasCoAwaitMethod<Awaitable>) {
         return detail::getAwaiter(
             std::forward<Awaitable>(awaitable).coAwait(ex));

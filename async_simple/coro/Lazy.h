@@ -147,7 +147,7 @@ public:
     FinalAwaiter final_suspend() noexcept { return {}; }
 
     template <typename Awaitable>
-    auto await_transform(Awaitable&& awaitable) {
+    decltype(auto) await_transform(Awaitable&& awaitable) {
         // See CoAwait.h for details.
         return detail::coAwait(_executor, std::forward<Awaitable>(awaitable));
     }
