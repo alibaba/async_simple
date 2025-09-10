@@ -63,7 +63,7 @@ void Uthread_read_file_for(int num, const std::string &s, auto e) {
     std::vector<std::function<void()>> task_list;
     task_list.reserve(num);
     for (int i = 0; i < num; ++i) {
-        task_list.template emplace_back(
+        task_list.emplace_back(
             [&s, e]() { Uthread_read_file(s.c_str(), e); });
     }
     collectAll<Launch::Schedule>(task_list.begin(), task_list.end(), e);
