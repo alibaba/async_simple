@@ -184,3 +184,36 @@ uthread::await(p.getFuture());
 ## Sanitizer
 
 Newer Compiler-rt will enable `Use-After-Return` by default. But it can't take care of Uthread well, so when we use Uthread with newer compiler-rt, we need to disable `Use-After-Return` explicitly by `-fsanitize-address-use-after-return=never`.
+
+## Memory Allocation
+
+
+Users can use self defined `stack_holder get_stack_holder(unsigned stack_size)` and `void stack_deleter::operator()(char* ptr) const noexcept` interfaces
+with strong symbols to override the default allocators and deallocators at link time:
+
+```C++
+namespace async_simple {
+namespace uthread {
+namespace internal {
+
+stack_holder get_stack_holder(unsigned stack_size) {
+    // user logics
+}
+
+void stack_deleter::operator()(char* ptr) const noexcept {
+    // user logics
+}
+}
+}
+}
+```
+
+the definition of  `stack_holder` is:
+
+```
+struct stack_deleter {
+    void operator()(char* ptr) const noexcept;
+};
+using stack_holder = std::unique_ptr<char[], stack_deleter>;
+```
+

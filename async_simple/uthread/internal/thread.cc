@@ -131,13 +131,18 @@ thread_context::thread_context(std::function<void()> func, size_t stack_size)
 
 thread_context::~thread_context() {}
 
-thread_context::stack_holder thread_context::make_stack() {
-    auto stack = stack_holder(new char[stack_size_]);
-    return stack;
+__attribute__((weak))
+void stack_deleter::operator()(char* ptr) const noexcept {
+    delete[] ptr;
 }
 
-void thread_context::stack_deleter::operator()(char* ptr) const noexcept {
-    delete[] ptr;
+__attribute__((weak))
+stack_holder get_stack_holder(unsigned stack_size) {
+    return stack_holder(new char[stack_size]);
+}
+
+stack_holder thread_context::make_stack() {
+    return get_stack_holder(stack_size_);
 }
 
 void thread_context::setup() {

@@ -39,12 +39,12 @@ namespace internal {
 inline constexpr size_t default_base_stack_size = 512 * 1024;
 size_t get_base_stack_size();
 
-class thread_context {
-    struct stack_deleter {
-        void operator()(char* ptr) const noexcept;
-    };
-    using stack_holder = std::unique_ptr<char[], stack_deleter>;
+struct stack_deleter {
+    void operator()(char* ptr) const noexcept;
+};
+using stack_holder = std::unique_ptr<char[], stack_deleter>;
 
+class thread_context {
     const size_t stack_size_;
     stack_holder stack_{make_stack()};
     std::function<void()> func_;

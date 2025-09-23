@@ -185,3 +185,35 @@ uthread::await(p.getFuture());
 ## Sanitizer
 
 高版本的 Compiler-rt 默认会检测 `Use-After-Return` 的情况。而因为 Uthread 不能很好的处理这个情况，所以当我们在开启高版本 Compiler-rt 后使用 Uthread 时，需要使用 `-fsanitize-address-use-after-return=never` 这个选项来禁止检测 `Use-After-Return`.
+
+## 内存分配
+
+用户可以通过自定义 `stack_holder get_stack_holder(unsigned stack_size)` 和 `void stack_deleter::operator()(char* ptr) const noexcept` 强符号接口
+在链接时覆盖 Uthread 默认的内存分配器。例如：
+
+```C++
+namespace async_simple {
+namespace uthread {
+namespace internal {
+
+stack_holder get_stack_holder(unsigned stack_size) {
+    // user logics
+}
+
+void stack_deleter::operator()(char* ptr) const noexcept {
+    // user logics
+}
+}
+}
+}
+```
+
+其中 `stack_holder` 的定义为:
+
+```
+struct stack_deleter {
+    void operator()(char* ptr) const noexcept;
+};
+using stack_holder = std::unique_ptr<char[], stack_deleter>;
+```
+
