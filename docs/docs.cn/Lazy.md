@@ -274,6 +274,48 @@ void func(int x, Executor *e) {
 
 总之，当我们需要为多个 Lazy 组成的任务链指定调度器时，我们只需要在任务链的开头指定调度器就好了。
 
+## 内存分配
+
+### 用户自定义分配器
+
+async_simple 支持用户为每个 Lazy 函数定义内存分配器。接口为，Lazy 函数的第一个参数为 `std::allocator_arg_t`，第二个参数为支持 `void *allocate(unsigned)` 和
+`void deallocate(void*, unsigned)` 成员函数的接口。例如 `std::pmr::polymorphic_allocator<>`。
+
+具体使用方式可参考 `demo_example/pmr_lazy.cpp`。
+
+### 编译器合并内存分配
+
+async_simple 支持 clang 的 `[[clang::coro_await_elidable]]` 属性。只需要使用支持 `[[clang::coro_await_elidable]]` 的编译器编译 async_simple，在 `co_await`
+后的 Lazy 调用所需的内存会被自动叠加进当前协程的协程帧中。例如：
+
+```
+Lazy<int> foo() { ... }
+Lazy<int> bar() {
+    auto f = co_await foo();
+    ...
+}
+```
+
+在这个例子中，`bar()` 协程调用 `foo()` 时并不会为 `foo()` 协程触发内存分配，而是 `bar()` 自己会申请一块更大的协程帧，将其中的一部分内容给 `foo()` 使用。而 `bar()` 自己
+的协程帧的生命周期，则是由 `bar()`  的调用者负责，若 `bar()` 的调用者依然使用 `co_await` 后直接调用 `bar()` 的方式，则 `bar()` 自身的协程帧依然不会被分配，而是复用其调用环境的协程帧的一部分。这个过程是递归的。
+
+注意，这种策略可能并不总是好的，考虑如下情况：
+
+```
+Lazy<int> foo() { ... }
+Lazy<int> bar(bool cond) {
+    if (cond) {
+        co_await foo();
+        ...
+    }
+    ...
+}
+```
+
+此时在开启  `[[clang::coro_await_elidable]]` 优化之后 `bar()` 的协程帧总是会更大以包含 `foo()` 的协程帧，然而，若实际运行时 `cond` 总是为 `false`，则这必然是一个负优化。
+
+为了缓解这一点，我们在内部编译器中做了更智能的优化，编译器会根据上下文的冷热信息来判断是否要对调用点进行转换，以避免这类负优化产生。
+
 # LazyLocals
 
 LazyLocals类似于线程环境下的thread_local。用户可以通过派生LazyLocals并实现静态函数`T::classof(const LazyLocalBase*)`来自定义LazyLocals。

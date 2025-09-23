@@ -272,6 +272,48 @@ In the above example, `task1...task4` represents a task chain consists of Lazy. 
 
 So we could assign the executor at the root the task chain simply.
 
+我来为您翻译这段关于内存分配的内容：
+
+Ran tool
+## Memory Allocation
+
+### User-Defined Allocator
+
+async_simple supports user-defined memory allocators for each Lazy function. The interface requires the first parameter of the Lazy function to be `std::allocator_arg_t`, and the second parameter to be an interface that supports `void *allocate(unsigned)` and `void deallocate(void*, unsigned)` member functions. For example, `std::pmr::polymorphic_allocator<>`.
+
+For specific usage, please refer to `demo_example/pmr_lazy.cpp`.
+
+### Compiler-Integrated Memory Allocation
+
+async_simple supports clang's `[[clang::coro_await_elidable]]` attribute. Simply compile async_simple with a compiler that supports `[[clang::coro_await_elidable]]`, and the memory required for Lazy calls after `co_await` will be automatically merged into the current coroutine's coroutine frame. For example:
+
+```
+Lazy<int> foo() { ... }
+Lazy<int> bar() {
+    auto f = co_await foo();
+    ...
+}
+```
+
+In this example, when the `bar()` coroutine calls `foo()`, it will not trigger memory allocation for the `foo()` coroutine. Instead, `bar()` itself will allocate a larger coroutine frame and give a portion of it to `foo()` to use. The lifecycle of `bar()`'s own coroutine frame is managed by `bar()`'s caller. If `bar()`'s caller still uses the method of directly calling `bar()` after `co_await`, then `bar()`'s own coroutine frame will still not be allocated, but will reuse a portion of its calling environment's coroutine frame. This process is recursive.
+
+Note that this strategy may not always be beneficial. Consider the following scenario:
+
+```
+Lazy<int> foo() { ... }
+Lazy<int> bar(bool cond) {
+    if (cond) {
+        co_await foo();
+        ...
+    }
+    ...
+}
+```
+
+In this case, after enabling the `[[clang::coro_await_elidable]]` optimization, `bar()`'s coroutine frame will always be larger to include `foo()`'s coroutine frame. However, if `cond` is always `false` at runtime, this would inevitably be a negative optimization.
+
+To mitigate this issue, we have implemented more intelligent optimizations in our internal compiler. The compiler will determine whether to perform transformations at call sites based on context hot/cold information to avoid such negative optimizations.
+
 # LazyLocals
 
 LazyLocals is similar to `thread_local` in a thread environment. Users can customize their own LazyLocals by deriving from LazyLocals and implement static function `T::classsof(const LazyLocalBase*)` 
