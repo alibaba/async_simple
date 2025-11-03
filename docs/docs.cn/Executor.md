@@ -4,14 +4,16 @@ Executor是调度协程的关键组件。绝大多数开源协程框架提供内
 
 ## 使用Executor
 
-让协程运行在指定的调度器中非常简单，只需要创建协程时传递Executor给协程即可。在Lazy中通过`via()/setEx()`可以传递Executor；在Uthread中设置`async()`的Executor参数传递。
+让协程运行在指定的调度器中非常简单，只需要创建协程时传递Executor给协程即可。在Lazy中通过`via()`可以传递Executor。或者可以使用`directlyStart(callback, executor)`接口启动协程并惰性调度，也可以在Uthread中设置`async()`的Executor参数传递。
 
 ```cpp
 Executor e;
 
 // lazy
-co_await f().via(&e).start([](){});
-co_await f().setEx(&e);
+// 协程绑定在对应的调度器上，立即调度执行
+f().via(&e).start([](auto&&){});
+// 协程绑定在对应的调度器上，延迟调度执行
+f().start([](auto&&){},&e);
 
 // uthread
 uthread::async<uthread::Launch::Schedule>(<lambda>, &e);
@@ -32,7 +34,11 @@ public:
     using Context = void *;
     
     virtual bool schedule(Func func) = 0;
+    virtual bool schedule(Func func, uint64_t schedule_info);
+    virtual bool schedule(Func func, Duration d);
+    virtual bool schedule(Func func, Duration d, uint64_t schedule_info);
     bool schedule_move_only(util::move_only_function<void()> func);
+    bool schedule_move_only(util::move_only_function<void()> func, uint64_t schedule_info);
     virtual bool currentThreadInExecutor() const = 0;
     virtual ExecutorStat stat() const = 0;
     virtual Context checkout();
@@ -40,7 +46,8 @@ public:
     virtual IOExecutor* getIOExecutor() = 0;
 ```
 
-- `virtual bool schedule(Func func) = 0;` 接口接收一个lambda函数进行调度执行。实现时将该lambda调度到任意一个线程执行即可。当 `schedule(Func)` 返回 `true` 时，该调度器实现需要保证 func 一定会被执行。否则被提交到调度器的 Lazy 任务可能会导致程序出现内存泄漏问题。
+- `virtual bool schedule(Func func, uint64_t schedule_info);` 接口接收一个lambda函数进行调度执行。实现时将该lambda调度到任意一个线程执行即可。当 `schedule(Func)` 返回 `true` 时，该调度器实现需要保证 func 一定会被执行。否则被提交到调度器的 Lazy 任务可能会导致程序出现内存泄漏问题。
+- `schedule_info` 用于指导调度。其中低16字节保留给async_simple, 最低的4 bit用于表示调度优先级，数字越大暗示任务的优先级越低，默认的调度优先级为`async_simple::Executor::Priority::DEFAULT`。具体调度逻辑由executor的实现决定，不做强制规定。但需要注意的是，为了避免`async_simple::coro::spinlock`死锁，至少需要实现以下逻辑：当优先级大于等于`async_simple::Executor::prority::YIELD`时，调度器必须保证当有其他排队任务时，当前任务不会总被立即执行。
 - `bool schedule_move_only(util::move_only_function<void()> func);` 接口可以接受一个move_only/copyable functor进行调度执行，这个接口是为了弥补std::function不能接收move_only functor的缺陷。
 - `virtual bool currentThreadInExecutor() const = 0;` 接口用于检查调用者是否运行在当前Executor中。实现时判断当前线程是否隶属于Executor。
 - `virtual ExecutorStat stat() const = 0;` 接口获取当前Executor状态信息。实现时可以继承ExecutorStat，添加更多状态信息方便用户调试和监控Executor。

@@ -26,6 +26,7 @@ jobs:
     - name: deps
       run: |
            sudo apt install -y build-essential
+           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
            sudo apt install -y gcc-${{matrix.gcc_version}} g++-${{matrix.gcc_version}}
            sudo apt install libaio-dev libgtest-dev libgmock-dev -y
 

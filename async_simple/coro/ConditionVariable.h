@@ -16,7 +16,11 @@
 #ifndef ASYNC_SIMPLE_CORO_CONDITION_VARIABLE_H
 #define ASYNC_SIMPLE_CORO_CONDITION_VARIABLE_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
+#include <mutex>
 #include "async_simple/coro/Lazy.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace coro {

@@ -17,15 +17,70 @@ async\_simple是阿里巴巴开源的轻量级C++异步框架。提供了基于C
 
 我们可以在 [compiler-explorer](compiler-explorer.com) 中在线快速体验 async_simple: https://compiler-explorer.com/z/Tdaesqsqj . 注意 `Uthread` 在 compiler-explorer 中不能使用。
 
-# 准备环境
+# 快速入门
 
-async\_simple 涉及 C++20 协程，对编译器版本有较高要求。需要 clang10 或 gcc10 或 Apple-clang14 及其以上版本。编译运行测试需要 gtest，使用`bazel`可自动拉取gtest。需要 libaio 的功能的需要依赖 libaio。
+我们的文档托管在GitHub Pages上，[点击进入快速开始](https://alibaba.github.io/async_simple/docs.cn/GetStarted.html).
+
+接下来可以阅读更多API文档，例如C++20协程（[Lazy](./docs/docs.cn/Lazy.md)）。熟悉async\_simple组件，可以先跟着[Demo](./docs/docs.cn/GetStarted.md)用C++20协程来实现异步统计文件字符数功能。
+
+更多文档介绍见目录[docs](./docs/docs.cn)。
+
+# 安装async_simple
+
+## 使用vcpkg安装
+
+```
+./vcpkg install async-simple
+```
+
+## 使用cmake安装
+
+```
+git clone -b main --single-branch --depth 1 https://github.com/alibaba/async_simple.git
+cd async_simple
+mkdir build
+cd build
+cmake .. -DASYNC_SIMPLE_ENABLE_TESTS=OFF -DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF -DASYNC_SIMPLE_ENABLE_ASAN=OFF
+cmake --build .
+cmake --install . # --prefix ./user_defined_install_path 
+```
+
+# 导入
+
+当你安装完async_simple以后，你可以在你的项目里导入async_simple。
+
+## 通过cmake find_package
+请在项目中添加以下cmake代码：
+```cmake
+find_package(async_simple REQUIRED)
+target_link_libraries(<your-target-name> PRIVATE async_simple::async_simple) # dynamic_link
+                                 # async_simple::async_simple_header_only   
+                                 # async_simple::async_simple_static  
+```
+其中，`<your-target-name>` 是你需要使用async_simple的target名
+
+## 手动导入
+
+async_simple几乎是header-only的. 因此你只需要将安装的include路径传递给编译器即可。
+
+但是async_simple的uthread模块不是header-only的，如果你要使用uthread，我们在安装路径下生成了编译好的库文件，你需要手动链接它。
+
+# 编译器约束
+
+async\_simple 涉及 C++20 协程，对编译器版本有较高要求。需要 clang10 或 gcc10 或 Apple-clang14 及其以上版本。
 
 注意当使用 gcc12 时需要加上 `-Wno-maybe-uninitialized` 选项因为 gcc12 的一个误报。详情可见 https://github.com/alibaba/async_simple/issues/234。
 
-注意当使用 clang15 时可能需要加上 `-Wno-unsequenced` 选项，这是clang15的一个误报。详情可见 https://github.com/llvm/llvm-project/issues/56768。
+若你需要使用 `async_simple::Generator`，我们推荐使用 clang17 或更高的版本因为在低版本 clang 上存在一些关于 Generator 的 bug report。
 
 注意，如果使用msvc时遇到了C4737错误，请加上选项/EHa。
+
+# 开发async_simple
+
+本项目编译运行测试需要 gtest和gmock，需要 libaio 的示例代码则依赖 libaio。
+
+默认情况下，async_simple 会尝试从 git 拉取 gtest 源码以保证版本一致性。在用户存在网络的情况下，
+建议用户按照以下指令安装对应版本的 gtest 并使用 CMake 变量 ('GMOCK_INCLUDE_DIR', 'GTEST_LIBRARIES', 'GMOCK_INCLUDE_DIR', 'GMOCK_LIBRARIES') 指定安装的 gtest 所在的位置。
 
 ## Debian/Ubuntu系列
 
@@ -129,7 +184,7 @@ mkdir build && cd build
 # Specify [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] to skip tests.
 # Specify [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] to skip build demo example.
 # Specify [-DASYNC_SIMPLE_DISABLE_AIO=ON] to skip the build libaio
-CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug] [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] [-DASYNC_SIMPLE_DISABLE_AIO=ON]
+CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug] [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] [-DASYNC_SIMPLE_DISABLE_AIO=ON] [-DGMOCK_INCLUDE_DIR=<path-to-headers of gtest> -DGTEST_INCLUDE_DIR=<path-to-headers of mock> -DGTEST_LIBRARIES=<path-to-library-of-gtest>  -DGMOCK_LIBRARIES=<path-to-library-of-gmock> ]
 make -j4
 make test
 make install
@@ -173,34 +228,6 @@ docker build . --no-cache -t async_simple:1.0
 docker run -it --name async_simple async_simple:1.0 /bin/bash
 ```
 
-## 导入
-
-当你安装完async_simple以后，你可以在你的项目里导入async_simple。
-
-## 手动导入
-
-async_simple几乎是header-only的. 因此你只需要将安装的include路径传递给编译器即可。
-
-但是async_simple的uthread模块不是header-only的，如果你要使用uthread，我们在安装路径下生成了编译好的库文件，你需要手动链接它。
-
-## 通过cmake find_package
-请添加以下cmake代码：
-```cmake
-find_package(async_simple REQUIRED)
-target_link_libraries(<your-target-name> PRIVATE async_simple::async_simple) # dynamic_link
-                                 # async_simple::async_simple_header_only   
-                                 # async_simple::async_simple_static  
-```
-其中，`<your-target-name>` 是你需要使用async_simple的target名
-
-# 更多示例
-
-我们的文档托管在GitHub Pages上，[点击进入快速开始](https://alibaba.github.io/async_simple/docs.cn/GetStarted.html).
-
-接下来可以阅读更多API文档，例如C++20协程（[Lazy](./docs/docs.cn/Lazy.md)）。熟悉async\_simple组件，可以先跟着[Demo](./docs/docs.cn/GetStarted.md)用C++20协程来实现异步统计文件字符数功能。
-
-更多文档介绍见目录[docs](./docs/docs.cn)。
-
 # 性能相关
 
 关于基于C++20无栈协程（Lazy）和有栈协程（Uthread）的性能定量分析，详见[定量分析报告](./docs/docs.cn/基于async_simple的协程性能定量分析.md)。
@@ -225,6 +252,8 @@ CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Release -DASYNC_SIMPLE_BUILD_MO
 ninja
 ```
 
+若 std module 在环境中可用，我们可以在配置 cmake 时定义 `-DSTD_MODULE_AVAILABLE=ON` 以使用官方的 std module。
+
 **需要注意:** 出于兼容性考虑，目前 main 分支中的 `async_simple` Module 本质上只是将 `async_simple` 的头文件封装为了 `Named Modules` 而已。我们可以在  https://github.com/alibaba/async_simple/tree/CXX20Modules 中找到更完整的 `Named Modules` 使用方式。该分支中同样包含 xmake 和 cmake 的支持。
 
 # 存在问题？
@@ -243,13 +272,6 @@ ninja
 - 确保修改后单元测试通过，代码格式化通过。（`git-clang-format HEAD^`）。目前 CI 系统中的 clang-format 版本为 14。当 CI 中提示的 format 结果不好时，也可考虑暂时先 accept 并在 clang-format 社区提交相关 issue。
 - 创建并提交Pull Request，选择开发者Review代码。（候选人：ChuanqiXu9, RainMark, foreverhy, qicosmos）
 - 最终意见一致后，代码将会被合并。
-
-# 联系我们
-
-欢迎大家一起共建async_simple, 有问题请扫钉钉二维码加群讨论。  
-<center>
-<img src="./docs/docs.cn/images/ding_talk_group.png" alt="dingtalk" width="200" height="200" align="bottom" />
-</center>
 
 # 许可证
 

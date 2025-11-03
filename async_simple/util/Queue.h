@@ -24,10 +24,13 @@
 #ifndef ASYNC_SIMPLE_QUEUE_H
 #define ASYNC_SIMPLE_QUEUE_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <condition_variable>
 #include <mutex>
 #include <queue>
 #include <utility>
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple::util {
 

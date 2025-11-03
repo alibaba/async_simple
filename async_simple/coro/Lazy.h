@@ -16,17 +16,28 @@
 #ifndef ASYNC_SIMPLE_CORO_LAZY_H
 #define ASYNC_SIMPLE_CORO_LAZY_H
 
-#include <atomic>
-#include <concepts>
+
+#ifndef ASYNC_SIMPLE_USE_MODULES
+
 #include <cstddef>
+#include <system_error>
 #include <cstdio>
 #include <exception>
+#include <memory>
+#include <type_traits>
+#include <utility>
 #include <variant>
 #include "async_simple/Common.h"
+#include "async_simple/Executor.h"
+#include "async_simple/Signal.h"
 #include "async_simple/Try.h"
 #include "async_simple/coro/DetachedCoroutine.h"
+#include "async_simple/coro/LazyLocalBase.h"
+#include "async_simple/coro/PromiseAllocator.h"
 #include "async_simple/coro/ViaCoroutine.h"
 #include "async_simple/experimental/coroutine.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 
@@ -48,8 +59,16 @@ class Lazy;
 // This would suspend the executing coroutine.
 struct Yield {};
 
-template <typename T = void>
-struct LazyLocals {};
+template <typename T = LazyLocalBase>
+struct CurrentLazyLocals {};
+
+// co_await CurrentSlot{} could return the point to current
+// Slot. Return nullptr if lazy don't binding to signal.
+struct CurrentSlot {};
+
+// co_await ForbidSignal{} could forbid Signal in lazy. After
+// calling this, call `co_await CurrentSlot{}` will return nullptr.
+struct ForbidSignal {};
 
 namespace detail {
 template <class, typename OAlloc, bool Para>
@@ -64,11 +83,14 @@ struct CollectAnyAwaiter;
 template <template <typename> typename LazyType, typename... Ts>
 struct CollectAnyVariadicAwaiter;
 
+template <typename... Ts>
+struct CollectAnyVariadicPairAwaiter;
+
 }  // namespace detail
 
 namespace detail {
 
-class LazyPromiseBase {
+class LazyPromiseBase : public PromiseAllocator<void, true> {
 public:
     // Resume the caller waiting to the current coroutine. Note that we need
     // destroy the frame for the current coroutine explicitly. Since after
@@ -88,8 +110,11 @@ public:
     };
 
     struct YieldAwaiter {
-        YieldAwaiter(Executor* executor) : _executor(executor) {}
-        bool await_ready() const noexcept { return false; }
+        YieldAwaiter(Executor* executor, Slot* slot)
+            : _executor(executor), _slot(slot) {}
+        bool await_ready() const noexcept {
+            return signalHelper{Terminate}.hasCanceled(_slot);
+        }
         template <typename PromiseType>
         void await_suspend(std::coroutine_handle<PromiseType> handle) {
             static_assert(
@@ -98,12 +123,21 @@ public:
 
             logicAssert(_executor,
                         "Yielding is only meaningful with an executor!");
-            _executor->schedule(std::move(handle));
+            // schedule_info is YIELD here, which avoid executor always
+            // run handle immediately when other works are waiting, which may
+            // cause deadlock.
+            _executor->schedule(
+                std::move(handle),
+                static_cast<uint64_t>(Executor::Priority::YIELD));
         }
-        void await_resume() noexcept {}
+        void await_resume() const {
+            signalHelper{Terminate}.checkHasCanceled(
+                _slot, "async_simple::Yield/SpinLock is canceled!");
+        }
 
     private:
         Executor* _executor;
+        Slot* _slot;
     };
 
 public:
@@ -123,24 +157,44 @@ public:
     }
 
     template <typename T>
-    auto await_transform(LazyLocals<T>) {
-        return ReadyAwaiter<T*>(static_cast<T*>(_lazy_local));
+    auto await_transform(CurrentLazyLocals<T>) {
+        return ReadyAwaiter<T*>(_lazy_local ? dynamicCast<T>(_lazy_local)
+                                            : nullptr);
     }
 
-    auto await_transform(Yield) { return YieldAwaiter(_executor); }
+    auto await_transform(CurrentSlot) {
+        return ReadyAwaiter<Slot*>(_lazy_local ? _lazy_local->getSlot()
+                                               : nullptr);
+    }
+
+    auto await_transform(ForbidSignal) {
+        if (_lazy_local) {
+            _lazy_local->forbidSignal();
+        }
+        return ReadyAwaiter<void>();
+    }
+
+    auto await_transform(Yield) {
+        return YieldAwaiter(_executor,
+                            _lazy_local ? _lazy_local->getSlot() : nullptr);
+    }
 
     /// IMPORTANT: _continuation should be the first member due to the
     /// requirement of dbg script.
     std::coroutine_handle<> _continuation;
     Executor* _executor;
-    void* _lazy_local;
+    LazyLocalBase* _lazy_local;
 };
 
 template <typename T>
 class LazyPromise : public LazyPromiseBase {
 public:
-    static_assert(alignof(T) <= alignof(::max_align_t),
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-alignof-expression"
+    static_assert(alignof(T) <= alignof(std::max_align_t),
                   "async_simple doesn't allow Lazy with over aligned object");
+#endif
 
     LazyPromise() noexcept {}
     ~LazyPromise() noexcept {}
@@ -151,8 +205,8 @@ public:
 
     template <typename V>
     void return_value(V&& value) noexcept(
-        std::is_nothrow_constructible_v<
-            T, V&&>) requires std::is_convertible_v<V&&, T> {
+        std::is_nothrow_constructible_v<T, V&&>) requires
+        std::is_convertible_v<V&&, T> {
         _value.template emplace<T>(std::forward<V>(value));
     }
     void unhandled_exception() noexcept {
@@ -270,6 +324,9 @@ struct LazyAwaiterBase {
     }
 };
 
+template <typename T, typename CB>
+concept isLazyCallback = std::is_invocable_v<CB, Try<T>>;
+
 template <typename T, bool reschedule>
 class LazyBase {
 public:
@@ -290,13 +347,13 @@ public:
                                    PromiseType>,
                 "'co_await Lazy' is only allowed to be called by Lazy or "
                 "DetachedCoroutine");
-
             // current coro started, caller becomes my continuation
             this->_handle.promise()._continuation = continuation;
             if constexpr (std::is_base_of<LazyPromiseBase,
                                           PromiseType>::value) {
-                this->_handle.promise()._lazy_local =
-                    continuation.promise()._lazy_local;
+                LazyLocalBase*& local = this->_handle.promise()._lazy_local;
+                if (local == nullptr)
+                    local = continuation.promise()._lazy_local;
             }
             return awaitSuspendImpl();
         }
@@ -354,7 +411,7 @@ public:
     Executor* getExecutor() { return _coro.promise()._executor; }
 
     template <typename F>
-    void start(F&& callback) requires(std::is_invocable_v<F&&, Try<T>>) {
+    void start(F&& callback) requires(isLazyCallback<T, F>) {
         logicAssert(this->_coro.operator bool(),
                     "Lazy do not have a coroutine_handle "
                     "Maybe the allocation failed or you're using a used Lazy");
@@ -392,6 +449,9 @@ protected:
 
     template <template <typename> typename LazyType, typename... Ts>
     friend struct detail::CollectAnyVariadicAwaiter;
+
+    template <typename... Ts>
+    friend struct detail::CollectAnyVariadicPairAwaiter;
 };
 
 }  // namespace detail
@@ -473,10 +533,57 @@ protected:
 // If any awaitable wants to derive the executor instance from its caller, it
 // should implement `coAwait(Executor*)` member method. Then the caller would
 // pass its executor instance to the awaitable.
+
+template <typename T>
+concept isDerivedFromLazyLocal = std::is_base_of_v<LazyLocalBase, T> &&
+    (std::is_same_v<LazyLocalBase, T> || requires(const T* base) {
+        std::is_same_v<decltype(T::classof(base)), bool>;
+    });
+
+namespace detail {
+inline void moveSlotFromContinuation(LazyLocalBase* nowLocal,
+                                     LazyLocalBase* preLocal) {
+    if (preLocal) {
+        // We only allow continuation has a local with LazyLocalBase type, which
+        // is designed for calling collectAll/collectAny with lazy has local
+        // variable.
+        if (preLocal->getTypeTag() == nullptr && preLocal->getSlot() &&
+            nowLocal->getSlot() == nullptr) {
+            nowLocal->_slot = std::move(preLocal->_slot);
+        } else {
+            logicAssert(false, "we dont allowed set lazy local twice");
+        }
+    }
+}
+}  // namespace detail
+
 template <typename T = void>
 class [[nodiscard]] CORO_ONLY_DESTROY_WHEN_DONE ELIDEABLE_AFTER_AWAIT Lazy
     : public detail::LazyBase<T, /*reschedule=*/false> {
     using Base = detail::LazyBase<T, false>;
+    template <isDerivedFromLazyLocal LazyLocal>
+    static Lazy<T> setLazyLocalImpl(Lazy<T> self, LazyLocal local) {
+        detail::moveSlotFromContinuation(&local, co_await CurrentLazyLocals{});
+        self._coro.promise()._lazy_local = &local;
+        co_return co_await std::move(self);
+    }
+    template <isDerivedFromLazyLocal LazyLocal>
+    static Lazy<T> setLazyLocalImpl(Lazy<T> self,
+                                    std::unique_ptr<LazyLocal> local) {
+        detail::moveSlotFromContinuation(local.get(),
+                                         co_await CurrentLazyLocals{});
+        self._coro.promise()._lazy_local = local.get();
+        co_return co_await std::move(self);
+    }
+
+    template <isDerivedFromLazyLocal LazyLocal>
+    static Lazy<T> setLazyLocalImpl(Lazy<T> self,
+                                    std::shared_ptr<LazyLocal> local) {
+        detail::moveSlotFromContinuation(local.get(),
+                                         co_await CurrentLazyLocals{});
+        self._coro.promise()._lazy_local = local.get();
+        co_return co_await std::move(self);
+    }
 
 public:
     using Base::Base;
@@ -488,21 +595,61 @@ public:
         logicAssert(this->_coro.operator bool(),
                     "Lazy do not have a coroutine_handle "
                     "Maybe the allocation failed or you're using a used Lazy");
-
         this->_coro.promise()._executor = ex;
         return RescheduleLazy<T>(std::exchange(this->_coro, nullptr));
     }
 
     // Bind an executor only. Don't re-schedule.
     //
-    // Users shouldn't use `setEx` directly. `setEx` is designed
-    // for internal purpose only. See uthread/Await.h/await for details.
-    Lazy<T> setEx(Executor* ex) && {
+    // This function is deprecated, please use start(cb,ex) instead of setEx.
+    [[deprecated]] Lazy<T> setEx(Executor* ex) && {
         logicAssert(this->_coro.operator bool(),
                     "Lazy do not have a coroutine_handle "
                     "Maybe the allocation failed or you're using a used Lazy");
         this->_coro.promise()._executor = ex;
         return Lazy<T>(std::exchange(this->_coro, nullptr));
+    }
+
+    template <isDerivedFromLazyLocal LazyLocal = LazyLocalBase>
+    Lazy<T> setLazyLocal(std::unique_ptr<LazyLocal> base) && {
+        logicAssert(this->_coro.operator bool(),
+                    "Lazy do not have a coroutine_handle "
+                    "Maybe the allocation failed or you're using a used Lazy");
+        return setLazyLocalImpl(std::move(*this), std::move(base));
+    }
+
+    template <isDerivedFromLazyLocal LazyLocal = LazyLocalBase>
+    Lazy<T> setLazyLocal(std::shared_ptr<LazyLocal> base) && {
+        logicAssert(this->_coro.operator bool(),
+                    "Lazy do not have a coroutine_handle "
+                    "Maybe the allocation failed or you're using a used Lazy");
+        return setLazyLocalImpl(std::move(*this), std::move(base));
+    }
+
+    template <isDerivedFromLazyLocal LazyLocal = LazyLocalBase,
+              typename... Args>
+    Lazy<T> setLazyLocal(Args&&... args) && {
+        logicAssert(this->_coro.operator bool(),
+                    "Lazy do not have a coroutine_handle "
+                    "Maybe the allocation failed or you're using a used Lazy");
+        if constexpr (std::is_move_constructible_v<LazyLocal>) {
+            return setLazyLocalImpl<LazyLocal>(
+                std::move(*this), LazyLocal{std::forward<Args>(args)...});
+        } else {
+            return setLazyLocalImpl<LazyLocal>(
+                std::move(*this),
+                std::make_unique<LazyLocal>(std::forward<Args>(args)...));
+        }
+    }
+
+    using Base::start;
+
+    // Bind an executor and start coroutine without scheduling immediately.
+    template <typename F>
+    void directlyStart(F&& callback, Executor* executor) requires(
+        detail::isLazyCallback<T, F>) {
+        this->_coro.promise()._executor = executor;
+        return start(std::forward<F>(callback));
     }
 
     auto coAwait(Executor* ex) {
@@ -518,6 +665,8 @@ public:
 private:
     friend class RescheduleLazy<T>;
 };
+
+// dispatch a lazy to executor, dont reschedule immediately
 
 // A RescheduleLazy is a Lazy with an executor. The executor of a RescheduleLazy
 // wouldn't/shouldn't be nullptr. So we needn't check it.
@@ -542,14 +691,6 @@ public:
                 std::rethrow_exception(t.getException());
             }
         });
-    }
-
-    RescheduleLazy<T> setLazyLocal(void* lazy_local) && {
-        logicAssert(this->_coro.operator bool(),
-                    "Lazy do not have a coroutine_handle "
-                    "Maybe the allocation failed or you're using a used Lazy");
-        this->_coro.promise()._lazy_local = lazy_local;
-        return RescheduleLazy<T>(std::exchange(this->_coro, nullptr));
     }
 
     [[deprecated(

@@ -16,13 +16,21 @@
 #ifndef ASYNC_SIMPLE_EXECUTOR_H
 #define ASYNC_SIMPLE_EXECUTOR_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <chrono>
+#include <cstdint>
 #include <functional>
+#include <future>
+#include <memory>
+#include <ratio>
 #include <string>
 #include <thread>
 #include "async_simple/MoveWrapper.h"
+#include "async_simple/Signal.h"
 #include "async_simple/experimental/coroutine.h"
 #include "async_simple/util/move_only_function.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 // Stat information for an executor.
@@ -89,10 +97,37 @@ public:
     // should guarantee that the func would be executed.
     virtual bool schedule(Func func) = 0;
 
+    // 4-bits priority, less level is more important. Default
+    // value of async-simple schedule is DEFAULT. For scheduling level >=
+    // YIELD, if executor always execute the work immediately if other
+    // works, it may cause dead lock. are waiting.
+    enum class Priority {
+        HIGHEST = 0x0,
+        DEFAULT = 0x7,
+        YIELD = 0x8,
+        LOWEST = 0xF
+    };
+
+    // Low 16-bit of schedule_info is reserved for async-simple, and the lowest
+    // 4-bit is stand for priority level. The implementation of scheduling logic
+    // isn't necessary, which is determined by implementation. However, to avoid
+    // spinlock/yield deadlock, when priority level >= YIELD, scheduler
+    // can't always execute the work immediately when other works are
+    // waiting.
+    virtual bool schedule(Func func, uint64_t schedule_info) {
+        return schedule(std::move(func));
+    }
+
     // Schedule a move only functor
     bool schedule_move_only(util::move_only_function<void()> func) {
         MoveWrapper<decltype(func)> tmp(std::move(func));
         return schedule([func = tmp]() { func.get()(); });
+    }
+
+    bool schedule_move_only(util::move_only_function<void()> func,
+                            uint64_t schedule_info) {
+        MoveWrapper<decltype(func)> tmp(std::move(func));
+        return schedule([func = tmp]() { func.get()(); }, schedule_info);
     }
 
     // Return true if caller runs in the executor.
@@ -119,10 +154,14 @@ public:
 
     const std::string &name() const { return _name; }
 
-    // Use
-    //  co_await executor.after(sometime)
+    // Use co_await executor.after(sometime)
     // to schedule current execution after some time.
     TimeAwaitable after(Duration dur);
+
+    // Use co_await executor.after(sometime)
+    // to schedule current execution after some time.
+    TimeAwaitable after(Duration dur, uint64_t schedule_info,
+                        Slot *slot = nullptr);
 
     // IOExecutor accepts IO read/write requests.
     // Return nullptr if the executor doesn't offer an IOExecutor.
@@ -132,8 +171,21 @@ public:
 
 protected:
     virtual void schedule(Func func, Duration dur) {
-        std::thread([this, func = std::move(func), dur]() {
-            std::this_thread::sleep_for(dur);
+        return schedule(func, dur,
+                        static_cast<uint64_t>(Executor::Priority::DEFAULT),
+                        nullptr);
+    }
+    virtual void schedule(Func func, Duration dur, uint64_t schedule_info,
+                          Slot *slot = nullptr) {
+        std::thread([this, func = std::move(func), dur, slot]() {
+            auto promise = std::make_unique<std::promise<void>>();
+            auto future = promise->get_future();
+            bool hasnt_canceled = signalHelper{Terminate}.tryEmplace(
+                slot, [p = std::move(promise)](SignalType, Signal *) {
+                    p->set_value();
+                });
+            if (hasnt_canceled)
+                future.wait_for(dur);
             schedule(std::move(func));
         }).detach();
     }
@@ -145,37 +197,59 @@ private:
 // Awaiter to implement Executor::after.
 class Executor::TimeAwaiter {
 public:
-    TimeAwaiter(Executor *ex, Executor::Duration dur) : _ex(ex), _dur(dur) {}
+    TimeAwaiter(Executor *ex, Executor::Duration dur, uint64_t schedule_info,
+                Slot *slot)
+        : _ex(ex), _dur(dur), _schedule_info(schedule_info), _slot(slot) {}
 
 public:
-    bool await_ready() const noexcept { return false; }
+    bool await_ready() const noexcept {
+        return signalHelper{Terminate}.hasCanceled(_slot);
+    }
 
     template <typename PromiseType>
-    void await_suspend(std::coroutine_handle<PromiseType> continuation) {
-        _ex->schedule(std::move(continuation), _dur);
+    void await_suspend(coro::CoroHandle<PromiseType> continuation) {
+        _ex->schedule(std::move(continuation), _dur, _schedule_info, _slot);
     }
-    void await_resume() const noexcept {}
+    void await_resume() {
+        signalHelper{Terminate}.checkHasCanceled(
+            _slot, "async_simple's timer is canceled!");
+    }
 
 private:
     Executor *_ex;
     Executor::Duration _dur;
+    uint64_t _schedule_info;
+    Slot *_slot;
 };
 
 // Awaitable to implement Executor::after.
 class Executor::TimeAwaitable {
 public:
-    TimeAwaitable(Executor *ex, Executor::Duration dur) : _ex(ex), _dur(dur) {}
+    TimeAwaitable(Executor *ex, Executor::Duration dur, uint64_t schedule_info,
+                  Slot *slot)
+        : _ex(ex), _dur(dur), _schedule_info(schedule_info), _slot(slot) {}
 
-    auto coAwait(Executor *) { return Executor::TimeAwaiter(_ex, _dur); }
+    auto coAwait(Executor *) {
+        return Executor::TimeAwaiter(_ex, _dur, _schedule_info, _slot);
+    }
 
 private:
     Executor *_ex;
     Executor::Duration _dur;
+    uint64_t _schedule_info;
+    Slot *_slot;
 };
 
 Executor::TimeAwaitable inline Executor::after(Executor::Duration dur) {
-    return Executor::TimeAwaitable(this, dur);
-};
+    return Executor::TimeAwaitable(
+        this, dur, static_cast<uint64_t>(Executor::Priority::DEFAULT), nullptr);
+}
+
+Executor::TimeAwaitable inline Executor::after(Executor::Duration dur,
+                                               uint64_t schedule_info,
+                                               Slot *slot) {
+    return Executor::TimeAwaitable(this, dur, schedule_info, slot);
+}
 
 }  // namespace async_simple
 

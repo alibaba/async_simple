@@ -16,14 +16,16 @@
 #ifndef ASYNC_SIMPLE_TRY_H
 #define ASYNC_SIMPLE_TRY_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <cassert>
 #include <exception>
 #include <functional>
-#include <new>
 #include <utility>
 #include <variant>
 #include "async_simple/Common.h"
 #include "async_simple/Unit.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 
@@ -70,8 +72,7 @@ public:
     }
 
     template <class... U>
-    Try(U&&... value)
-        requires std::is_constructible_v<T, U...>
+    Try(U&&... value) requires std::is_constructible_v<T, U...>
         : _value(std::in_place_type<T>, std::forward<U>(value)...) {}
 
     Try(std::exception_ptr error) : _value(error) {}
@@ -174,7 +175,7 @@ public:
     bool hasError() const { return _error.operator bool(); }
 
     void setException(std::exception_ptr error) { _error = error; }
-    std::exception_ptr getException() { return _error; }
+    std::exception_ptr getException() const { return _error; }
 
 private:
     std::exception_ptr _error;

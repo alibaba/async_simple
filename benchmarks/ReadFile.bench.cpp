@@ -21,7 +21,6 @@
 #ifdef ASYNC_SIMPLE_BENCHMARK_UTHREAD
 #include "async_simple/uthread/Async.h"
 #include "async_simple/uthread/Collect.h"
-#include "async_simple/uthread/Uthread.h"
 #endif
 #include "ReadFileUtil.hpp"
 using namespace async_simple;

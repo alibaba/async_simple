@@ -16,13 +16,14 @@
 #ifndef FUTURE_SIMPLE_EXECUTOR_H
 #define FUTURE_SIMPLE_EXECUTOR_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <functional>
 
 #include "async_simple/Executor.h"
 #include "async_simple/executors/SimpleIOExecutor.h"
 #include "async_simple/util/ThreadPool.h"
 
-#include <thread>
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

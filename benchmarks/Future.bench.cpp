@@ -17,9 +17,9 @@
 
 #include "async_simple/Collect.h"
 #include "async_simple/Future.h"
+#include "async_simple/Promise.h"
 #include "async_simple/executors/SimpleExecutor.h"
 
-#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>

@@ -30,7 +30,7 @@ Lazy<int> task2(int x) {
 
 ## 启动方式
 
-一个 Lazy 应该以 `co_await`、 `syncAwait` 以及 `.start(callback)` 方式启动。
+一个 Lazy 应该以 `co_await`、 `syncAwait`, `.start(callback)` 以及 `directlyStart(callback, executor)`方式启动。
 
 ### co_await 启动
 
@@ -91,6 +91,28 @@ void func() {
 对于不需要 `callback` 的情况，用户可以写:
 ```cpp
 task().start([](auto&&){});
+```
+
+### directlyStart(callback, executor) 启动
+
+和`start`类似，但是提供了调度器接口，用于在启动协程时绑定调度器。需要注意的是，`directlyStart`不会在启动时立即调度协程。
+
+```cpp
+Lazy<> task() {
+
+    auto e = co_await currentExecutor{};
+    // 已经成功绑定调度器
+    assert(e!=nullptr);
+    // 惰性调度，此时任务还未被提交给调度器运行
+    assert(e.currentThreadInExecutor()==false);
+    co_await coro::Sleep(1s);
+    // Sleep函数需要使用调度器，因此任务已被提交给调度器运行。
+    assert(e.currentThreadInExecutor()==true);
+}
+void func() {
+    auto executor=std::make_shared<executors::SimpleExecutor>(1);
+    task().directlyStart([executor](Try<void> Result){},executor.get());
+}
 ```
 
 ### syncAwait 启动
@@ -253,40 +275,63 @@ void func(int x, Executor *e) {
 总之，当我们需要为多个 Lazy 组成的任务链指定调度器时，我们只需要在任务链的开头指定调度器就好了。
 
 # LazyLocals
-LazyLocals类似于线程环境下的thread_local，用户可以通过LazyLocals为具有调用关系的Lazy间共享数据。
-只允许为RescheduleLazy绑定LazyLocals，其会随着co_await一路传递。
-RescheduleLazy和Lazy持有的LazyLocals为一个void*类型的指针，类型转换与生命周期需要由用户管理，以下为使用示例：
-```c++
-    int* i = new int(10);
-    async_simple::executors::SimpleExecutor ex(2);
 
-    auto sub_task = [&]() -> Lazy<> {
-        // 类型转换无运行时检测，正确性由用户保证
-        int* v = co_await LazyLocals<int>{};
-        EXPECT_EQ(v, i);
-        EXPECT_EQ(*v, 20);
-        *v = 30;
+LazyLocals类似于线程环境下的thread_local。用户可以通过派生LazyLocals并实现静态函数`T::classof(const LazyLocalBase*)`来自定义LazyLocals。
+async_simple为LazyLocals提供了不依赖rtti且安全高效的类型转换检查，只需要做一次整数比较操作即可。此外，async_simple还会自动管理LazyLocal的生命周期。以下为使用示例：
+```cpp
+template<typename T>
+struct mylocal: public LazyLocalBase {
+    template<typename ...Args>
+    mylocalImpl(Args...&& args): LazyLocalBase(&tag),value(std::forward<Args>(args)...){}
+    static bool classof(const LazyLocalBase* base) {
+        return base->getTypeTag() == &tag;
+    }
+    T value;
+    inline static char tag;
+};
+void foo() {
+    auto sub_task = []() -> Lazy<> {
+        // 通过调用co_await CurrentLazyLocals 获取lazy local value的指针
+        mylocal<int>* v = co_await CurrentLazyLocals<mylocal<int>>{};
+        // 如果协程未绑定local变量，或者类型转换失败，则返回空指针
+        EXPECT_NE(v, nullptr);
+        EXPECT_EQ(v->value, 42);
     };
 
-    auto task = [&]() -> Lazy<> {
-        void* v = co_await LazyLocals{};
-        EXPECT_EQ(v, i);
-        (*i) = 20;
+    auto task = []() -> Lazy<> {
+        // 获取到基类指针
+        LazyLocalBase* v = co_await CurrentLazyLocals{};
+        // 如果协程未绑定local变量，则返回空指针
+        EXPECT_NE(v, nullptr);
+        // 用户可以通过强制转换基类指针来跳过类型转换过程中的安全检查。
+        EXPECT_EQ(static_cast<mylocal<int>>(v)->value, 42);
+        // local value会自动通过co_await 传染到调用链上的每一个协程中
         co_await sub_task();
         co_return;
     };
-    syncAwait(task().via(&ex).setLazyLocal(i));
-    EXPECT_EQ(*i, 30);
-    delete i;
+    syncAwait(task().setLazyLocal<mylocal<int>>(42));
+} 
 ```
-如果用户通过`start(callback)`启动并需要在Lazy执行完毕后回收LazyLocals资源，则可以在callback中完成，例如：
+
+`setLazyLocal`允许用户原地构造指定的对象，也可以传入该对象的unique_ptr或者shared_ptr。
+
+需要注意的是，LazyLocals会在协程执行完毕之后，调用回调之前析构。因此如果想要在回调函数中安全的访问LazyLocals，要么自己管理生命周期，要么通过shared_ptr共享生命周期。
 ```c++
-    int* i = new int(10);
-    task().via(&ex).setLazyLocal(i).start([&](Try<void>) {
+void foo() {
+    int* i = new int(42);
+    task().via(&ex).setLazyLocal<mylocal<int*>>(i).start([i](Try<void>) {
+        std::cout<<*i<<std::endl;
         delete i;
-        i = nullptr;
     });
+}
+void bar() {
+    auto ptr = std::make_shared<mylocal<int>>(42);
+    task().via(&ex).setLazyLocal<mylocal<int>>(ptr).start([ptr](Try<void>) {
+        std::cout<<ptr->value<<std::endl;
+    });
+}
 ```
+最后，已经调用过setLazyLocal的协程再次调用setLazyLocal会抛出`std::logic_error`异常，这是因为设计上来说我们希望启动协程后不要中途改变其绑定的LazyLocals。
 
 # Yield
 
@@ -349,7 +394,7 @@ Lazy<> foo() {
 
 如果 colletAll 的所有参数都是 Lazy  而非 RescheduleLazy，那么 collectAll 会单线程地执行每个 Lazy。
 有两个办法可以解决这个问题：
-- 为所以参数绑定 Lazy 使其成为 RescheduleLazy。
+- 为所有参数绑定 Executor 使其成为 RescheduleLazy。
 - 使用 collectAllPara。
 
 使用 collectAllPara 需要注意其所在协程必须要绑定调度器，否则依然是单线程执行所有 Lazy。
@@ -403,9 +448,11 @@ Lazy<int> batch_sum(size_t total_number, size_t batch_size)  {
 
 #### 参数类型与行为
 
-collectAny 接受两种类型的参数：
+collectAny 接受四种类型的参数：
 - 参数类型：`std::vector<LazyType<T>>`。 返回类型： `Lazy<CollectAnyResult<T>>`。
 - 参数类型: `LazyType<T1>, LazyType<T2>, LazyType<T3>, ...`。 返回类型： `std::variant<Try<T1>, Try<T2>, Try<T3>, ...>`。
+- 参数类型: `std::pair/std::tuple<LazyType<T1>, [](size_t, Try<T1>)>, std::pair/std::tuple<LazyType<T2>, [](size_t, Try<T2>)>, ...`。返回类型：`size_t`。
+- 参数类型: `std::vector<LazyType<T>>, [](Try<T>)`。返回类型：`size_t`
 
 其中 LazyType 应为 `Lazy<T>` 或 `RescheduleLazy<T>`。
 
@@ -455,6 +502,56 @@ Lazy<int> getAnyConditionalValue(Executor* e) {
 ```
 
 在这个 case 中，每一个任务可能都比较重。此时用 `Lazy<T>` 的话就有可能导致某个任务执行时间过长而迟迟不让出资源导致其他有可能有机会更早获得结果的任务无法开启。在这个情况下，用 `RescheduleLazy<T>` 可能就会更好一些。
+
+当传入回调函数的时候，被执行协程的结果将会在回调函数中处理，collectAny返回执行协程的索引。
+```cpp
+void variadicCallback() {
+    auto test0 = []() -> Lazy<Unit> { co_return Unit{}; };
+    auto test1 = []() -> Lazy<int> { co_return 42; };
+    auto test2 = [](int val) -> Lazy<std::string> {
+        co_return std::to_string(val);
+    };
+
+    auto collectAnyLazy = [](auto&&... args) -> Lazy<size_t> {
+        co_return co_await collectAny(std::move(args)...);
+    };
+
+    int call_count = 0;
+    size_t index = syncAwait(
+        collectAnyLazy(std::pair{test0(), [&](auto) { call_count++; }},
+                       std::pair{test1(),
+                                 [&](Try<int> val) {
+                                     call_count++;
+                                     EXPECT_EQ(val.value(), 42);
+                                 }},
+                       std::pair{test2(42), [&](Try<std::string> val) {
+                                     call_count++;
+                                     EXPECT_EQ("42", val.value());
+                                 }}));
+    EXPECT_EQ(1, call_count);
+}
+
+void vectorCallback() {
+    auto test0 = []() -> Lazy<int> { co_return 41; };
+    auto test1 = []() -> Lazy<int> { co_return 42; };
+
+    std::vector<Lazy<int>> input;
+    input.push_back(test0());
+    input.push_back(test1());
+
+    auto collectAnyLazy = [](auto input, auto func) -> Lazy<void> {
+        co_await collectAny(std::move(input), func);
+    };
+
+    size_t index = syncAwait(collectAnyLazy(std::move(input), [](size_t index, Try<int> val) {
+        if (index == 0) {
+            EXPECT_EQ(val.value(), 41);
+        } else {
+            EXPECT_EQ(val.value(), 42);
+        }
+    }));
+}
+```
 
 #### CollectAnyResult
 

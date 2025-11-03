@@ -123,3 +123,10 @@ cc_binary(
         "//conditions:default" : [],
     }),
 )
+
+cc_binary(
+    name = "pmr_lazy",
+    srcs = ["pmr_lazy.cpp"],
+    deps = ["//:async_simple"],
+    copts = ASYNC_SIMPLE_COPTS,
+)

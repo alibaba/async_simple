@@ -16,9 +16,10 @@
 #ifndef ASYNC_SIMPLE_CORO_TRAITS_H
 #define ASYNC_SIMPLE_CORO_TRAITS_H
 
-#include <exception>
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <utility>
-#include "async_simple/Common.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

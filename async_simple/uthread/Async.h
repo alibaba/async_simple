@@ -34,9 +34,13 @@
 #ifndef ASYNC_SIMPLE_UTHREAD_ASYNC_H
 #define ASYNC_SIMPLE_UTHREAD_ASYNC_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <memory>
 #include <type_traits>
+#include <tuple>
 #include "async_simple/uthread/Uthread.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace uthread {

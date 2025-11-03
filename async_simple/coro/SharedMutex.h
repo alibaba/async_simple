@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <cassert>
 #include <climits>
 
 #include "async_simple/coro/ConditionVariable.h"
 #include "async_simple/coro/Lazy.h"
-#include "async_simple/coro/Mutex.h"
 #include "async_simple/coro/SpinLock.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
+
 namespace async_simple::coro {
 
 template <typename Lock>

@@ -16,12 +16,12 @@
 #ifndef ASYNC_SIMPLE_CORO_DETACHED_COROUTINE_H
 #define ASYNC_SIMPLE_CORO_DETACHED_COROUTINE_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <stdio.h>
-#include <atomic>
 #include <exception>
-#include <mutex>
-#include "async_simple/Common.h"
 #include "async_simple/experimental/coroutine.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 
@@ -74,6 +74,15 @@ struct ReadyAwaiter {
     T await_resume() noexcept { return std::move(_value); }
 
     T _value;
+};
+
+template <>
+struct ReadyAwaiter<void> {
+    ReadyAwaiter() {}
+
+    bool await_ready() const noexcept { return true; }
+    void await_suspend(CoroHandle<>) const noexcept {}
+    void await_resume() noexcept { return; }
 };
 
 }  // namespace coro

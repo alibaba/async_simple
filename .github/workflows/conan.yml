@@ -15,18 +15,21 @@ jobs:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v2
 
       - name: deps
         run: |
-          sudo apt install libaio-dev libgtest-dev -y
-          cd /usr/src/gtest
-          sudo mkdir build && cd build
-          sudo cmake .. && sudo make
-          sudo apt install libgmock-dev -y
+          sudo apt install libaio-dev
+
+      - name: Install newer Clang
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x ./llvm.sh
+          sudo ./llvm.sh 17
+
       - name: Install Conan
         id: conan
         uses: turtlebrowser/get-conan@main
@@ -35,14 +38,14 @@ jobs:
         run: echo "${{ steps.conan.outputs.version }}"
 
       - name: Generate conan profile
-        run: CXX=clang++ CC=clang conan profile detect --name clang_tmp
+        run: CXX=clang++-17 CC=clang-17 conan profile detect --name clang_tmp
 
       - name: Install deps
         run: conan install ${{github.workspace}} -pr:b=clang_tmp -pr=clang_tmp -o header_only=False
 
       - name: Build
         # Build your program with the given configuration
-        run: CXX=clang++ CC=clang conan build ${{github.workspace}} -pr:b=clang_tmp -pr=clang_tmp -o header_only=False
+        run: CXX=clang++-17 CC=clang-17 conan build ${{github.workspace}} -pr:b=clang_tmp -pr=clang_tmp -o header_only=False
 
       - name: Test
         working-directory: ${{github.workspace}}/build/${{env.BUILD_TYPE}}

@@ -16,8 +16,6 @@
 #ifndef __ASYNC_SIMPLE_UNITTEST_H
 #define __ASYNC_SIMPLE_UNITTEST_H
 
-#include <string>
-#include <typeinfo>
 #define GTEST_USE_OWN_TR1_TUPLE 0
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

@@ -17,17 +17,14 @@
 #ifndef ASYNC_SIMPLE_LOCALSTATE_H
 #define ASYNC_SIMPLE_LOCALSTATE_H
 
-#include <atomic>
-
-#include <condition_variable>
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <functional>
-#include <mutex>
-#include <stdexcept>
-#include <thread>
 #include <utility>
-#include "async_simple/Common.h"
+
 #include "async_simple/Executor.h"
 #include "async_simple/Try.h"
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 

@@ -16,6 +16,7 @@
 #ifndef ASYNC_RESUME_BY_SCHEDULE_H
 #define ASYNC_RESUME_BY_SCHEDULE_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include "async_simple/Executor.h"
 #include "async_simple/Future.h"
 #include "async_simple/coro/Lazy.h"
@@ -23,6 +24,8 @@
 
 #include <type_traits>
 #include <utility>
+
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple::coro {
 
@@ -36,7 +39,7 @@ public:
     bool await_ready() { return _future.hasResult(); }
 
     template <typename PromiseType>
-    void await_suspend(std::coroutine_handle<PromiseType> continuation) {
+    void await_suspend(CoroHandle<PromiseType> continuation) {
         static_assert(std::is_base_of_v<LazyPromiseBase, PromiseType>,
                       "FutureResumeByScheduleAwaiter is only allowed to be "
                       "called by Lazy");

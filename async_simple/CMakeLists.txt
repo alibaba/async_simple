@@ -8,6 +8,7 @@ endif()
 
 file(GLOB headers "*.h")
 file(GLOB coro_header "coro/*.h")
+file(GLOB executors_header "executors/*.h")
 file(GLOB experimental_header "experimental/*.h")
 file(GLOB util_header "util/*.h")
 if(UTHREAD)
@@ -29,13 +30,37 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   endif()
 endif()
 # If there is no Uthread, async_simple is a header only library 
-if(UTHREAD)
+if(${UTHREAD} OR ${ASYNC_SIMPLE_BUILD_MODULES})
   add_library(async_simple_static STATIC ${SRCS})
   add_library(async_simple SHARED ${SRCS})
+
+  if (${ASYNC_SIMPLE_BUILD_MODULES})
+    set(MODULES_SRCS "")
+    list(APPEND MODULES_SRCS async_simple.cppm)
+    if (NOT ${STD_MODULE_AVAILABLE})
+      list(APPEND MODULES_SRCS std.mock.cppm)
+    endif()
+    target_sources(async_simple_static
+      PUBLIC
+        FILE_SET CXX_MODULES FILES
+          ${MODULES_SRCS}
+    )
+    target_sources(async_simple
+      PUBLIC
+        FILE_SET CXX_MODULES FILES
+          ${MODULES_SRCS}
+    )
+  endif()
+
   target_link_libraries(async_simple PUBLIC async_simple_header_only)
   target_link_libraries(async_simple_static PUBLIC async_simple_header_only)
-  install(TARGETS async_simple EXPORT async_simple_targets DESTINATION lib/)
-  install(TARGETS async_simple_static EXPORT async_simple_targets DESTINATION lib/)
+  if (${ASYNC_SIMPLE_BUILD_MODULES})
+    install(TARGETS async_simple EXPORT async_simple_targets FILE_SET CXX_MODULES DESTINATION lib/)
+    install(TARGETS async_simple_static EXPORT async_simple_targets FILE_SET CXX_MODULES DESTINATION lib/)
+  else()
+    install(TARGETS async_simple EXPORT async_simple_targets DESTINATION lib/)
+    install(TARGETS async_simple_static EXPORT async_simple_targets DESTINATION lib/)
+  endif()
 else()
   add_library(async_simple_static INTERFACE)
   target_link_libraries(async_simple_static INTERFACE async_simple_header_only)

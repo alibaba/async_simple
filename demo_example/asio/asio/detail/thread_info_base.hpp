@@ -56,7 +56,7 @@ public:
     enum
     {
       cache_size = ASIO_RECYCLING_ALLOCATOR_CACHE_SIZE,
-      begin_mem_index = default_tag::end_mem_index,
+      begin_mem_index = (unsigned)default_tag::end_mem_index,
       end_mem_index = begin_mem_index + cache_size
     };
   };
@@ -66,7 +66,7 @@ public:
     enum
     {
       cache_size = ASIO_RECYCLING_ALLOCATOR_CACHE_SIZE,
-      begin_mem_index = awaitable_frame_tag::end_mem_index,
+      begin_mem_index = (unsigned)awaitable_frame_tag::end_mem_index,
       end_mem_index = begin_mem_index + cache_size
     };
   };
@@ -76,7 +76,7 @@ public:
     enum
     {
       cache_size = ASIO_RECYCLING_ALLOCATOR_CACHE_SIZE,
-      begin_mem_index = executor_function_tag::end_mem_index,
+      begin_mem_index = (unsigned)executor_function_tag::end_mem_index,
       end_mem_index = begin_mem_index + cache_size
     };
   };
@@ -86,7 +86,7 @@ public:
     enum
     {
       cache_size = ASIO_RECYCLING_ALLOCATOR_CACHE_SIZE,
-      begin_mem_index = cancellation_signal_tag::end_mem_index,
+      begin_mem_index = (unsigned)cancellation_signal_tag::end_mem_index,
       end_mem_index = begin_mem_index + cache_size
     };
   };

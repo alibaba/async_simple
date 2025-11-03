@@ -17,6 +17,8 @@
 #ifndef ASYNC_SIMPLE_CORO_PROMISEALLOCATOR_H
 #define ASYNC_SIMPLE_CORO_PROMISEALLOCATOR_H
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
+#include <algorithm>
 #include <concepts>
 #include <cstring>
 #include <memory>
@@ -28,6 +30,8 @@
 // The reason why `__cpp_sized_deallocation` is not enabled is that it will
 // cause ABI breaking
 #if defined(__clang__) && defined(__GLIBCXX__)
+#endif  // ASYNC_SIMPLE_USE_MODULES
+
 void operator delete[](void* p, std::size_t sz) noexcept;
 #endif
 
@@ -69,7 +73,7 @@ concept HasRealPointers = std::same_as<Alloc, void> ||
  * stateless_void_example(std::allocator_arg, std::allocator<float>{});
  *
  */
-template <class Allocator>
+template <class Allocator, bool no_except_new = false>
 class PromiseAllocator {
 private:
     using Alloc = Rebind<Allocator>;
@@ -150,7 +154,7 @@ public:
 };
 
 template <>
-class PromiseAllocator<void> {  // type-erased allocator
+class PromiseAllocator<void, false> {  // type-erased allocator
 private:
     using DeallocFn = void (*)(void*, size_t);
 
@@ -236,8 +240,117 @@ public:
         return Allocate(al, size);
     }
 
-    static void operator delete(void* const ptr,
-                                std::size_t size) noexcept {
+    static void operator delete(void* const ptr, std::size_t size) noexcept {
+        DeallocFn dealloc;
+        ::memcpy(&dealloc, static_cast<const char*>(ptr) + size,
+                 sizeof(DeallocFn));
+        return dealloc(ptr, size);
+    }
+};
+
+template <>
+class PromiseAllocator<void, true> {  // type-erased allocator
+private:
+    using DeallocFn = void (*)(void*, size_t);
+
+    template <class ProtoAlloc>
+    static void* Allocate(const ProtoAlloc& proto, std::size_t size) noexcept {
+        using Alloc = Rebind<ProtoAlloc>;
+        auto al = static_cast<Alloc>(proto);
+
+        if constexpr (std::default_initializable<Alloc> &&
+                      std::allocator_traits<Alloc>::is_always_equal::value) {
+            // don't store stateless allocator
+            const DeallocFn dealloc = [](void* const ptr, const size_t size) {
+                Alloc al{};
+                const size_t count =
+                    (size + sizeof(DeallocFn) + sizeof(Aligned_block) - 1) /
+                    sizeof(Aligned_block);
+                al.deallocate(static_cast<Aligned_block*>(ptr), count);
+            };
+
+            const size_t count =
+                (size + sizeof(DeallocFn) + sizeof(Aligned_block) - 1) /
+                sizeof(Aligned_block);
+            void* ptr = nullptr;
+            try {
+                ptr = al.allocate(count);
+            } catch (...) {
+                return nullptr;
+            }
+            ::memcpy(static_cast<char*>(ptr) + size, &dealloc, sizeof(dealloc));
+            return ptr;
+        } else {
+            // store stateful allocator
+            static constexpr size_t Align =
+                (::std::max)(alignof(Alloc), sizeof(Aligned_block));
+
+            const DeallocFn dealloc = [](void* const ptr, size_t size) {
+                size += sizeof(DeallocFn);
+                const auto al_address = (reinterpret_cast<uintptr_t>(ptr) +
+                                         size + alignof(Alloc) - 1) &
+                                        ~(alignof(Alloc) - 1);
+                auto& stored_al = *reinterpret_cast<const Alloc*>(al_address);
+                Alloc al{::std::move(stored_al)};
+                stored_al.~Alloc();
+
+                const size_t count =
+                    (size + sizeof(al) + Align - 1) / sizeof(Aligned_block);
+                al.deallocate(static_cast<Aligned_block*>(ptr), count);
+            };
+
+            const size_t count =
+                (size + sizeof(DeallocFn) + sizeof(al) + Align - 1) /
+                sizeof(Aligned_block);
+            void* ptr = nullptr;
+            try {
+                ptr = al.allocate(count);
+            } catch (...) {
+                return nullptr;
+            }
+            ::memcpy(static_cast<char*>(ptr) + size, &dealloc, sizeof(dealloc));
+            size += sizeof(DeallocFn);
+            const auto al_address =
+                (reinterpret_cast<uintptr_t>(ptr) + size + alignof(Alloc) - 1) &
+                ~(alignof(Alloc) - 1);
+            ::new (reinterpret_cast<void*>(al_address)) Alloc{::std::move(al)};
+            return ptr;
+        }
+    }
+
+public:
+    static void* operator new(
+        const std::size_t size) noexcept {  // default: new/delete
+        void* const ptr =
+            ::operator new[](size + sizeof(DeallocFn), std::nothrow);
+        if (ptr == nullptr) {
+            return nullptr;
+        }
+        const DeallocFn dealloc = [](void* const ptr, const size_t size) {
+            ::operator delete[](ptr, size + sizeof(DeallocFn));
+        };
+        ::memcpy(static_cast<char*>(ptr) + size, &dealloc, sizeof(DeallocFn));
+        return ptr;
+    }
+
+    template <class Alloc, class... Args>
+    static void* operator new(const std::size_t size, std::allocator_arg_t,
+                              const Alloc& al, const Args&...) noexcept {
+        static_assert(HasRealPointers<Alloc>,
+                      "coroutine allocators must use true pointers");
+        return Allocate(al, size);
+    }
+
+    template <class This, class Alloc, class... Args>
+    static void* operator new(const std::size_t size, const This&,
+                              std::allocator_arg_t, const Alloc& al,
+                              const Args&...) noexcept {
+        static_assert(HasRealPointers<Alloc>,
+                      "coroutine allocators must be true pointers");
+        return Allocate(al, size);
+    }
+
+    static void operator delete(void* const ptr, std::size_t size) noexcept {
         DeallocFn dealloc;
         ::memcpy(&dealloc, static_cast<const char*>(ptr) + size,
                  sizeof(DeallocFn));

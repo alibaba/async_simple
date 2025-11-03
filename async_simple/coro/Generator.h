@@ -17,14 +17,21 @@
 #ifndef ASYNC_SIMPLE_CORO_GENERATOR_H
 #define ASYNC_SIMPLE_CORO_GENERATOR_H
 
-#if __has_include(<generator>)
+#if defined(__clang__) && __clang_major__ == 15
+// See: https://github.com/alibaba/async_simple/issues/372
+#warning "Clang 15 is not supported for Generator due to some issues."
+#endif
 
+#if defined(__cpp_lib_generator) && __has_include(<generator>)
+
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <generator>
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple::coro {
 
 template <class Ref, class V = void, class Allocator = void>
-using Generator = std::generator<Ref, V, AlloAllocator>;
+using Generator = std::generator<Ref, V, Allocator>;
 
 }  // namespace async_simple::coro
 
@@ -37,6 +44,7 @@ using elements_of = std::ranges::elements_of<R, Alloc>;
 
 #else
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <cassert>
 #include <concepts>
 #include <cstddef>
@@ -48,6 +56,7 @@ using elements_of = std::ranges::elements_of<R, Alloc>;
 #include "async_simple/Common.h"
 #include "async_simple/coro/PromiseAllocator.h"
 #include "async_simple/experimental/coroutine.h"
+#endif
 
 namespace async_simple::ranges {
 

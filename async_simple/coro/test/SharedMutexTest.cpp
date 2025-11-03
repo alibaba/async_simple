@@ -15,16 +15,11 @@
  */
 #include <gtest/gtest.h>
 #include <cstdint>
-#include <memory>
 #include <random>
-#include <thread>
-#include <unordered_set>
-#include "async_simple/Future.h"
+
 #include "async_simple/coro/Collect.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SharedMutex.h"
-#include "async_simple/coro/Sleep.h"
-#include "async_simple/coro/SpinLock.h"
 #include "async_simple/coro/SyncAwait.h"
 #include "async_simple/executors/SimpleExecutor.h"
 #include "async_simple/test/unittest.h"

@@ -45,6 +45,7 @@ template <class P> struct hash<coroutine_handle<P>>;
 
  */
 
+#ifndef ASYNC_SIMPLE_USE_MODULES
 #if __has_include(<version>)
 // Use <version> to detect standard library. In case libstdc++ doesn't implement
 // <version>, it shouldn't own <coroutine> too.
@@ -57,7 +58,8 @@ template <class P> struct hash<coroutine_handle<P>>;
 // And the outdated <experimental/coroutine> is available for clang only(need to
 // exclude msvc).
 #if (__cplusplus <= 201703L && !defined(_MSC_VER)) || \
-    (defined(__clang__) && defined(__GLIBCXX__))
+    (defined(__clang__) && defined(__GLIBCXX__) && \
+     (__GLIBCXX__ < 20210408))
 #define USE_SELF_DEFINED_COROUTINE
 #endif
 
@@ -402,6 +404,7 @@ using std::experimental::suspend_never;
 }  // namespace std
 
 #endif /* HAS_NON_EXPERIMENTAL_COROUTINE */
+#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace coro {
