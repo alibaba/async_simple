@@ -296,12 +296,14 @@ TEST_F(LazyTest, testYield) {
         // push task to queue's tail
         co_await Yield();
         value++;
+        m.unlock();
         co_return;
     };
 
     auto test2 = [](std::mutex& m, int& value) -> Lazy<void> {
         m.lock();
         value++;
+        m.unlock();
         co_return;
     };
 
@@ -322,9 +324,6 @@ TEST_F(LazyTest, testYield) {
     std::this_thread::sleep_for(100000us);
     ASSERT_EQ(1, value1);
     ASSERT_EQ(1, value2);
-
-    m1.unlock();
-    m2.unlock();
 }
 
 TEST_F(LazyTest, testVoid) {

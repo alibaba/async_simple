@@ -55,6 +55,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         /Zc:__cplusplus
         /await:strict
         /EHa
+        /utf-8
+        /bigobj
         )
 else()
     set(CXX_FLAGS
