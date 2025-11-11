@@ -19,13 +19,10 @@
 #ifndef ASYNC_SIMPLE_UTIL_MOVE_ONLY_FUNCTION_H
 #define ASYNC_SIMPLE_UTIL_MOVE_ONLY_FUNCTION_H
 
-#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <cstddef>
 #include <functional>
 #include <memory>
 #include <type_traits>
-
-#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple::util {
 

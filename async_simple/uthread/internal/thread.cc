@@ -172,8 +172,6 @@ void thread_context::main() {
     asm(".cfi_undefined lr");
 #elif defined(__aarch64__)
     asm(".cfi_undefined x30");
-#elif defined(__riscv)
-    asm(".cfi_undefined ra"); // The return address register in RISC-V is 'ra'
 #else
 #warning "Backtracing from uthreads may be broken"
 #endif

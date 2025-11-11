@@ -30,7 +30,7 @@ of async_simple itself, we requrie the alignment of `T` in `Lazy<T>` can exceed 
 
 ## Start Lazy
 
-We could start a Lazy by `co_await`, `syncAwait`, `.start(callback)` or `directlyStart(callback, executor)`.
+We could start a Lazy by `co_await`, `syncAwait` and `.start(callback)`.
 
 ### co_await
 
@@ -91,28 +91,6 @@ By design, `start` should be a non-blocking asynchronous interface. Semantically
 In case the `callback` isn't needed, we could write:
 ```cpp
 task().start([](auto&&){});
-```
-
-
-### directlyStart(callback, executor)
-
-Similar to `start`, but provides a paramter for binding a scheduler when starting a coroutine. It is important to note that `directlyStart` does not immediately schedule the task when coroutine start.
-
-```cpp
-Lazy<> task() {
-    auto e = co_await currentExecutor{};
-    // binding executor successfully.
-    assert(e!=nullptr);
-    // lazy schedule, work doesn't run in executor.
-    assert(e->currentThreadInExecutor()==false);
-    co_await coro::Sleep(1s);
-    // Sleep function need executor schedule, now work runs in executor.
-    assert(e->currentThreadInExecutor()==true);
-}
-void func() {
-    auto executor=std::make_shared<executors::SimpleExecutor>(1);
-    task().directlyStart([executor](Try<void> Result){},executor.get());
-}
 ```
 
 ### syncAwait
@@ -273,69 +251,41 @@ In the above example, `task1...task4` represents a task chain consists of Lazy. 
 So we could assign the executor at the root the task chain simply.
 
 # LazyLocals
+LazyLocals is similar to thread_local in the thread environment, and users can share data for related Lazies through LazyLocals.
+LazyLocals can only be bound to RescheduleLazy, and it will be passed along with co_wait.
+LazyLocals held by RescheduleLazy and Lazy have void* type, type conversion and lifecycle need to be managed by users,the following is an example:
+```c++
+    int* i = new int(10);
+    async_simple::executors::SimpleExecutor ex(2);
 
-LazyLocals is similar to `thread_local` in a thread environment. Users can customize their own LazyLocals by deriving from LazyLocals and implement static function `T::classsof(const LazyLocalBase*)` 
-
-`async_simple` provides a type conversion check for LazyLocals that is safe and efficient without relying on RTTI, requiring only a single integer comparison operation. Additionally, `async_simple` automatically manages the lifecycle of LazyLocal. Below is an example of usage:
-
-```cpp
-template<typename T>
-struct mylocal: public LazyLocalBase {
-    template<typename... Args>
-    mylocalImpl(Args...&& args): LazyLocalBase(&tag), value(std::forward<Args>(args)...){}
-    static bool classof(const LazyLocalBase* base) {
-        return base->getTypeTag() == &tag;
-    }
-    T value;
-    inline static char tag;
-};
-
-void foo() {
-    auto sub_task = []() -> Lazy<> {
-        // Get the pointer to the lazy local value by calling co_await CurrentLazyLocals
-        mylocal<int>* v = co_await CurrentLazyLocals<mylocal<int>>{};
-        // If the coroutine is not bound to a local variable, or the type conversion fails, return a null pointer
-        EXPECT_NE(v, nullptr);
-        EXPECT_EQ(v->value, 42);
+    auto sub_task = [&]() -> Lazy<> {
+        // There is no runtime detection for Type conversion, and the correctness is guaranteed by users
+        int* v = co_await LazyLocals<int>{};
+        EXPECT_EQ(v, i);
+        EXPECT_EQ(*v, 20);
+        *v = 30;
     };
 
-    auto task = []() -> Lazy<> {
-        // Obtain the base class pointer
-        LazyLocalBase* v = co_await CurrentLazyLocals{};
-        // If the coroutine is not bound to a local variable, return a null pointer
-        EXPECT_NE(v, nullptr);
-        // The user can skip the safety check of type conversion by casting the base class pointer
-        EXPECT_EQ(static_cast<mylocal<int>>(v)->value, 42);
-        // The local value will automatically propagate to each coroutine in the call chain via co_await
+    auto task = [&]() -> Lazy<> {
+        void* v = co_await LazyLocals{};
+        EXPECT_EQ(v, i);
+        (*i) = 20;
         co_await sub_task();
         co_return;
     };
-    syncAwait(task().setLazyLocal<mylocal<int>>(42));
-}
+    syncAwait(task().via(&ex).setLazyLocal(i));
+    EXPECT_EQ(*i, 30);
+    delete i;
 ```
-
-`setLazyLocal` allows users to construct the specified object in place or pass in a `unique_ptr` or `shared_ptr` of that object.
-
-It is important to note that LazyLocals will be destructed after the coroutine completes and before the callback is invoked. Therefore, if you want to safely access LazyLocals in the callback function, you need to manage the lifecycle yourself or share the lifecycle using `shared_ptr`.
+If the user starts Lazy through 'start (callback)' and needs to recycle LazyLocals resources after Lazy execution is completed, it can be done in the callback, for example:
 
 ```c++
-void foo() {
-    int* i = new int(42);
-    task().via(&ex).setLazyLocal<mylocal<int*>>(i).start([i](Try<void>) {
-        std::cout << *i << std::endl;
+    int* i = new int(10);
+    task().via(&ex).setLazyLocal(i).start([&](Try<void>) {
         delete i;
+        i = nullptr;
     });
-}
-
-void bar() {
-    auto ptr = std::make_shared<mylocal<int>>(42);
-    task().via(&ex).setLazyLocal<mylocal<int*>>(ptr).start([ptr](Try<void>) {
-        std::cout << ptr->value << std::endl;
-    });
-}
 ```
-
-Finally, calling `setLazyLocal` again in a coroutine that has already called `setLazyLocal` will throw a `std::logic_error` exception, as we want to ensure that the bound LazyLocals are not changed midway through the coroutine's execution.
 
 # Yield
 
@@ -453,8 +403,6 @@ Sometimes we need only a result of a lot of tasks. We could use `collectAny` in 
 
 - Argument type: `std::vector<LazyType<T>>`. Return type:  `Lazy<CollectAnyResult<T>>`.
 - Argument type: `LazyType<T1>, LazyType<T2>, LazyType<T3>, ...`. Return type: `std::variant<Try<T1>, Try<T2>, Try<T3>, ...>`.
-- Argument type: `std::pair/std::tuple<LazyType<T1>, [](size_t, Try<T1>)>, std::pair/std::tuple<LazyType<T2>, [](size_t, Try<T2>)>, ...`. Return type: `size_t`.
-- Argument type: `std::vector<LazyType<T>>, [](Try<T>)`. Return type: `size_t`
 
 LazyType should be `Lazy<T>` or `RescheduleLazy<T>`.
 
@@ -506,57 +454,6 @@ Lazy<int> getAnyConditionalValue(Executor* e) {
 ```
 
 In this case, every task is heavier. And if we use `Lazy<T>`, it is possible that one of the task takes the resources for a long time and other tasks can't get started. So it may be better to use `RescheduleLazy<T>` in such cases.
-
-When pass callback function to collectAny, the result of executed coroutine will be handled in callback function, and return the index of the executed coroutine.
-
-```cpp
-void variadicCallback() {
-    auto test0 = []() -> Lazy<Unit> { co_return Unit{}; };
-    auto test1 = []() -> Lazy<int> { co_return 42; };
-    auto test2 = [](int val) -> Lazy<std::string> {
-        co_return std::to_string(val);
-    };
-
-    auto collectAnyLazy = [](auto&&... args) -> Lazy<size_t> {
-        co_return co_await collectAny(std::move(args)...);
-    };
-    
-    int call_count = 0;
-    size_t index = syncAwait(
-        collectAnyLazy(std::pair{test0(), [&](auto) { call_count++; }},
-                       std::pair{test1(),
-                                 [&](Try<int> val) {
-                                     call_count++;
-                                     EXPECT_EQ(val.value(), 42);
-                                 }},
-                       std::pair{test2(42), [&](Try<std::string> val) {
-                                     call_count++;
-                                     EXPECT_EQ("42", val.value());
-                                 }}));
-    EXPECT_EQ(1, call_count);
-}
-
-void vectorCallback() {
-    auto test0 = []() -> Lazy<int> { co_return 41; };
-    auto test1 = []() -> Lazy<int> { co_return 42; };
-
-    std::vector<Lazy<int>> input;
-    input.push_back(test0());
-    input.push_back(test1());
-
-    auto collectAnyLazy = [](auto input, auto func) -> Lazy<void> {
-        co_await collectAny(std::move(input), func);
-    };
-
-    size_t index = syncAwait(collectAnyLazy(std::move(input), [](size_t index, Try<int> val) {
-        if (index == 0) {
-            EXPECT_EQ(val.value(), 41);
-        } else {
-            EXPECT_EQ(val.value(), 42);
-        }
-    }));
-}
-```
 
 #### CollectAnyResult
 

@@ -18,8 +18,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#ifdef USE_MODULES
+import async_simple;
+#else
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SyncAwait.h"
+#endif
 
 using namespace async_simple::coro;
 
@@ -35,8 +39,7 @@ Lazy<Texts> ReadFile(const std::string &filename) {
 }
 
 Lazy<int> CountLineChar(const std::string &line, char c) {
-    auto ret = std::count(line.begin(), line.end(), c);
-    co_return static_cast<int>(ret);
+    co_return std::count(line.begin(), line.end(), c);
 }
 
 Lazy<int> CountTextChar(const Texts &Content, char c) {

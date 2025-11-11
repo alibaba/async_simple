@@ -17,7 +17,6 @@
 #ifndef ASYNC_SIMPLE_CORO_DISPATCH_H
 #define ASYNC_SIMPLE_CORO_DISPATCH_H
 
-#ifndef ASYNC_SIMPLE_USE_MODULES
 #include "async_simple/Common.h"
 #include "async_simple/Executor.h"
 #include "async_simple/coro/Lazy.h"
@@ -25,8 +24,6 @@
 
 #include <cassert>
 #include <type_traits>
-
-#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace coro {
@@ -36,22 +33,24 @@ namespace detail {
 // based on c++ coroutine common abi.
 // it is not supported that the PromiseType's align is larger than the size of
 // two function pointer.
-inline CoroHandle<> GetContinuationFromHandle(CoroHandle<> h) {
+inline std::coroutine_handle<> GetContinuationFromHandle(
+    std::coroutine_handle<> h) {
     constexpr size_t promise_offset = 2 * sizeof(void*);
     char* ptr = static_cast<char*>(h.address());
     ptr = ptr + promise_offset;
-    return CoroHandle<>::from_address(
+    return std::coroutine_handle<>::from_address(
         *static_cast<void**>(static_cast<void*>(ptr)));
 }
 
-inline void ChangeLaziessExecutorTo(CoroHandle<> h, Executor* ex) {
+inline void ChangeLaziessExecutorTo(std::coroutine_handle<> h, Executor* ex) {
     while (true) {
-        CoroHandle<> continuation = GetContinuationFromHandle(h);
+        std::coroutine_handle<> continuation = GetContinuationFromHandle(h);
         if (!continuation.address()) {
             break;
         }
         auto& promise =
-            CoroHandle<LazyPromiseBase>::from_address(h.address()).promise();
+            std::coroutine_handle<LazyPromiseBase>::from_address(h.address())
+                .promise();
         promise._executor = ex;
         h = continuation;
     }
@@ -66,7 +65,7 @@ public:
     bool await_ready() const noexcept { return false; }
 
     template <typename PromiseType>
-    bool await_suspend(CoroHandle<PromiseType> h) {
+    bool await_suspend(std::coroutine_handle<PromiseType> h) {
         static_assert(std::is_base_of<LazyPromiseBase, PromiseType>::value,
                       "dispatch is only allowed to be called by Lazy");
         if (h.promise()._executor == _ex) {

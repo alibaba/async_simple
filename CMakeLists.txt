@@ -3,8 +3,6 @@ project(async_simple
         VERSION 1.3
         LANGUAGES CXX C ASM)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 enable_testing()
 
 set(CMAKE_CXX_STANDARD 20)
@@ -74,10 +72,6 @@ else()
         -D__STDC_LIMIT_MACROS
         -g
         )
-    if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.3)
-        message(STATUS "append -unused-value when gcc version is less equal than 10.2.")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-value")
-    endif()
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         list(APPEND CXX_FLAGS -Wno-uninitialized)
     else()
@@ -118,8 +112,7 @@ if(NOT ${ASYNC_SIMPLE_DISABLE_AIO} AND LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
     list(APPEND testdeplibs ${LIBAIO_LIBRARIES})
 endif()
 
-set(X86_PROCESSORS i386 x86_64)
-if((NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC") AND (CMAKE_SYSTEM_PROCESSOR IN_LIST X86_PROCESSORS))
+if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     if(CMAKE_BUILD_BITS EQUAL 32)
         message("-- Use flag -m32")
         list(APPEND CXX_FLAGS "-m32")
@@ -143,9 +136,8 @@ if (ASYNC_SIMPLE_ENABLE_ASAN)
 endif()
 
 # Start Detecing Uthread
-set(UTHREAD OFF)
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux") # uname -s
-  if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64|aarch64|ppc64le|riscv64") # uname -m
+  if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64|aarch64|ppc64le") # uname -m
     set(UTHREAD ON)
     message("-- Uthread on")
   endif()
@@ -168,7 +160,7 @@ else()
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 endif()
 
-option(STD_MODULE_AVAILABLE "if the std module is available by default" OFF)
+add_subdirectory(async_simple)
 
 option(ASYNC_SIMPLE_BUILD_MODULES "Build async_simple library in C++20 Modules form" OFF)
 if(${ASYNC_SIMPLE_BUILD_MODULES})
@@ -186,35 +178,12 @@ if(${ASYNC_SIMPLE_BUILD_MODULES})
         endif()
     endif()
 
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "16.0.0")
-            string(CONCAT CMAKE_CXX_SCANDEP_SOURCE
-            "\"${CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS}\""
-            " -format=p1689"
-            " --"
-            " <CMAKE_CXX_COMPILER> <DEFINES> <INCLUDES> <FLAGS>"
-            " -x c++ <SOURCE> -c -o <OBJECT>"
-            " -MT <DYNDEP_FILE>"
-            " -MD -MF <DEP_FILE>"
-            # Write to a temporary file. If the scan fails, we do not want to update
-            # the actual output file as `ninja` (at least) assumes that failed
-            # commands either delete or leave output files alone. See Issue#25419.
-            " > <DYNDEP_FILE>.tmp"
-            # We cannot use `copy_if_different` as the rule does not have a feature
-            # analogous to `ninja`'s `restat = 1`. It would also leave behind the
-            # `.tmp` file.
-            " && mv <DYNDEP_FILE>.tmp <DYNDEP_FILE>")
-            set(CMAKE_CXX_MODULE_MAP_FORMAT "clang")
-            set(CMAKE_CXX_MODULE_MAP_FLAG "@<MODULE_MAP_FILE>")
-            set(CMAKE_CXX_MODULE_BMI_ONLY_FLAG "--precompile")
-        endif()
-    endif()
-
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
+    set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_subdirectory(async_simple)
+    add_subdirectory(modules)
+endif()
 
 option(ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE "Build the demo example" ON)
 if (ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE)

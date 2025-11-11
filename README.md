@@ -11,7 +11,7 @@
 
 English | [中文](./README_CN.md)
 
-async_simple is a library offering simple, light-weight and easy-to-use
+async_simple is a library offering simple, light-weight and easy-to-use 
 components to write asynchronous code. The components offered include Lazy
 (based on C++20 stackless coroutine), Uthread (based on stackful coroutine)
 and the traditional Future/Promise.
@@ -20,72 +20,10 @@ and the traditional Future/Promise.
 
 We can try async_simple online in [compiler-explorer](compiler-explorer.com): https://compiler-explorer.com/z/Tdaesqsqj . Note that `Uthread` cannot be use in compiler-explorer since it requires installation.
 
-# Get Started
-
-Our documents are hosted by GitHub Pages, [go to Get Started](https://alibaba.github.io/async_simple/docs.en/GetStarted.html).
-
-After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with API, here is a [demo](./docs/docs.en/GetStarted.md) use Lazy to count char in a file.
-
-# Install async_simple
-
-## By Vcpkg
-
-vcpkg is a [cross-platform package manager](https://vcpkg.io/en/getting-started).
-
-```
-./vcpkg install async-simple
-```
-
-## By Cmake
-
-```
-git clone -b main --single-branch --depth 1 https://github.com/alibaba/async_simple.git
-cd async_simple
-mkdir build
-cd build
-cmake .. -DASYNC_SIMPLE_ENABLE_TESTS=OFF -DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF -DASYNC_SIMPLE_ENABLE_ASAN=OFF
-cmake --build .
-cmake --install . # --prefix ./user_defined_install_path
-```
-
-# Import async_simple
-
-After install async_simple, you can import it to your project.
-
-## By cmake find_package
-
-Please add those cmake code:
-
-```cmake
-find_package(async_simple REQUIRED)
-target_link_libraries(<your-target-name> PRIVATE async_simple::async_simple) # dynamic_link
-                                 # async_simple::async_simple_header_only
-                                 # async_simple::async_simple_static
-```
-`<your-target-name>` is the target name which want to use async_simple
-
-## Manually
-
-async_simple is almost header-only. So you can just pass the include path of the install position to your compiler.
-
-But the uthread part of async_simple is not head-only. If you want to use uthread, You need link it manually. The library file is in the install path.
-
-# Compiler Requirement
-
-Required Compiler: clang (>= 10.0.0) or gcc (>= 10.3) or Apple-clang (>= 14)
-
-Note that we need to add the `-Wno-maybe-uninitialized` option when we use gcc 12 due to a false positive diagnostic message by gcc 12
-
-If you're using `async_simple::Generator`, there may be some compiler bugs in clang15. We suggest to use clang17 or higher for that.
-
-If you meet any problem about MSVC Compiler Error C4737. Try to add the /EHa option to fix the problem.
-
-# Develop async_simple
+# Install Dependencies
 
 The build of async_simple requires libaio, googletest and cmake.  Both libaio and googletest
-are optional. (Testing before using is highly suggested.) By default, async_simple would try
-to clone the googletest from git to make sure the version used is correct. But in case the
-users have problems with networks, users can try to install the gtest libraries by the following instructions and use the CMake variables ('GMOCK_INCLUDE_DIR', 'GTEST_LIBRARIES', 'GMOCK_INCLUDE_DIR', 'GMOCK_LIBRARIES') to specify the location.
+are optional. (Testing before using is highly suggested.)
 
 ## Using apt (Ubuntu and Debian)
 
@@ -175,6 +113,15 @@ mkdir build && cd build
 cmake .. && sudo make install
 ```
 
+## Compiler Requirement
+
+Required Compiler: clang (>= 10.0.0) or gcc (>= 10.3) or Apple-clang (>= 14)
+
+Note that we need to add the `-Wno-maybe-uninitialized` option when we use gcc 12 due to a false positive diagnostic message by gcc 12
+
+Note that when using clang 15 it may be necessary to add the `-Wno-unsequenced` option, which is a false positive of clang 15. See https://github.com/llvm/llvm-project/issues/56768 for details.
+
+If you meet any problem about MSVC Compiler Error C4737. Try to add the /EHa option to fix the problem.
 
 ## Demo example dependency
 
@@ -188,7 +135,7 @@ $ mkdir build && cd build
 # Specify [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] to skip tests.
 # Specify [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] to skip build demo example.
 # Specify [-DASYNC_SIMPLE_DISABLE_AIO=ON] to skip the build libaio
-CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug] [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] [-DASYNC_SIMPLE_DISABLE_AIO=ON] [-DGMOCK_INCLUDE_DIR=<path-to-headers of gtest> -DGTEST_INCLUDE_DIR=<path-to-headers of mock> -DGTEST_LIBRARIES=<path-to-library-of-gtest>  -DGMOCK_LIBRARIES=<path-to-library-of-gmock> ]
+CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug] [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] [-DASYNC_SIMPLE_DISABLE_AIO=ON]
 # for gcc, use CXX=g++ CC=gcc
 make -j4
 make test # optional
@@ -218,14 +165,10 @@ bazel run benchmarks:benchmarking   # compile and run benchmark
 bazel test async_simple/coro/test:async_simple_coro_test
 # Use clang toolchain
 bazel build --action_env=CXX=clang++ --action_env=CC=clang ...
-# Add compile option
+# Add compile option 
 bazel build --copt='-O0' --copt='-ggdb' ...
-# Extracts compile_commands.json
-# If you want to specify additional flags for targets, please refer to:
-# https://github.com/hedronvision/bazel-compile-commands-extractor
-bazel run @hedron_compile_commands//:refresh_all
 ```
-- See [this](https://bazel.build/run/build) to get more information
+- See [this](https://bazel.build/run/build) get more infomation
 - ` ...` Indicates recursively scan all targets, recognized as `../..` in `oh-my-zsh`, can be replaced by other `shell` or `bash -c 'commond'` to run, such as `bash -c 'bazel build' ...` or use `bazel build ...:all`
 - Use `async_simple` as a dependency, see also [bazel support](bazel/support/README.md)
 
@@ -237,6 +180,35 @@ docker build . --no-cache -t async_simple:1.0
 docker run -it --name async_simple async_simple:1.0 /bin/bash
 ```
 
+# Import
+
+After install async_simple, you can import it to your project.
+
+## Manully
+
+async_simple is almost header-only. So you can just pass the include path of the install position to your compiler.
+
+But the uthread part of async_simple is not head-only. If you want to use uthread, You need link it manully. The library file is in the install path. 
+
+## By cmake find_package
+
+please add those cmake codes:
+
+```cmake
+find_package(async_simple REQUIRED)
+target_link_libraries(<your-target-name> PRIVATE async_simple::async_simple) # dynamic_link
+                                 # async_simple::async_simple_header_only   
+                                 # async_simple::async_simple_static  
+```
+`<your-target-name>` is the target name which want to use async_simple
+
+
+# Get Started
+
+Our documents are hosted by GitHub Pages, [go to Get Started](https://alibaba.github.io/async_simple/docs.en/GetStarted.html).
+
+After installing and reading [Lazy](./docs/docs.en/Lazy.md) to get familiar with API, here is a [demo](./docs/docs.en/GetStarted.md) use Lazy to count char in a file.
+
 # Performance
 
 We also give a [Quantitative Analysis Report](docs/docs.en/QuantitativeAnalysisReportOfCoroutinePerformance.md) of
@@ -244,7 +216,7 @@ Lazy (based on C++20 stackless coroutine) and Uthread (based on stackful corouti
 
 # C++20 Modules Support
 
-We have **experimental** support for C++20 Modules in `modules/async_simple.cppm`.
+We have **experimental** support for C++20 Modules in `modules/async_simple.cppm`. 
 We can build the `async_simple` module by `xmake` and `cmake`.
 We can find the related usage in `CountChar`, `ReadFiles`, `LazyTest.cpp` and `FutureTest.cpp`.
 
@@ -265,9 +237,7 @@ CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Release -DASYNC_SIMPLE_BUILD_MO
 ninja
 ```
 
-If std module is available, we can define `-DSTD_MODULE_AVAILABLE=ON` when configuring cmake to use std modules provided by vendors.
-
-**Note** that the `async_simple` module in the main branch is actually a named module's wrapper for headers for compatibility. We can find the practical usage of C++20 Modules in https://github.com/alibaba/async_simple/tree/CXX20Modules, which contains the support for xmake and cmake as well.
+**Note** that the `async_simple` module in the main branch is actually a named module's wrapper for headers for compatability. We can find the practical usage of C++20 Modules in https://github.com/alibaba/async_simple/tree/CXX20Modules, which contains the support for xmake and cmake as well.
 
 # Questions
 
@@ -279,11 +249,17 @@ Specifically, for defect report or feature enhancement, it'd be better to file a
 
 # How to Contribute
 1. Read the [How to fix issue](./docs/docs.en/HowToFixIssue.md) document firstly.
-2. Run tests and `git-clang-format HEAD^` locally for the change. Note that the  version of clang-format in CI is clang-format 14. So that it is possible your local
+2. Run tests and `git-clang-format HEAD^` locally for the change. Note that the  version of clang-format in CI is clang-format 14. So that it is possible your local 
 format result is inconsistency with the format result in the CI. In the case, you need to install the new clang-format or adopt the suggested change by hand. In case the format result is not good, it is OK to accept the PR temporarily and file an issue for the clang-formt.
 3. Create a PR, fill in the PR template.
 4. Choose one or more reviewers from contributors: (e.g., ChuanqiXu9, RainMark, foreverhy, qicosmos).
 5. Get approved and merged.
+
+# Contact us
+Please scan the following QR code of DingTalk to contact us.  
+<center>
+<img src="./docs/docs.cn/images/ding_talk_group.png" alt="dingtalk" width="200" height="200" align="bottom" />
+</center>
 
 # License
 

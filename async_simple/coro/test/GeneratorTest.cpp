@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-#if defined(__clang__) && __clang_major__ == 15
-// See: https://github.com/alibaba/async_simple/issues/372
-#define SKIP_GENERATOR_TEST
-#endif
-
-#ifndef SKIP_GENERATOR_TEST
-
 #include <algorithm>
 #include <array>
 #include <iostream>
 #include <tuple>
 #include <vector>
 #include "async_simple/coro/Generator.h"
+#include "async_simple/coro/Lazy.h"
 #include "async_simple/test/unittest.h"
 
 namespace async_simple::coro {
@@ -235,9 +229,7 @@ TEST_F(GeneratorTest, testIterator) {
 
 // FIXME: clang complile fail
 #ifndef __clang__
-#ifdef __GNUC__
-#include <features.h>
-#if __GNUC_PREREQ(10, 3)  // If  gcc_version >= 10.3
+
 TEST_F(GeneratorTest, testRange) {
     int j = 0;
     for (auto i : iota() | std::views::take(10)) {
@@ -245,8 +237,6 @@ TEST_F(GeneratorTest, testRange) {
     }
     EXPECT_EQ(j, 10);
 }
-#endif
-#endif
 #endif  // __clang__
 
 TEST_F(GeneratorTest, testExample) {
@@ -404,5 +394,3 @@ TEST_F(GeneratorTest, testNoCopyClass) {
 }
 
 }  // namespace async_simple::coro
-
-#endif  // SKIP_GENERATOR_TEST

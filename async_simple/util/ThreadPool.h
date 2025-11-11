@@ -24,19 +24,14 @@
 #ifndef FUTURE_THREAD_POOL_H
 #define FUTURE_THREAD_POOL_H
 
-#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <atomic>
 #include <cassert>
 #include <functional>
 #include <iostream>
 #include <thread>
 #include <vector>
-#include <cstdlib>
 
 #include "async_simple/util/Queue.h"
-
-#endif  // ASYNC_SIMPLE_USE_MODULES
-
 namespace async_simple::util {
 class ThreadPool {
 public:
@@ -81,7 +76,7 @@ private:
 };
 
 #ifdef __linux__
-inline void getCurrentCpus(std::vector<uint32_t> &ids) {
+static void getCurrentCpus(std::vector<uint32_t> &ids) {
     cpu_set_t set;
     ids.clear();
     if (sched_getaffinity(0, sizeof(set), &set) == 0)
@@ -191,7 +186,7 @@ inline ThreadPool::ERROR_TYPE ThreadPool::scheduleById(std::function<void()> fn,
             }
         }
 
-        id = std::rand() % _threadNum;
+        id = rand() % _threadNum;
         _queues[id].push(
             WorkItem{/*canSteal = */ _enableWorkSteal, std::move(fn)});
     } else {

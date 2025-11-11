@@ -4,16 +4,14 @@ Executor is the key component for shceduling coroutine. A lot of the open-source
 
 ### Use Executor
 
-It is easy to assign a coroutine instance to an executor. The user need to pass the executor to coroutine only. The users could assign an executor to a Lazy then schedule immediately by `via`. User could also use `directlyStart(callback, executor)` to assign an executor wihtout schedul immediately. They could use `async` to pass Executor to Uthread.
+It is easy to assign a coroutine instance to an executor. The user need to pass the executor to coroutine only. The users could assign an executor to a Lazy by `via/setEx`. They could use `async` to pass Executor to Uthread.
 
 ```cpp
 Executor e;
 
 // lazy
-// schedule to executor immediately
-f().via(&e).start([](auto&&){});
-// binding executor but dont schedule immediately
-f().start([](auto&&){},&e);
+co_await f().via(&e).start([](){});
+co_await f().setEx(&e);
 
 // uthread
 uthread::async<uthread::Launch::Schedule>(<lambda>, &e);
@@ -33,11 +31,7 @@ public:
     using Context = void *;
     
     virtual bool schedule(Func func) = 0;
-    virtual bool schedule(Func func, uint64_t schedule_info);
-    virtual bool schedule(Func func, Duration d);
-    virtual bool schedule(Func func, Duration d, uint64_t schedule_info);
     bool schedule_move_only(util::move_only_function<void()> func);
-    bool schedule_move_only(util::move_only_function<void()> func, uint64_t schedule_info);
     virtual bool currentThreadInExecutor() const = 0;
     virtual ExecutorStat stat() const = 0;
     virtual Context checkout();
@@ -45,8 +39,7 @@ public:
     virtual IOExecutor* getIOExecutor() = 0;
 ```
 
-- `Virtual bool schedule(Func func) = 0;`. It would schedule a lambda function to execute. When `scheudle(Func)` returns true, the implementation is required to schedule the lambda to any threads to execute. Otherwise, the unfinished Lazy tasks may result memory leaks.\
-- `schedule_info` is used to guide the scheduling. Low 16 bits are reserved for async-simple, and lowest 4 bits is stand for priority level of schedule. Larger number indicating lower priority. Default priority is `async_simple::Executor::Priority::DEFAULT`. The scheduling logic isn't necessary, which is determined by implementation. However, to avoid spinlock deadlock, when schedule_info is equal or greater than `async_simple::Executor::Priority::YIELD`, scheduler shouldn't always execute the work immediately when other works are waiting.
+- `Virtual bool schedule(Func func) = 0;`. It would schedule a lambda function to execute. When `scheudle(Func)` returns true, the implementation is required to schedule the lambda to any threads to execute. Otherwise, the unfinished Lazy tasks may result memory leaks.
 - `bool schedule_move_only(util::move_only_function<void()> func);`. It would schedule a move_only or copyable functor to execute, the interface is designed to compensate for the limitation that std:: function cannot receive move_only functor.
 - `virtual bool currentThreadInExecutor() const = 0;`. It would check if the current thread are in the executor.
 - `virtual ExecutorStat stat() const = 0;`. It would return the state information of the executor.

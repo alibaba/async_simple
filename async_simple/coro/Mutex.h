@@ -23,13 +23,9 @@
 #ifndef ASYNC_SIMPLE_CORO__MUTEXH
 #define ASYNC_SIMPLE_CORO__MUTEXH
 
-#ifndef ASYNC_SIMPLE_USE_MODULES
 #include <atomic>
-#include <cassert>
 #include <mutex>
 #include "async_simple/experimental/coroutine.h"
-
-#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace coro {
@@ -161,7 +157,7 @@ private:
     private:
         friend Mutex;
 
-        CoroHandle<> _awaitingCoroutine;
+        std::coroutine_handle<> _awaitingCoroutine;
         LockAwaiter* _next;
     };
 

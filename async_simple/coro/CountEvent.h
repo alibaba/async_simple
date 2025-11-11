@@ -16,13 +16,10 @@
 #ifndef ASYNC_SIMPLE_CORO_EVENT_H
 #define ASYNC_SIMPLE_CORO_EVENT_H
 
-#ifndef ASYNC_SIMPLE_USE_MODULES
-#include <atomic>
-#include <cstddef>
-#include <utility>
-#include "async_simple/experimental/coroutine.h"
-
-#endif  // ASYNC_SIMPLE_USE_MODULES
+#include <exception>
+#include "async_simple/Common.h"
+#include "async_simple/Executor.h"
+#include "async_simple/coro/Lazy.h"
 
 namespace async_simple {
 
@@ -34,20 +31,16 @@ namespace detail {
 // The last 'down' will resume the awaiting coroutine on this event.
 class CountEvent {
 public:
-    CountEvent(size_t count) : _count(count) {}
+    CountEvent(size_t count) : _count(count + 1) {}
     CountEvent(const CountEvent&) = delete;
     CountEvent(CountEvent&& other)
         : _count(other._count.exchange(0, std::memory_order_relaxed)),
           _awaitingCoro(std::exchange(other._awaitingCoro, nullptr)) {}
 
     [[nodiscard]] CoroHandle<> down(size_t n = 1) {
-        std::size_t oldCount;
-        return down(oldCount, n);
-    }
-    [[nodiscard]] CoroHandle<> down(size_t& oldCount, std::size_t n) {
         // read acquire and write release, _awaitingCoro store can not be
         // reordered after this barrier
-        oldCount = _count.fetch_sub(n, std::memory_order_acq_rel);
+        auto oldCount = _count.fetch_sub(n, std::memory_order_acq_rel);
         if (oldCount == 1) {
             auto awaitingCoro = _awaitingCoro;
             _awaitingCoro = nullptr;

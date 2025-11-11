@@ -19,7 +19,6 @@
 #ifndef ASYNC_SIMPLE_UTIL_CONDITION_H
 #define ASYNC_SIMPLE_UTIL_CONDITION_H
 
-#ifndef ASYNC_SIMPLE_USE_MODULES
 #if __has_include(<semaphore>)
 #include <semaphore>
 #else
@@ -27,8 +26,6 @@
 #include <condition_variable>
 #include <mutex>
 #endif
-
-#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace util {

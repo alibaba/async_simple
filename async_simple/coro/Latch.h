@@ -17,13 +17,12 @@
 #ifndef ASYNC_SIMPLE_CORO_LATCH_H
 #define ASYNC_SIMPLE_CORO_LATCH_H
 
-#ifndef ASYNC_SIMPLE_USE_MODULES
+#include <chrono>
 #include <cstddef>
 #include "async_simple/coro/ConditionVariable.h"
 #include "async_simple/coro/Lazy.h"
+#include "async_simple/coro/Mutex.h"
 #include "async_simple/coro/SpinLock.h"
-
-#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple::coro {
 

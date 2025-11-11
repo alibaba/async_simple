@@ -23,10 +23,7 @@
 #ifndef ASYNC_SIMPLE_UTHREAD_INTERNAL_UTHREAD_IMPL_H
 #define ASYNC_SIMPLE_UTHREAD_INTERNAL_UTHREAD_IMPL_H
 
-#ifndef ASYNC_SIMPLE_USE_MODULES
 #include "async_simple/Common.h"
-
-#endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
 namespace uthread {
