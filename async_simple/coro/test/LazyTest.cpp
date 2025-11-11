@@ -303,43 +303,30 @@ TEST_F(LazyTest, testYield) {
     executors::SimpleExecutor executor(1);
     std::mutex m1;
     std::mutex m2;
-    int value1 = 0;
-    int value2 = 0;
+    std::atomic<int> value = 0;
     m1.lock();
     m2.lock();
 
-    auto test1 = [](std::mutex& m, int& value) -> Lazy<void> {
+    auto test1 = [&value](std::mutex& m) -> Lazy<void> {
         m.lock();
         // push task to queue's tail
         co_await Yield();
+        EXPECT_EQ(value, 1);
         value++;
+        m.unlock();
         co_return;
     };
 
-    auto test2 = [](std::mutex& m, int& value) -> Lazy<void> {
+    auto test2 = [&value](std::mutex& m) -> Lazy<void> {
         m.lock();
+        EXPECT_EQ(value, 0);
         value++;
+        m.unlock();
         co_return;
     };
 
-    test1(m1, value1).via(&executor).start([](Try<void> result) {});
-    std::this_thread::sleep_for(100000us);
-    ASSERT_EQ(0, value1);
-
-    test2(m2, value2).via(&executor).start([](Try<void> result) {});
-    std::this_thread::sleep_for(100000us);
-    ASSERT_EQ(0, value2);
-
-    m1.unlock();
-    std::this_thread::sleep_for(100000us);
-    ASSERT_EQ(0, value1);
-    ASSERT_EQ(0, value2);
-
-    m2.unlock();
-    std::this_thread::sleep_for(100000us);
-    ASSERT_EQ(1, value1);
-    ASSERT_EQ(1, value2);
-
+    test1(m1).via(&executor).start([](Try<void> result) {});
+    test2(m2).via(&executor).start([](Try<void> result) {});
     m1.unlock();
     m2.unlock();
 }
