@@ -140,7 +140,7 @@ public:
     }
 
     AS_INLINE void attachOne() {
-        _attached.fetch_add(1, std::memory_order_relaxed);
+        _attached.fetch_add(1, std::memory_order_acq_rel);
     }
     AS_INLINE void detachOne() {
         auto old = _attached.fetch_sub(1, std::memory_order_acq_rel);
@@ -150,7 +150,7 @@ public:
         }
     }
     AS_INLINE void attachPromise() {
-        _promiseRef.fetch_add(1, std::memory_order_relaxed);
+        _promiseRef.fetch_add(1, std::memory_order_acq_rel);
         attachOne();
     }
     AS_INLINE void detachPromise() {
@@ -204,9 +204,9 @@ public:
         auto state = _state.load(std::memory_order_acquire);
         switch (state) {
             case detail::State::START:
-                if (_state.compare_exchange_strong(state,
-                                                   detail::State::ONLY_RESULT,
-                                                   std::memory_order_release)) {
+                if (_state.compare_exchange_strong(
+                        state, detail::State::ONLY_RESULT,
+                        std::memory_order_acq_rel, std::memory_order_acquire)) {
                     return;
                 }
                 // state has already transfered, fallthrough
@@ -214,7 +214,8 @@ public:
                        detail::State::ONLY_CONTINUATION);
             case detail::State::ONLY_CONTINUATION:
                 if (_state.compare_exchange_strong(state, detail::State::DONE,
-                                                   std::memory_order_release)) {
+                                                   std::memory_order_acq_rel,
+                                                   std::memory_order_acquire)) {
                     scheduleContinuation(false);
                     return;
                 }
@@ -237,7 +238,7 @@ public:
             case detail::State::START:
                 if (_state.compare_exchange_strong(
                         state, detail::State::ONLY_CONTINUATION,
-                        std::memory_order_release)) {
+                        std::memory_order_acq_rel, std::memory_order_acquire)) {
                     return;
                 }
                 // state has already transferred, fallthrough
@@ -245,7 +246,8 @@ public:
                        detail::State::ONLY_RESULT);
             case detail::State::ONLY_RESULT:
                 if (_state.compare_exchange_strong(state, detail::State::DONE,
-                                                   std::memory_order_release)) {
+                                                   std::memory_order_acq_rel,
+                                                   std::memory_order_acquire)) {
                     scheduleContinuation(true);
                     return;
                 }
@@ -308,10 +310,10 @@ private:
     }
 
     void refContinuation() {
-        _continuationRef.fetch_add(1, std::memory_order_relaxed);
+        _continuationRef.fetch_add(1, std::memory_order_acq_rel);
     }
     void derefContinuation() {
-        auto old = _continuationRef.fetch_sub(1, std::memory_order_relaxed);
+        auto old = _continuationRef.fetch_sub(1, std::memory_order_acq_rel);
         assert(old >= 1);
         if (old == 1) {
             _continuation.~Continuation();

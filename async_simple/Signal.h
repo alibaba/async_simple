@@ -80,7 +80,8 @@ private:
             validSignal = (expected | type) ^ expected;
         } while (validSignal &&
                  !state.compare_exchange_weak(expected, expected | type,
-                                              std::memory_order_release));
+                                              std::memory_order_acq_rel,
+                                              std::memory_order_acquire));
         // high 32 bits signal is always valid, they can be trigger multiple
         // times. low 32 bits signal only trigger once.
         return static_cast<SignalType>(validSignal |

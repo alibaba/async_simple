@@ -67,8 +67,8 @@ public:
         do {
             _next = awaitings;
         } while (!_cv->_awaiters.compare_exchange_weak(
-            awaitings, this, std::memory_order_acquire,
-            std::memory_order_relaxed));
+            awaitings, this, std::memory_order_release,
+            std::memory_order_acquire));
     }
     void await_resume() const noexcept {}
 
@@ -94,23 +94,23 @@ inline Lazy<> ConditionVariable<Lock>::wait(Lock& lock, Pred&& pred) noexcept {
 
 template <class Lock>
 inline void ConditionVariable<Lock>::notifyAll() noexcept {
-    auto awaitings = _awaiters.load(std::memory_order_relaxed);
+    auto awaitings = _awaiters.load(std::memory_order_acquire);
     while (!_awaiters.compare_exchange_weak(awaitings, nullptr,
-                                            std::memory_order_release,
-                                            std::memory_order_relaxed))
+                                            std::memory_order_acq_rel,
+                                            std::memory_order_acquire))
         ;
     resumeWaiters(awaitings);
 }
 
 template <class Lock>
 inline void ConditionVariable<Lock>::notifyOne() noexcept {
-    auto awaitings = _awaiters.load(std::memory_order_relaxed);
+    auto awaitings = _awaiters.load(std::memory_order_acquire);
     if (!awaitings) {
         return;
     }
     while (!_awaiters.compare_exchange_weak(awaitings, awaitings->_next,
-                                            std::memory_order_release,
-                                            std::memory_order_relaxed))
+                                            std::memory_order_acq_rel,
+                                            std::memory_order_acquire))
         ;
     awaitings->_next = nullptr;
     resumeWaiters(awaitings);
