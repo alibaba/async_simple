@@ -105,13 +105,13 @@ inline void ConditionVariable<Lock>::notifyAll() noexcept {
 template <class Lock>
 inline void ConditionVariable<Lock>::notifyOne() noexcept {
     auto awaitings = _awaiters.load(std::memory_order_acquire);
-    if (!awaitings) {
-        return;
-    }
-    while (!_awaiters.compare_exchange_weak(awaitings, awaitings->_next,
+    while (awaitings && !_awaiters.compare_exchange_weak(awaitings, awaitings->_next,
                                             std::memory_order_acq_rel,
                                             std::memory_order_acquire))
         ;
+    if (!awaitings) {
+        return;
+    }
     awaitings->_next = nullptr;
     resumeWaiters(awaitings);
 }
