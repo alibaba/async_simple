@@ -1438,7 +1438,7 @@ TEST_F(LazyTest, testCollectAnyVariadicWithCancel) {
             collectAny<SignalType::Terminate>(
                 my_sleep(10ms, SignalType::Terminate, false),
                 my_sleep(5s, SignalType::Terminate, true, false)));
-        EXPECT_EQ(result.index(), 1);
+        EXPECT_EQ(result.index(), 1u);
         auto slot2 = co_await CurrentSlot{};
         EXPECT_EQ(slot, slot2);
     }()
@@ -1454,7 +1454,7 @@ TEST_F(LazyTest, testCollectAnyVariadicWithCancel) {
             collectAny<SignalType::None>(
                 my_sleep(10ms, SignalType::None, false),
                 my_sleep(200ms, SignalType::None, false)));
-        EXPECT_EQ(result.index(), 1);
+        EXPECT_EQ(result.index(), 1u);
         auto slot2 = co_await CurrentSlot{};
         EXPECT_EQ(slot, slot2);
     }()
@@ -1468,7 +1468,7 @@ TEST_F(LazyTest, testCollectAnyVariadicWithCancel) {
             collectAny<SignalType::None>(
                 my_sleep(10ms, SignalType::None, false),
                 my_sleep(200ms, SignalType::Terminate)));
-        EXPECT_EQ(result.index(), 1);
+        EXPECT_EQ(result.index(), 1u);
         auto slot2 = co_await CurrentSlot{};
         EXPECT_EQ(slot, slot2);
     }()
@@ -1491,7 +1491,7 @@ TEST_F(LazyTest, testCollectAnyWithCancel) {
         v3.push_back(collectAny<SignalType::Terminate>(std::move(v1)));
         v3.push_back(collectAny<SignalType::Terminate>(std::move(v2)));
         auto result = co_await collectAny<SignalType::All>(std::move(v3));
-        EXPECT_EQ(result.index(), 1);
+        EXPECT_EQ(result.index(), 1u);
         auto slot2 = co_await CurrentSlot{};
         EXPECT_EQ(slot, slot2);
     }()
@@ -1508,7 +1508,7 @@ TEST_F(LazyTest, testCollectAnyWithCancel) {
         v3.push_back(collectAny<SignalType::Terminate>(std::move(v1)));
         v3.push_back(collectAny<SignalType::None>(std::move(v2)));
         auto result = co_await collectAny<SignalType::None>(std::move(v3));
-        EXPECT_EQ(result.index(), 1);
+        EXPECT_EQ(result.index(), 1u);
         auto slot2 = co_await CurrentSlot{};
         EXPECT_EQ(slot, slot2);
     }()
@@ -1525,7 +1525,7 @@ TEST_F(LazyTest, testCollectAnyWithCancel) {
         v3.push_back(collectAny<SignalType::Terminate>(std::move(v1)));
         v3.push_back(collectAny<SignalType::None>(std::move(v2)));
         auto result = co_await collectAny<SignalType::Terminate>(std::move(v3));
-        EXPECT_EQ(result.index(), 1);
+        EXPECT_EQ(result.index(), 1u);
         auto slot2 = co_await CurrentSlot{};
         EXPECT_EQ(slot, slot2);
     }()

@@ -110,7 +110,7 @@ TEST_F(UthreadAllocSwapTest, testSwitch) {
     while (running) {
     }
 
-    EXPECT_NE(get_stack_holder_count, 0);
+    EXPECT_NE(get_stack_holder_count, 0u);
     while (!delete_stack_holder_count) {
     }
 

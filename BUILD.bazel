@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//bazel/config:copt.bzl", "ASYNC_SIMPLE_COPTS")
 
 uthread_prefix = "async_simple/uthread/internal/"

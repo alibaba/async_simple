@@ -466,7 +466,7 @@ TEST_F(CancellationTest, testDerivedSignal) {
         SignalType::Terminate, [](SignalType type, Signal* signal) {
             auto mySignal = dynamic_cast<MySignal*>(signal);
             EXPECT_NE(mySignal, nullptr);
-            EXPECT_EQ(mySignal->myState, 1);
+            EXPECT_EQ(mySignal->myState, 1u);
         });
     mySignal->myState = 1;
     mySignal->emits(SignalType::Terminate);

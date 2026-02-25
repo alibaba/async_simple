@@ -55,5 +55,5 @@ TEST(SimpleExecutorTest, testNormal) {
         async_simple::util::move_only_function(std::move(move_only_functor)));
     std::unique_lock<std::mutex> guard(mut);
     cv.wait(guard, [&]() { return done_count == 2; });
-    EXPECT_EQ(sum, 30);
+    EXPECT_EQ(sum, 30u);
 }
