@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("//bazel/config:copt.bzl", "ASYNC_SIMPLE_COPTS")
 
 cc_library(
@@ -6,8 +7,8 @@ cc_library(
         "asio/**/*.hpp",
         "asio/**/*.ipp",
     ]),
-    visibility = ["//visibility:public"],
     includes = ["asio"],
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -17,116 +18,115 @@ cc_library(
         "asio_util.hpp",
     ],
     deps = [
+        ":asio",
         "//:async_simple",
         "//:simple_executors",
-        ":asio",
     ],
 )
 
 cc_binary(
     name = "CountChar",
     srcs = ["CountChar.cpp"],
-    deps = ["//:async_simple"],
     copts = ASYNC_SIMPLE_COPTS,
+    deps = ["//:async_simple"],
 )
 
 cc_binary(
     name = "ReadFiles",
     srcs = ["ReadFiles.cpp"],
+    copts = ASYNC_SIMPLE_COPTS,
     deps = [
         "//:async_simple",
         "//:simple_executors",
     ],
-    copts = ASYNC_SIMPLE_COPTS,
 )
 
 cc_binary(
     name = "async_echo_server",
     srcs = ["async_echo_server.cpp"],
-    deps = [":hdrs_dep"],
     copts = ASYNC_SIMPLE_COPTS,
+    deps = [":hdrs_dep"],
 )
-
 
 cc_binary(
     name = "async_echo_client",
     srcs = ["async_echo_client.cpp"],
-    deps = [":hdrs_dep"],
     copts = ASYNC_SIMPLE_COPTS,
+    deps = [":hdrs_dep"],
 )
 
 cc_binary(
     name = "block_echo_server",
     srcs = ["block_echo_server.cpp"],
-    deps = [":hdrs_dep"],
     copts = ASYNC_SIMPLE_COPTS,
+    deps = [":hdrs_dep"],
 )
 
 cc_binary(
     name = "block_echo_client",
     srcs = ["block_echo_client.cpp"],
-    deps = [":hdrs_dep"],
     copts = ASYNC_SIMPLE_COPTS,
+    deps = [":hdrs_dep"],
 )
 
 cc_library(
     name = "http_hdrs_dep",
     hdrs = glob([
-    	"http/**/*.hpp",
+        "http/**/*.hpp",
         "io_context_pool.hpp",
     ]),
-    deps = [":hdrs_dep"],
     visibility = ["//visibility:public"],
+    deps = [":hdrs_dep"],
 )
 
 cc_binary(
     name = "http_server",
     srcs = ["http/coroutine_http/http_server.cpp"],
-    deps = [":http_hdrs_dep"],
     copts = ASYNC_SIMPLE_COPTS,
+    deps = [":http_hdrs_dep"],
 )
 
 cc_binary(
     name = "multiple_core_http_server",
     srcs = ["http/coroutine_http/multiple_core_http_server.cpp"],
-    deps = [":http_hdrs_dep"],
     copts = ASYNC_SIMPLE_COPTS,
+    deps = [":http_hdrs_dep"],
 )
 
 cc_binary(
     name = "http_client",
     srcs = ["http/coroutine_http/http_client.cpp"],
-    deps = [":http_hdrs_dep"],
     copts = ASYNC_SIMPLE_COPTS,
+    deps = [":http_hdrs_dep"],
 )
 
 cc_binary(
     name = "block_http_server",
     srcs = ["http/block_http/block_http_server.cpp"],
-    deps = [":http_hdrs_dep"],
     copts = ASYNC_SIMPLE_COPTS,
+    deps = [":http_hdrs_dep"],
 )
 
 cc_binary(
     name = "smtp_client",
     srcs = ["smtp/smtp_client.cpp"],
-    deps = [":hdrs_dep"] + select({
-        "//bazel/config:async_simple_enable_ssl": [
-            "@boringssl//:ssl",
-            "@boringssl//:crypto",
-        ],
-        "//conditions:default" : [],
-    }),
     copts = ASYNC_SIMPLE_COPTS,
     defines = select({
         "//bazel/config:async_simple_enable_ssl": ["ENABLE_SSL"],
-        "//conditions:default" : [],
+        "//conditions:default": [],
+    }),
+    deps = [":hdrs_dep"] + select({
+        "//bazel/config:async_simple_enable_ssl": [
+            "@boringssl//:crypto",
+            "@boringssl//:ssl",
+        ],
+        "//conditions:default": [],
     }),
 )
 
 cc_binary(
     name = "pmr_lazy",
     srcs = ["pmr_lazy.cpp"],
-    deps = ["//:async_simple"],
     copts = ASYNC_SIMPLE_COPTS,
+    deps = ["//:async_simple"],
 )

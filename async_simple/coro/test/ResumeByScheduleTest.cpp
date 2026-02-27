@@ -130,8 +130,8 @@ TEST(ResumeBySchedule, basic) {
     std::unique_lock guard(mut);
     cv.wait(guard, [&]() -> bool { return done_count == 100; });
     cbs.Stop();
-    EXPECT_EQ(ex.checkin_count_, 0);
-    EXPECT_LE(ex.schedule_count_, 200);
+    EXPECT_EQ(ex.checkin_count_, 0u);
+    EXPECT_LE(ex.schedule_count_, 200u);
 }
 
 }  // namespace coro

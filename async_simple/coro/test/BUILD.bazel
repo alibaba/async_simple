@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("//bazel/config:copt.bzl", "ASYNC_SIMPLE_COPTS")
 
 cc_library(
@@ -9,14 +10,14 @@ cc_library(
 cc_test(
     name = "async_simple_coro_test",
     srcs = glob(["*.cpp"]),
-    deps = [
-        "//:async_simple",
-        "//async_simple/test:gtest_main",
-        ":hdrs_dep",
-    ],  
     copts = ASYNC_SIMPLE_COPTS + select({
         "@platforms//os:windows": [],
         # Clang gives incorrect warnings, See https://github.com/llvm/llvm-project/issues/56768
         "//conditions:default": ["-Wno-unsequenced"],
-    })
+    }),
+    deps = [
+        ":hdrs_dep",
+        "//:async_simple",
+        "//async_simple/test:gtest_main",
+    ],
 )

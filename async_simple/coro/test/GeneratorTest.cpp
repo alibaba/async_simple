@@ -228,7 +228,7 @@ public:
 
 TEST_F(GeneratorTest, testIterator) {
     size_t n = 15;
-    for (int j = 0; int i : fibonacci_sequence(n)) {
+    for (int j = 0; auto i : fibonacci_sequence(n)) {
         EXPECT_EQ(i, fibonacci_expected[j++]);
     }
 }

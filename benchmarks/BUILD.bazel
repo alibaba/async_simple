@@ -1,37 +1,41 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("//bazel/config:copt.bzl", "ASYNC_SIMPLE_COPTS")
 
 cc_library(
     name = "benchmark_main",
     srcs = ["benchmark_main.cpp"],
-    hdrs = glob(["*.h", "*.hpp"]),
+    hdrs = glob([
+        "*.h",
+        "*.hpp",
+    ]),
+    copts = ASYNC_SIMPLE_COPTS,
+    defines = select({
+        "//bazel/config:async_simple_with_uthread": ["ASYNC_SIMPLE_BENCHMARK_UTHREAD"],
+        "//conditions:default": [],
+    }),
     deps = [
         "//:async_simple",
         "//:simple_executors",
         "@com_google_benchmark//:benchmark",
     ],
-    defines = select({
-        "//bazel/config:async_simple_with_uthread" : ["ASYNC_SIMPLE_BENCHMARK_UTHREAD"],
-        "//conditions:default" : [],
-    }),
-    copts = ASYNC_SIMPLE_COPTS,
 )
 
 cc_binary(
     name = "benchmarking",
     srcs = [
+        "CallDepth.bench.cpp",
+        "Future.bench.cpp",
+        "Lazy.bench.cpp",
+        "Mutex.bench.cpp",
         "PureSwitch.bench.cpp",
         "ReadFile.bench.cpp",
-        "CallDepth.bench.cpp",
-        "Lazy.bench.cpp",
-        "Future.bench.cpp",
-        "ThreadPool.bench.cpp",
-        "Mutex.bench.cpp",
+        "SharedMutex.bench.cpp",
         "SpinLock.bench.cpp",
-        "SharedMutex.bench.cpp"
+        "ThreadPool.bench.cpp",
     ] + select({
         "//bazel/config:async_simple_with_uthread": ["Uthread.bench.cpp"],
         "//conditions:default": [],
     }),
-    deps = [":benchmark_main"],
     copts = ASYNC_SIMPLE_COPTS,
+    deps = [":benchmark_main"],
 )
