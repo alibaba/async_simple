@@ -13,8 +13,7 @@ else()
         GIT_TAG v1.17.0
         GIT_SHALLOW ON
     )
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND
-       CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "20")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "21")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=character-conversion")
     endif()
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
