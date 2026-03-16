@@ -19,6 +19,7 @@
 #ifndef ASYNC_SIMPLE_USE_MODULES
 #include <mutex>
 #include "async_simple/coro/Lazy.h"
+#include "async_simple/coro/SpinLock.h"
 
 #endif  // ASYNC_SIMPLE_USE_MODULES
 
@@ -49,7 +50,8 @@ private:
 
 private:
     friend class ConditionVariableAwaiter<Lock>;
-    std::atomic<ConditionVariableAwaiter<Lock>*> _awaiters = nullptr;
+    ConditionVariableAwaiter<Lock>* _awaiters = nullptr;
+    SpinLock _queueLock;
 };
 
 template <class Lock>
@@ -63,12 +65,11 @@ public:
     void await_suspend(std::coroutine_handle<> continuation) noexcept {
         _continuation = continuation;
         std::unique_lock<Lock> lock{_lock, std::adopt_lock};
-        auto awaitings = _cv->_awaiters.load(std::memory_order_relaxed);
-        do {
-            _next = awaitings;
-        } while (!_cv->_awaiters.compare_exchange_weak(
-            awaitings, this, std::memory_order_release,
-            std::memory_order_acquire));
+        {
+            ScopedSpinLock queue_lock(_cv->_queueLock); 
+            _next = _cv->_awaiters;
+            _cv->_awaiters = this;
+        }
     }
     void await_resume() const noexcept {}
 
@@ -94,21 +95,26 @@ inline Lazy<> ConditionVariable<Lock>::wait(Lock& lock, Pred&& pred) noexcept {
 
 template <class Lock>
 inline void ConditionVariable<Lock>::notifyAll() noexcept {
-    auto awaitings = _awaiters.load(std::memory_order_acquire);
-    while (!_awaiters.compare_exchange_weak(awaitings, nullptr,
-                                            std::memory_order_acq_rel,
-                                            std::memory_order_acquire))
-        ;
+    ConditionVariableAwaiter<Lock>* awaitings = nullptr;
+    {
+        ScopedSpinLock queue_lock(_queueLock);
+        awaitings = _awaiters;
+        _awaiters = nullptr;
+    }
     resumeWaiters(awaitings);
 }
 
 template <class Lock>
 inline void ConditionVariable<Lock>::notifyOne() noexcept {
-    auto awaitings = _awaiters.load(std::memory_order_acquire);
-    while (awaitings && !_awaiters.compare_exchange_weak(awaitings, awaitings->_next,
-                                            std::memory_order_acq_rel,
-                                            std::memory_order_acquire))
-        ;
+    ConditionVariableAwaiter<Lock>* awaitings = nullptr;
+    {
+        ScopedSpinLock queue_lock(_queueLock);
+        if (_awaiters != nullptr) {
+            awaitings = _awaiters;
+            _awaiters = _awaiters->_next;
+        }
+    }
+
     if (!awaitings) {
         return;
     }
