@@ -101,8 +101,8 @@ inline void ConditionVariable<Lock>::notifyAll() noexcept {
         ScopedSpinLock notifyLock(_notifyLock);
         awaitings = _awaiters.load(std::memory_order_acquire);
         while (!_awaiters.compare_exchange_weak(awaitings, nullptr,
-                                            std::memory_order_acq_rel,
-                                            std::memory_order_acquire))
+                                                std::memory_order_acq_rel,
+                                                std::memory_order_acquire))
             ;
     }
     resumeWaiters(awaitings);
@@ -114,7 +114,8 @@ inline void ConditionVariable<Lock>::notifyOne() noexcept {
     {
         ScopedSpinLock notifyLock(_notifyLock);
         awaitings = _awaiters.load(std::memory_order_acquire);
-        while (awaitings && !_awaiters.compare_exchange_weak(awaitings, awaitings->_next,
+        while (awaitings &&
+               !_awaiters.compare_exchange_weak(awaitings, awaitings->_next,
                                                 std::memory_order_acq_rel,
                                                 std::memory_order_acquire))
             ;
