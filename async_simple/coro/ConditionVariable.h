@@ -19,6 +19,7 @@
 #ifndef ASYNC_SIMPLE_USE_MODULES
 #include <mutex>
 #include "async_simple/coro/Lazy.h"
+#include "async_simple/coro/SpinLock.h"
 
 #endif  // ASYNC_SIMPLE_USE_MODULES
 
@@ -50,6 +51,7 @@ private:
 private:
     friend class ConditionVariableAwaiter<Lock>;
     std::atomic<ConditionVariableAwaiter<Lock>*> _awaiters = nullptr;
+    SpinLock _notifyLock;
 };
 
 template <class Lock>
@@ -94,21 +96,31 @@ inline Lazy<> ConditionVariable<Lock>::wait(Lock& lock, Pred&& pred) noexcept {
 
 template <class Lock>
 inline void ConditionVariable<Lock>::notifyAll() noexcept {
-    auto awaitings = _awaiters.load(std::memory_order_acquire);
-    while (!_awaiters.compare_exchange_weak(awaitings, nullptr,
-                                            std::memory_order_acq_rel,
-                                            std::memory_order_acquire))
-        ;
+    ConditionVariableAwaiter<Lock>* awaitings = nullptr;
+    {
+        ScopedSpinLock notifyLock(_notifyLock);
+        awaitings = _awaiters.load(std::memory_order_acquire);
+        while (!_awaiters.compare_exchange_weak(awaitings, nullptr,
+                                                std::memory_order_acq_rel,
+                                                std::memory_order_acquire))
+            ;
+    }
     resumeWaiters(awaitings);
 }
 
 template <class Lock>
 inline void ConditionVariable<Lock>::notifyOne() noexcept {
-    auto awaitings = _awaiters.load(std::memory_order_acquire);
-    while (awaitings && !_awaiters.compare_exchange_weak(awaitings, awaitings->_next,
-                                            std::memory_order_acq_rel,
-                                            std::memory_order_acquire))
-        ;
+    ConditionVariableAwaiter<Lock>* awaitings = nullptr;
+    {
+        ScopedSpinLock notifyLock(_notifyLock);
+        awaitings = _awaiters.load(std::memory_order_acquire);
+        while (awaitings &&
+               !_awaiters.compare_exchange_weak(awaitings, awaitings->_next,
+                                                std::memory_order_acq_rel,
+                                                std::memory_order_acquire))
+            ;
+    }
+
     if (!awaitings) {
         return;
     }

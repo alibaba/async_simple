@@ -58,8 +58,10 @@ export extern "C++" {
   #include "uthread/internal/thread.h"
   #include "uthread/Uthread.h"
   #include "uthread/Async.h"
-  #include "coro/ConditionVariable.h"
+  // clang-format off
   #include "coro/SpinLock.h"
+  #include "coro/ConditionVariable.h"
+  // clang-format on
   #include "coro/Latch.h"
   #include "coro/CountEvent.h"
   #include "coro/Collect.h"
