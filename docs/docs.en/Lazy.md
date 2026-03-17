@@ -272,9 +272,6 @@ In the above example, `task1...task4` represents a task chain consists of Lazy. 
 
 So we could assign the executor at the root the task chain simply.
 
-我来为您翻译这段关于内存分配的内容：
-
-Ran tool
 ## Memory Allocation
 
 ### User-Defined Allocator
