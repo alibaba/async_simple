@@ -85,7 +85,7 @@ TEST_F(FutureAwaiterTest, testWithFutureCancel) {
         Promise<int> pr;
         auto fut = pr.getFuture();
         sum(1, 1, [pr = std::move(pr)](int val) mutable {
-            std::this_thread::sleep_for(std::chrono::seconds::max());
+            std::this_thread::sleep_for(std::chrono::hours{60});
             pr.setValue(val);
         });
         async_simple::SignalType type = None;
@@ -114,7 +114,7 @@ TEST_F(FutureAwaiterTest, testWithFutureCancel) {
     };
     syncAwait(collectAll<async_simple::Terminate>(
         lazy2().via(&ex1),
-        async_simple::coro::sleep(std::chrono::seconds::max()).via(&ex1)));
+        async_simple::coro::sleep(std::chrono::hours{60}).via(&ex1)));
 }
 
 namespace detail {
