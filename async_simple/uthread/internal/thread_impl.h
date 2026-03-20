@@ -37,10 +37,10 @@ struct transfer_t {
     fcontext_t fctx;
     void* data;
 };
-extern "C" __attribute__((__visibility__("default"))) transfer_t
-_fl_jump_fcontext(fcontext_t const to, void* vp);
-extern "C" __attribute__((__visibility__("default"))) fcontext_t
-_fl_make_fcontext(void* sp, std::size_t size, void (*fn)(transfer_t));
+extern "C" AS_EXPORT transfer_t _fl_jump_fcontext(fcontext_t const to,
+                                                  void* vp);
+extern "C" AS_EXPORT fcontext_t _fl_make_fcontext(void* sp, std::size_t size,
+                                                  void (*fn)(transfer_t));
 
 class thread_context;
 
