@@ -31,6 +31,12 @@
 #define AS_INLINE __attribute__((__always_inline__)) inline
 #endif
 
+#ifdef _WIN32
+#define AS_EXPORT __declspec(dllexport)
+#else
+#define AS_EXPORT __attribute__((__visibility__("default")))
+#endif
+
 #ifdef __clang__
 #if __has_feature(address_sanitizer)
 #define AS_INTERNAL_USE_ASAN 1
