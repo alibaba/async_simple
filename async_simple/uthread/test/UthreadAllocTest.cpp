@@ -7,7 +7,6 @@
 #include "async_simple/test/unittest.h"
 #include "async_simple/uthread/Await.h"
 #include "async_simple/uthread/Uthread.h"
-#include "async_simple/uthread/internal/thread.h"
 
 using namespace std;
 using namespace async_simple::uthread::internal;
