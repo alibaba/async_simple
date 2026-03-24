@@ -43,6 +43,40 @@ struct stack_deleter {
     void operator()(char* ptr) const noexcept;
 };
 using stack_holder = std::unique_ptr<char[], stack_deleter>;
+using stack_deleter_fn = void (*)(char*) noexcept;
+using stack_allocator_fn = stack_holder (*)(unsigned);
+
+inline void default_stack_deleter(char* ptr) noexcept { delete[] ptr; }
+
+inline stack_holder default_get_stack_holder(unsigned stack_size) {
+    return stack_holder(new char[stack_size]);
+}
+
+inline stack_deleter_fn& get_stack_deleter() noexcept {
+    static stack_deleter_fn fn = &default_stack_deleter;
+    return fn;
+}
+
+inline stack_allocator_fn& get_stack_allocator() noexcept {
+    static stack_allocator_fn fn = &default_get_stack_holder;
+    return fn;
+}
+
+inline void set_stack_deleter(stack_deleter_fn fn) noexcept {
+    get_stack_deleter() = fn ? fn : &default_stack_deleter;
+}
+
+inline void set_stack_allocator(stack_allocator_fn fn) noexcept {
+    get_stack_allocator() = fn ? fn : &default_get_stack_holder;
+}
+
+inline void stack_deleter::operator()(char* ptr) const noexcept {
+    get_stack_deleter()(ptr);
+}
+
+inline stack_holder get_stack_holder(unsigned stack_size) {
+    return get_stack_allocator()(stack_size);
+}
 
 class thread_context {
     const size_t stack_size_;
