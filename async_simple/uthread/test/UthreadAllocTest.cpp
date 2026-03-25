@@ -9,34 +9,35 @@
 #include "async_simple/uthread/Uthread.h"
 
 using namespace std;
+using namespace async_simple::uthread::internal;
 
 static std::atomic<unsigned> get_stack_holder_count = 0;
 static std::atomic<unsigned> delete_stack_holder_count = 0;
 
 namespace async_simple {
 namespace uthread {
-namespace internal {
-
-stack_holder get_stack_holder(unsigned stack_size) {
-    get_stack_holder_count++;
-    return stack_holder(new char[stack_size]);
-}
-
-void stack_deleter::operator()(char* ptr) const noexcept {
-    delete_stack_holder_count++;
-    delete[] ptr;
-}
-}
-}
-}
-
-namespace async_simple {
-namespace uthread {
 class UthreadAllocSwapTest : public FUTURE_TESTBASE {
 public:
     UthreadAllocSwapTest() : _executor(4) {}
-    void caseSetUp() override {}
-    void caseTearDown() override {}
+
+    void caseSetUp() override {
+        get_stack_holder_count = 0;
+        delete_stack_holder_count = 0;
+
+        set_stack_allocator([](unsigned stack_size) -> stack_holder {
+            get_stack_holder_count++;
+            return stack_holder(new char[stack_size]);
+        });
+        set_stack_deleter([](char* ptr) noexcept {
+            delete_stack_holder_count++;
+            delete[] ptr;
+        });
+    }
+
+    void caseTearDown() override {
+        set_stack_allocator(nullptr);
+        set_stack_deleter(nullptr);
+    }
 
     template <class Func>
     void delayedTask(Func&& func, std::size_t ms) {
