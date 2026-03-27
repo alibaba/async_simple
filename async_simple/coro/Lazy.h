@@ -37,6 +37,9 @@
 #include "async_simple/coro/ViaCoroutine.h"
 #include "async_simple/experimental/coroutine.h"
 
+#include <cmath>
+#include <list>
+
 #endif  // ASYNC_SIMPLE_USE_MODULES
 
 namespace async_simple {
@@ -90,6 +93,84 @@ struct CollectAnyVariadicPairAwaiter;
 
 namespace detail {
 
+struct Segment {
+    static constexpr unsigned default_size = 256;
+    Segment(unsigned maxsize) : max_size(maxsize) {
+        memory = new char[max_size];
+    }
+    Segment(const Segment&) = delete;
+    Segment& operator=(const Segment&) = delete;
+
+    ~Segment() { delete[] memory; }
+
+    char* memory = nullptr;
+    unsigned max_size;
+    unsigned size = 0;
+    Segment* prev = nullptr;
+};
+
+inline char* align_address(char* ptr, std::size_t align) {
+    return (char*)(((uintptr_t)ptr + align - 1) & ~(align - 1));
+    ;
+}
+
+class StackedAllocator {
+public:
+    ~StackedAllocator() {
+        while (current_segment != &segment) {
+            remove_segment();
+        }
+    }
+
+    void* allocate(std::size_t size, std::align_val_t align) {
+        if (get_current_segment().size + size + sizeof(std::size_t) +
+                (std::size_t)align >=
+            get_current_segment().max_size) [[unlikely]] {
+            add_segment();
+        }
+
+        char* top = get_current_segment().memory + get_current_segment().size;
+        char* ptr = top + sizeof(std::size_t);
+        char* aligned_ptr =
+            align_address(ptr + sizeof(std::size_t), (std::size_t)align);
+        std::size_t allocated_size =
+            size + sizeof(std::size_t) + (aligned_ptr - ptr);
+        get_current_segment().size += allocated_size;
+        *(std::size_t*)(aligned_ptr - sizeof(std::size_t)) = allocated_size;
+
+        return aligned_ptr;
+    }
+
+    void dealloacte(void* ptr, std::align_val_t align) {
+        ptr = (char*)ptr - sizeof(std::size_t);
+        std::size_t allocated_size = *(std::size_t*)ptr;
+        if (get_current_segment().size < allocated_size) [[unlikely]]
+            remove_segment();
+        get_current_segment().size -= allocated_size;
+    }
+
+    Segment& get_current_segment() { return *current_segment; }
+
+    void add_segment(unsigned specified_size = 0) {
+        Segment* new_segment =
+            new Segment(specified_size ? specified_size
+                                       : get_current_segment().max_size * 2);
+        new_segment->prev = current_segment;
+        current_segment = new_segment;
+    }
+
+    void remove_segment() {
+        // We shouldn't call remove segment when we only have one segment.
+        auto* previous = current_segment;
+        current_segment = current_segment->prev;
+        delete previous;
+    }
+
+private:
+    Segment segment{Segment::default_size};
+    Segment* current_segment = &segment;
+};
+
 class LazyPromiseBase : public PromiseAllocator<void, true> {
 public:
     // Resume the caller waiting to the current coroutine. Note that we need
@@ -142,6 +223,11 @@ public:
 
 public:
     LazyPromiseBase() noexcept : _executor(nullptr), _lazy_local(nullptr) {}
+    ~LazyPromiseBase() {
+        if (OwnedStackedAllocator) [[unlikely]] {
+            delete stacked_allocator;
+        }
+    }
     // Lazily started, coroutine will not execute until first resume() is called
     std::suspend_always initial_suspend() noexcept { return {}; }
     FinalAwaiter final_suspend() noexcept { return {}; }
@@ -179,10 +265,24 @@ public:
                             _lazy_local ? _lazy_local->getSlot() : nullptr);
     }
 
+    void* stacked_allocate(std::size_t size, std::align_val_t align) {
+        if (!stacked_allocator) [[unlikely]] {
+            stacked_allocator = new StackedAllocator();
+            OwnedStackedAllocator = true;
+        }
+
+        return stacked_allocator->allocate(size, align);
+    }
+    void stacked_deallocate(void* ptr, std::align_val_t align) {
+        return stacked_allocator->dealloacte(ptr, align);
+    }
+
     /// IMPORTANT: _continuation should be the first member due to the
     /// requirement of dbg script.
     std::coroutine_handle<> _continuation;
     Executor* _executor;
+    StackedAllocator* stacked_allocator = nullptr;
+    bool OwnedStackedAllocator = false;
     LazyLocalBase* _lazy_local;
 };
 
@@ -349,6 +449,9 @@ public:
                 "DetachedCoroutine");
             // current coro started, caller becomes my continuation
             this->_handle.promise()._continuation = continuation;
+            if constexpr (std::is_base_of<LazyPromiseBase, PromiseType>::value)
+                this->_handle.promise().stacked_allocator =
+                    continuation.promise().stacked_allocator;
             if constexpr (std::is_base_of<LazyPromiseBase,
                                           PromiseType>::value) {
                 LazyLocalBase*& local = this->_handle.promise()._lazy_local;
