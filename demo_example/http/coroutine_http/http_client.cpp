@@ -48,7 +48,7 @@ async_simple::coro::Lazy<void> start(asio::io_context &io_context,
     // grow to accommodate the entire line. The growth may be limited by passing
     // a maximum size to the streambuf constructor.
     asio::streambuf response;
-    co_await async_read_until(socket, response, "\r\n");
+    co_await ::async_read_until(socket, response, "\r\n");
 
     // Check that response is OK.
     std::istream response_stream(&response);
@@ -69,7 +69,7 @@ async_simple::coro::Lazy<void> start(asio::io_context &io_context,
     }
 
     // Read the response headers, which are terminated by a blank line.
-    co_await async_read_until(socket, response, "\r\n\r\n");
+    co_await ::async_read_until(socket, response, "\r\n\r\n");
 
     // Process the response headers.
     std::string header;
@@ -83,7 +83,8 @@ async_simple::coro::Lazy<void> start(asio::io_context &io_context,
 
     // Read until EOF, writing data to output as we go.
     while (true) {
-        auto [error, bytes_transferred] = co_await async_read(socket, response);
+        auto [error, bytes_transferred] =
+            co_await ::async_read(socket, response);
         if (error != asio::error::eof)
             throw asio::system_error(error);
 
@@ -105,7 +106,7 @@ int main(int argc, char *argv[]) {
     try {
         asio::io_context io_context;
         std::thread thd([&io_context] {
-            asio::io_context::work work(io_context);
+            auto work = asio::make_work_guard(io_context);
             io_context.run();
         });
         async_simple::coro::syncAwait(start(io_context, "127.0.0.1", "9980"));

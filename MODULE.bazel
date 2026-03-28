@@ -1,5 +1,6 @@
 module(name = "com_github_async_simple")
 
+bazel_dep(name = "asio", version = "1.34.2")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 bazel_dep(name = "libaio", version = "0.3.113.bcr.0")
 bazel_dep(name = "platforms", version = "1.0.0")
