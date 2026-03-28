@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
     try {
         asio::io_context io_context;
         std::thread thd([&io_context] {
-            asio::io_context::work work(io_context);
+            auto work = asio::make_work_guard(io_context);
             io_context.run();
         });
         AsioExecutor executor(io_context);

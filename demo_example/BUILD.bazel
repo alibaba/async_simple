@@ -2,25 +2,15 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("//bazel/config:copt.bzl", "ASYNC_SIMPLE_COPTS")
 
 cc_library(
-    name = "asio",
-    hdrs = glob([
-        "asio/**/*.hpp",
-        "asio/**/*.ipp",
-    ]),
-    includes = ["asio"],
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
     name = "hdrs_dep",
     hdrs = [
         "asio_coro_util.hpp",
         "asio_util.hpp",
     ],
     deps = [
-        ":asio",
         "//:async_simple",
         "//:simple_executors",
+        "@asio",
     ],
 )
 
@@ -73,8 +63,7 @@ cc_library(
     name = "http_hdrs_dep",
     hdrs = glob([
         "http/**/*.hpp",
-        "io_context_pool.hpp",
-    ]),
+    ]) + ["io_context_pool.hpp"],
     visibility = ["//visibility:public"],
     deps = [":hdrs_dep"],
 )

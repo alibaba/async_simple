@@ -27,8 +27,9 @@ public:
             pool_size = 1;  // set default value as 1
 
         for (std::size_t i = 0; i < pool_size; ++i) {
-            io_context_ptr io_context(new asio::io_context);
-            work_ptr work(new asio::io_context::work(*io_context));
+            io_context_ptr io_context = std::make_shared<asio::io_context>();
+            work_ptr work = std::make_shared<work_guard_type>(
+                asio::make_work_guard(*io_context));
             io_contexts_.push_back(io_context);
             work_.push_back(work);
         }
@@ -64,7 +65,9 @@ public:
 
 private:
     using io_context_ptr = std::shared_ptr<asio::io_context>;
-    using work_ptr = std::shared_ptr<asio::io_context::work>;
+    using work_guard_type =
+        asio::executor_work_guard<asio::io_context::executor_type>;
+    using work_ptr = std::shared_ptr<work_guard_type>;
 
     std::vector<io_context_ptr> io_contexts_;
     std::vector<work_ptr> work_;

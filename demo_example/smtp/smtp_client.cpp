@@ -171,10 +171,9 @@ public:
             host.erase(0, pos + 3);
         }
 
-        asio::ip::tcp::resolver::query qry(
-            host, server_.port, asio::ip::resolver_query_base::numeric_service);
         std::error_code ec;
-        auto endpoint_iterator = resolver_.resolve(qry, ec);
+        auto endpoint_iterator = resolver_.resolve(
+            host, server_.port, asio::ip::resolver_base::numeric_service, ec);
 
         ec = co_await async_connect(io_context_, socket_, host, server_.port);
         if (ec) {
@@ -189,7 +188,7 @@ public:
 
         build_request();
 
-        const char *header = asio::buffer_cast<const char *>(request_.data());
+        const char *header = static_cast<const char *>(request_.data().data());
         std::cout << header << '\n';
         [[maybe_unused]] auto [write_ec, size] = co_await async_write(
             get_socket(), asio::buffer(header, request_.size()));
@@ -391,7 +390,7 @@ int main(int argc, char **argv) {
     try {
         asio::io_context io_context;
         std::thread thd([&io_context] {
-            asio::io_context::work work(io_context);
+            auto work = asio::make_work_guard(io_context);
             io_context.run();
         });
 
