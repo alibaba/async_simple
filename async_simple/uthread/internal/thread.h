@@ -52,23 +52,13 @@ inline stack_holder default_get_stack_holder(unsigned stack_size) {
     return stack_holder(new char[stack_size]);
 }
 
-inline stack_deleter_fn& get_stack_deleter() noexcept {
-    static stack_deleter_fn fn = &default_stack_deleter;
-    return fn;
-}
+AS_EXPORT stack_deleter_fn& get_stack_deleter() noexcept;
 
-inline stack_allocator_fn& get_stack_allocator() noexcept {
-    static stack_allocator_fn fn = &default_get_stack_holder;
-    return fn;
-}
+AS_EXPORT stack_allocator_fn& get_stack_allocator() noexcept;
 
-inline void set_stack_deleter(stack_deleter_fn fn) noexcept {
-    get_stack_deleter() = fn ? fn : &default_stack_deleter;
-}
+AS_EXPORT void set_stack_deleter(stack_deleter_fn fn) noexcept;
 
-inline void set_stack_allocator(stack_allocator_fn fn) noexcept {
-    get_stack_allocator() = fn ? fn : &default_get_stack_holder;
-}
+AS_EXPORT void set_stack_allocator(stack_allocator_fn fn) noexcept;
 
 inline void stack_deleter::operator()(char* ptr) const noexcept {
     get_stack_deleter()(ptr);
@@ -78,7 +68,7 @@ inline stack_holder get_stack_holder(unsigned stack_size) {
     return get_stack_allocator()(stack_size);
 }
 
-class thread_context {
+class AS_EXPORT thread_context {
     const size_t stack_size_;
     stack_holder stack_{make_stack()};
     std::function<void()> func_;
