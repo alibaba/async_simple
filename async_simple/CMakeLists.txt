@@ -3,7 +3,11 @@ if(${UTHREAD})
   if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
       CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "13")
   endif()
-file(GLOB uthread_asm_src "uthread/internal/${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}/*.S")
+  if(MSVC)
+    file(GLOB uthread_asm_src "uthread/internal/${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}/*.asm")
+  else()
+    file(GLOB uthread_asm_src "uthread/internal/${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}/*.S")
+  endif()
 endif()
 
 file(GLOB headers "*.h")

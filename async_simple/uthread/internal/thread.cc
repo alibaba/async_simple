@@ -61,6 +61,25 @@ inline void finish_switch_fiber(jmp_buf_link* context, void *stack) {}
 #endif  // AS_INTERNAL_USE_ASAN
 
 thread_local jmp_buf_link g_unthreaded_context;
+
+stack_deleter_fn& get_stack_deleter() noexcept {
+    static stack_deleter_fn fn = &default_stack_deleter;
+    return fn;
+}
+
+stack_allocator_fn& get_stack_allocator() noexcept {
+    static stack_allocator_fn fn = &default_get_stack_holder;
+    return fn;
+}
+
+void set_stack_deleter(stack_deleter_fn fn) noexcept {
+    get_stack_deleter() = fn ? fn : &default_stack_deleter;
+}
+
+void set_stack_allocator(stack_allocator_fn fn) noexcept {
+    get_stack_allocator() = fn ? fn : &default_get_stack_holder;
+}
+
 thread_local jmp_buf_link* g_current_context = nullptr;
 
 static const std::string uthread_stack_size = "UTHREAD_STACK_SIZE_KB";
@@ -169,8 +188,13 @@ void thread_context::main() {
     asm(".cfi_undefined x30");
 #elif defined(__riscv)
     asm(".cfi_undefined ra"); // The return address register in RISC-V is 'ra'
+#elif defined(_MSC_VER)
+    // MSVC uses SEH (structured exception handling) with .pdata/.xdata for
+    // unwinding instead of DWARF CFI directives. The unwind information is
+    // already provided in the MASM assembly files, so no inline annotation is
+    // needed here.
 #else
-#warning "Backtracing from uthreads may be broken"
+#error "Backtracing from uthreads may be broken"
 #endif
     context_.initial_switch_in_completed();
     try {
@@ -188,6 +212,8 @@ namespace thread_impl {
 void switch_in(thread_context* to) { to->switch_in(); }
 
 void switch_out(thread_context* from) { from->switch_out(); }
+
+thread_context* get() { return g_current_context->thread; }
 
 bool can_switch_out() { return g_current_context && g_current_context->thread; }
 

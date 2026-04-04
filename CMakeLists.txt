@@ -1,9 +1,24 @@
 cmake_minimum_required(VERSION 3.15)
+
+if(POLICY CMP0194)
+    cmake_policy(SET CMP0194 NEW)
+endif()
+
 project(async_simple
         VERSION 1.3
-        LANGUAGES CXX C ASM)
+        LANGUAGES C CXX)
+
+if(MSVC)
+    enable_language(ASM_MASM)
+else()
+    enable_language(ASM)
+endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+if(WIN32)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+endif()
 
 enable_testing()
 
@@ -155,6 +170,11 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux") # uname -s
   endif()
 elseif ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin") # uname -s
   if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64|arm64") # uname -m
+    set(UTHREAD ON)
+    message("-- Uthread on")
+  endif()
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+  if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64" AND MSVC)
     set(UTHREAD ON)
     message("-- Uthread on")
   endif()
