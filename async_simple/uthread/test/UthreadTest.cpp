@@ -515,7 +515,7 @@ TEST_F(UthreadTest, testLatchThreadSafe) {
                 auto f = [&taskEx, &taskNotify]() mutable {
                     Latch latch(1u);
                     taskNotify.schedule([latchPtr = &latch]() mutable {
-                        std::this_thread::sleep_for(1us);
+                        std::this_thread::yield();
                         latchPtr->downCount();
                     });
                     latch.await(&taskEx);
@@ -533,7 +533,7 @@ TEST_F(UthreadTest, testLatchThreadSafe) {
                                             &taskEx);
             })
             .thenValue([&runningTask]() { runningTask.fetch_sub(1u); });
-        std::this_thread::sleep_for(10us);
+        std::this_thread::yield();
     }
 
     while (runningTask) {
