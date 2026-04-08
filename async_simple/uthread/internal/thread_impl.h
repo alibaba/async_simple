@@ -61,15 +61,12 @@ public:
     void final_switch_out();
 };
 
-extern thread_local jmp_buf_link* g_current_context;
-
 namespace thread_impl {
 
-inline thread_context* get() { return g_current_context->thread; }
-
-void switch_in(thread_context* to);
-void switch_out(thread_context* from);
-bool can_switch_out();
+AS_EXPORT thread_context* get();
+AS_EXPORT void switch_in(thread_context* to);
+AS_EXPORT void switch_out(thread_context* from);
+AS_EXPORT bool can_switch_out();
 
 }  // namespace thread_impl
 
