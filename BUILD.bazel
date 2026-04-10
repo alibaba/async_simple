@@ -16,6 +16,7 @@ uthread_srcs = [
     "//bazel/config:linux_ppc64le": glob([uthread_prefix + "Linux/" + "ppc64le/*.S"]),
     "//bazel/config:darwin_x86_64": glob([uthread_prefix + "Darwin/" + "x86_64/*.S"]),
     "//bazel/config:darwin_aarch64": glob([uthread_prefix + "Darwin/" + "arm64/*.S"]),
+    "//bazel/config:windows_x86_64": glob([uthread_prefix + "Windows/" + "AMD64/*.asm"]),
     "//conditions:default": [],
 })
 
