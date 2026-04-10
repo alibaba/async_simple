@@ -52,10 +52,16 @@ std::size_t Uthread_read_some(FileDescriptor fd, Buffer buffer,
 inline std::size_t Uthread_read_file(const char *filename, SimpleExecutor *e) {
     auto buffer_size = fs::file_size(filename);
     char *buffer = new char[buffer_size];
+#ifdef _WIN32
+    int fd = -1;
+#else
     auto fd = open(filename, O_RDONLY);
+#endif
     auto sz = Uthread_read_some(fd, buffer, buffer_size, 0, e);
     delete[] buffer;
+#ifndef _WIN32
     close(fd);
+#endif
     return sz;
 }
 
