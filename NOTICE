@@ -19,12 +19,27 @@ async_simple/experimental/coroutine.h
 
 Boost Software License, Version 1.0
 --------------------------------------
-async_simple/uthread/internal/jump_arm64_aapcs_elf_gas.S
-async_simple/uthread/internal/jump_x86_64_sysv_elf_gas.S 
-async_simple/uthread/internal/make_arm64_aapcs_elf_gas.S 
-async_simple/uthread/internal/make_x86_64_sysv_elf_gas.S 
-async_simple/uthread/internal/ontop_arm64_aapcs_elf_gas.S 
-async_simple/uthread/internal/ontop_x86_64_sysv_elf_gas.S
+async_simple/uthread/internal/Darwin/x86_64/jump_x86_64_sysv_macho_gas.S
+async_simple/uthread/internal/Darwin/x86_64/ontop_x86_64_sysv_macho_gas.S
+async_simple/uthread/internal/Darwin/x86_64/make_x86_64_sysv_macho_gas.S
+async_simple/uthread/internal/Darwin/arm64/ontop_arm64_aapcs_macho_gas.S
+async_simple/uthread/internal/Darwin/arm64/make_arm64_aapcs_macho_gas.S
+async_simple/uthread/internal/Darwin/arm64/jump_arm64_aapcs_macho_gas.S
+async_simple/uthread/internal/Linux/ppc64le/jump_ppc64_sysv_elf_gas.S
+async_simple/uthread/internal/Linux/ppc64le/make_ppc64_sysv_elf_gas.S
+async_simple/uthread/internal/Linux/ppc64le/ontop_ppc64_sysv_elf_gas.S
+async_simple/uthread/internal/Linux/x86_64/make_x86_64_sysv_elf_gas.S
+async_simple/uthread/internal/Linux/x86_64/jump_x86_64_sysv_elf_gas.S
+async_simple/uthread/internal/Linux/x86_64/ontop_x86_64_sysv_elf_gas.S
+async_simple/uthread/internal/Linux/aarch64/jump_arm64_aapcs_elf_gas.S
+async_simple/uthread/internal/Linux/aarch64/ontop_arm64_aapcs_elf_gas.S
+async_simple/uthread/internal/Linux/aarch64/make_arm64_aapcs_elf_gas.S
+async_simple/uthread/internal/Linux/riscv64/jump_riscv64_sysv_elf_gas.S
+async_simple/uthread/internal/Linux/riscv64/make_riscv64_sysv_elf_gas.S
+async_simple/uthread/internal/Linux/riscv64/ontop_riscv64_sysv_elf_gas.S
+async_simple/uthread/internal/Windows/AMD64/ontop_x86_64_ms_pe_masm.asm
+async_simple/uthread/internal/Windows/AMD64/make_x86_64_ms_pe_masm.asm
+async_simple/uthread/internal/Windows/AMD64/jump_x86_64_ms_pe_masm.asm
 
 MIT LICENSE
 --------------------------------------
