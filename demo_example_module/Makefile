@@ -78,8 +78,12 @@ block_http_server.out: block_http_server.o asio_util.o
 block_http_server.o: ./http/block_http/block_http_server.cpp asio_util.pcm
 	clang++ $(OBJECT_CFLAGS) ./http/block_http/block_http_server.cpp $(PREBUILT_PATH) -c -o block_http_server.o
 
+# Compile from the pre-built .pcm, not from .cppm source.
+# Compiling from .cppm with -c -o would regenerate asio_util.pcm via
+# -fmodule-output=, overwriting the file while parallel compilations
+# are reading it.  Compiling from .pcm avoids this side effect.
 asio_util.o: asio_util.pcm
-	clang++ $(OBJECT_CFLAGS) asio_util.cppm $(PREBUILT_PATH) -c -o asio_util.o
+	clang++ $(OBJECT_CFLAGS) $(PREBUILT_PATH) -c asio_util.pcm -o asio_util.o
 
 asio_util.pcm: asio_util.cppm ../async_simple_module/async_simple.pcm $(ASIO_PATH)/asio.pcm
 	clang++ $(INTERFACE_CFLAGS) asio_util.cppm $(PREBUILT_PATH) -c -o asio_util.pcm
