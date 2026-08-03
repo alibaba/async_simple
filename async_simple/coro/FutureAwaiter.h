@@ -106,8 +106,15 @@ struct FutureAwaiter {
         return true;
     }
     auto await_resume() {
-        if constexpr (!std::is_same_v<T, void>)
+        if constexpr (std::is_same_v<T, void>) {
+            // Inspect the result even for void: the cancellation path replaces
+            // future_ with a ready future carrying SignalException. Skipping
+            // value() here would silently swallow the cancellation and make
+            // the co_await return normally instead of throwing.
+            future_.value();
+        } else {
             return std::move(future_.value());
+        }
     }
 };
 }  // namespace coro::detail
