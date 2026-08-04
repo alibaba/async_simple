@@ -30,7 +30,7 @@ jobs:
       - name: Install
         run: sudo apt-get install doxygen graphviz
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Yarn Install
