@@ -117,6 +117,51 @@ TEST_F(FutureAwaiterTest, testWithFutureCancel) {
         async_simple::coro::sleep(std::chrono::hours{60}).via(&ex1)));
 }
 
+TEST_F(FutureAwaiterTest, testWithFutureCancelVoid) {
+    async_simple::executors::SimpleExecutor ex1(2);
+    // cancel while awaiting: the Terminate handler resumes the coroutine and
+    // await_resume must surface the SignalException even for Future<void>.
+    auto lazy = [&]() -> Lazy<> {
+        Promise<void> pr;
+        auto fut = pr.getFuture();
+        async_simple::SignalType type = None;
+        try {
+            co_await std::move(fut);
+        } catch (const async_simple::SignalException& e) {
+            type = e.value();
+        } catch (...) {
+        }
+        EXPECT_EQ(type, async_simple::Terminate);
+    };
+    syncAwait(collectAll<async_simple::Terminate>(
+        lazy().via(&ex1),
+        async_simple::coro::sleep(std::chrono::microseconds{10}).via(&ex1)));
+    // pre-fired signal: the slot is already triggered, so the second
+    // co_await's tryEmplace fails and await_resume runs immediately.
+    auto lazy2 = [&]() -> Lazy<> {
+        Promise<void> pr1;
+        auto fut1 = pr1.getFuture();
+        try {
+            co_await std::move(fut1);
+        } catch (const async_simple::SignalException& e) {
+            EXPECT_EQ(e.value(), async_simple::Terminate);
+        }
+        Promise<void> pr2;
+        auto fut2 = pr2.getFuture();
+        async_simple::SignalType type = None;
+        try {
+            co_await std::move(fut2);
+        } catch (const async_simple::SignalException& e) {
+            type = e.value();
+        } catch (...) {
+        }
+        EXPECT_EQ(type, async_simple::Terminate);
+    };
+    syncAwait(collectAll<async_simple::Terminate>(
+        lazy2().via(&ex1),
+        async_simple::coro::sleep(std::chrono::microseconds{10}).via(&ex1)));
+}
+
 namespace detail {
 
 static_assert(HasGlobalCoAwaitOperator<Future<int>>);
