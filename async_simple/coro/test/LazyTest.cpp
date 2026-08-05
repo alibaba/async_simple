@@ -303,45 +303,42 @@ TEST_F(LazyTest, testYield) {
     executors::SimpleExecutor executor(1);
     std::mutex m1;
     std::mutex m2;
-    int value1 = 0;
-    int value2 = 0;
-    m1.lock();
-    m2.lock();
+    std::atomic<int> value1 = 0;
+    std::atomic<int> value2 = 0;
+    std::unique_lock<std::mutex> gate1(m1);
+    std::unique_lock<std::mutex> gate2(m2);
 
-    auto test1 = [](std::mutex& m, int& value) -> Lazy<void> {
-        m.lock();
+    auto test1 = [](std::mutex& m, std::atomic<int>& value) -> Lazy<void> {
+        { std::lock_guard<std::mutex> lock(m); }
         // push task to queue's tail
         co_await Yield();
         value++;
         co_return;
     };
 
-    auto test2 = [](std::mutex& m, int& value) -> Lazy<void> {
-        m.lock();
+    auto test2 = [](std::mutex& m, std::atomic<int>& value) -> Lazy<void> {
+        { std::lock_guard<std::mutex> lock(m); }
         value++;
         co_return;
     };
 
     test1(m1, value1).via(&executor).start([](Try<void> result) {});
     std::this_thread::sleep_for(100000us);
-    ASSERT_EQ(0, value1);
+    ASSERT_EQ(0, value1.load());
 
     test2(m2, value2).via(&executor).start([](Try<void> result) {});
     std::this_thread::sleep_for(100000us);
-    ASSERT_EQ(0, value2);
+    ASSERT_EQ(0, value2.load());
 
-    m1.unlock();
+    gate1.unlock();
     std::this_thread::sleep_for(100000us);
-    ASSERT_EQ(0, value1);
-    ASSERT_EQ(0, value2);
+    ASSERT_EQ(0, value1.load());
+    ASSERT_EQ(0, value2.load());
 
-    m2.unlock();
+    gate2.unlock();
     std::this_thread::sleep_for(100000us);
-    ASSERT_EQ(1, value1);
-    ASSERT_EQ(1, value2);
-
-    m1.unlock();
-    m2.unlock();
+    ASSERT_EQ(1, value1.load());
+    ASSERT_EQ(1, value2.load());
 }
 
 TEST_F(LazyTest, testYieldCancel) {
@@ -2035,33 +2032,68 @@ TEST_F(LazyTest, testForbiddenCancel) {
     {
         auto signal = Signal::create();
         async_simple::Promise<void> p;
-        auto lazy = [](async_simple::Future<void> f) -> Lazy<void> {
+        std::promise<void> ready;
+        std::promise<void> done;
+        auto readyFuture = ready.get_future();
+        auto doneFuture = done.get_future();
+        auto lazy = [](async_simple::Future<void> f,
+                       std::promise<void>& ready) -> Lazy<void> {
             auto slot = co_await CurrentSlot{};
             EXPECT_NE(slot, nullptr);
-            co_await std::move(f);
+            ready.set_value();
+            try {
+                co_await std::move(f);
+                ADD_FAILURE() << "Expected cancellation to throw";
+            } catch (const async_simple::SignalException& e) {
+                EXPECT_EQ(e.value(), SignalType::Terminate);
+            }
             EXPECT_TRUE(slot->canceled());
             EXPECT_EQ(slot->signal()->state(), SignalType::Terminate);
         };
-        lazy(p.getFuture()).setLazyLocal(signal.get()).via(&e).detach();
+        lazy(p.getFuture(), ready)
+            .setLazyLocal(signal.get())
+            .via(&e)
+            .start([&done](Try<void>&& result) {
+                EXPECT_FALSE(result.hasError());
+                done.set_value();
+            });
+        readyFuture.wait();
         signal->emits(SignalType::Terminate);
+        auto status = doneFuture.wait_for(5s);
         p.setValue();
+        if (status != std::future_status::ready) {
+            doneFuture.wait();
+        }
+        EXPECT_EQ(status, std::future_status::ready);
     }
     {
         auto signal = Signal::create();
         async_simple::Promise<void> p;
-        auto lazy = [](async_simple::Future<void> f) -> Lazy<void> {
+        std::promise<void> ready;
+        std::promise<void> done;
+        auto lazy = [](async_simple::Future<void> f,
+                       std::promise<void>& ready) -> Lazy<void> {
             auto slot = co_await CurrentSlot{};
             EXPECT_NE(slot, nullptr);
             co_await ForbidSignal{};
             slot = co_await CurrentSlot{};
             EXPECT_EQ(slot, nullptr);
+            ready.set_value();
             co_await std::move(f);
             slot = co_await CurrentSlot{};
             EXPECT_EQ(slot, nullptr);
         };
-        lazy(p.getFuture()).setLazyLocal(signal.get()).via(&e).detach();
+        lazy(p.getFuture(), ready)
+            .setLazyLocal(signal.get())
+            .via(&e)
+            .start([&done](Try<void>&& result) {
+                EXPECT_FALSE(result.hasError());
+                done.set_value();
+            });
+        ready.get_future().wait();
         signal->emits(SignalType::Terminate);
         p.setValue();
+        done.get_future().wait();
     }
 }
 

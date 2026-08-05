@@ -17,17 +17,17 @@ jobs:
     strategy:
       matrix:
         mode: [ Release ]
-        arch: [ x86 ]
+        arch: [ x64 ]
 
     env:
       CXX: cl.exe
       CC: cl.exe
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
 
       - name: Generate Project
-        run: cmake -B Build/${{ matrix.mode }} -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DRFK_DEV=1 -G "Visual Studio 17 2022" -A x64
+        run: cmake -B Build/${{ matrix.mode }} -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DRFK_DEV=1 -A ${{ matrix.arch }}
 
       - name: Build async_simple
         run: cmake --build Build/${{ matrix.mode }} --config ${{ matrix.mode }} --verbose
@@ -42,12 +42,13 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
 
       - name: Build 
         working-directory: ${{github.workspace}}
-        run: bazel build ...
+        # Lazy.bench.cpp intentionally instantiates a coroutine chain 1000 levels deep.
+        run: bazel build --cxxopt=/templateDepth:2000 ...
 
       - name: Test
         working-directory: ${{github.workspace}}
-        run: bazel test --test_output=errors ...
+        run: bazel test --cxxopt=/templateDepth:2000 --test_output=errors ...
