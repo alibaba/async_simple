@@ -39,10 +39,13 @@ find_package(Threads REQUIRED)
 target_link_libraries(async_simple_header_only INTERFACE Threads::Threads)
 find_package(Aio QUIET)
 
-find_package(Benchmark)
-
 option(ASYNC_SIMPLE_ENABLE_TESTS "Build the tests" ON)
+option(ASYNC_SIMPLE_ENABLE_BENCHMARKS "Build benchmarks when Benchmark is available" OFF)
 option(ASYNC_SIMPLE_DISABLE_AIO "Don't build SimpleIOExecutor with AIO" OFF)
+
+if (ASYNC_SIMPLE_ENABLE_BENCHMARKS)
+    find_package(Benchmark)
+endif()
 
 if(NOT ASYNC_SIMPLE_DISABLE_AIO AND LIBAIO_INCLUDE_DIR AND LIBAIO_LIBRARIES)
     message(STATUS "aio found")
@@ -57,7 +60,7 @@ if (ASYNC_SIMPLE_ENABLE_TESTS)
     find_package(GTest)
 endif()
 
-if (BENCHMARK_INCLUDE_DIR AND BENCHMARK_LIBRARIES)
+if (ASYNC_SIMPLE_ENABLE_BENCHMARKS AND BENCHMARK_INCLUDE_DIR AND BENCHMARK_LIBRARIES)
     message(STATUS "Benchmark found.")
     message(STATUS "Benchmark: ${BENCHMARK_INCLUDE_DIR}, ${BENCHMARK_LIBRARIES}")
 endif()
@@ -245,7 +248,7 @@ if (ASYNC_SIMPLE_BUILD_DEMO_EXAMPLE)
     add_subdirectory(demo_example)
 endif ()
 
-if (BENCHMARK_INCLUDE_DIR AND BENCHMARK_LIBRARIES)
+if (ASYNC_SIMPLE_ENABLE_BENCHMARKS AND BENCHMARK_INCLUDE_DIR AND BENCHMARK_LIBRARIES)
     message(STATUS "Building benchmarks")
     add_subdirectory(benchmarks)
 else()

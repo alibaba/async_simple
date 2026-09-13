@@ -43,7 +43,7 @@ git clone -b main --single-branch --depth 1 https://github.com/alibaba/async_sim
 cd async_simple
 mkdir build
 cd build
-cmake .. -DASYNC_SIMPLE_ENABLE_TESTS=OFF -DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF -DASYNC_SIMPLE_ENABLE_ASAN=OFF
+cmake .. -DASYNC_SIMPLE_ENABLE_TESTS=OFF -DASYNC_SIMPLE_ENABLE_BENCHMARKS=OFF -DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF -DASYNC_SIMPLE_ENABLE_ASAN=OFF
 cmake --build .
 cmake --install . # --prefix ./user_defined_install_path
 ```
@@ -186,14 +186,33 @@ Demo example depends on standalone asio(https://github.com/chriskohlhoff/asio/tr
 ```bash
 $ mkdir build && cd build
 # Specify [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] to skip tests.
+# Specify [-DASYNC_SIMPLE_ENABLE_BENCHMARKS=ON] to enable optional benchmark discovery and targets.
 # Specify [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] to skip build demo example.
 # Specify [-DASYNC_SIMPLE_DISABLE_AIO=ON] to skip the build libaio
-CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug] [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] [-DASYNC_SIMPLE_DISABLE_AIO=ON] [-DGMOCK_INCLUDE_DIR=<path-to-headers of gtest> -DGTEST_INCLUDE_DIR=<path-to-headers of mock> -DGTEST_LIBRARIES=<path-to-library-of-gtest>  -DGMOCK_LIBRARIES=<path-to-library-of-gmock> ]
+CXX=clang++ CC=clang cmake ../ -DCMAKE_BUILD_TYPE=[Release|Debug] [-DASYNC_SIMPLE_ENABLE_TESTS=OFF] [-DASYNC_SIMPLE_ENABLE_BENCHMARKS=ON] [-DASYNC_SIMPLE_BUILD_DEMO_EXAMPLE=OFF] [-DASYNC_SIMPLE_DISABLE_AIO=ON] [-DGMOCK_INCLUDE_DIR=<path-to-headers of gtest> -DGTEST_INCLUDE_DIR=<path-to-headers of mock> -DGTEST_LIBRARIES=<path-to-library-of-gtest>  -DGMOCK_LIBRARIES=<path-to-library-of-gmock> ]
 # for gcc, use CXX=g++ CC=gcc
 make -j4
 make test # optional
 make install # sudo if required
 ```
+
+`ASYNC_SIMPLE_ENABLE_BENCHMARKS` defaults to `OFF`, so Benchmark discovery and
+benchmark targets are skipped. Set it to `ON` to build benchmarks when both the
+Benchmark headers and library are available. Set it back to `OFF` to skip discovery
+and targets even when reusing a build directory with cached Benchmark paths.
+Existing build directories retain their cached option value; pass `OFF` explicitly
+to disable benchmarks in a directory previously configured with `ON`.
+
+Run the benchmark-option configure regression tests from the repository root:
+
+```bash
+python3 cmake/tests/test_benchmark_option.py
+```
+
+These tests require Python 3, CMake, Ninja and a supported C++ compiler. They use
+placeholder Benchmark paths to check configuration traces and generated targets;
+they do not build or run benchmarks. Package unavailability is simulated by
+disabling Benchmark discovery.
 
 Conan is also supported. You can install async_simple to conan local cache.
 ```
