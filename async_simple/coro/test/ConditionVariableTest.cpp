@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#include <deque>
+#include <exception>
+
 #include "async_simple/coro/ConditionVariable.h"
 #include "async_simple/coro/Lazy.h"
 #include "async_simple/coro/SpinLock.h"
@@ -40,6 +43,88 @@ public:
 
     executors::SimpleExecutor _executor;
 };
+
+TEST_F(ConditionVariableTest, testCancellationWhileReacquiringLock) {
+    class QueueExecutor : public Executor {
+    public:
+        bool schedule(Func func) override {
+            jobs.push_back(std::move(func));
+            return true;
+        }
+        bool currentThreadInExecutor() const override { return true; }
+        bool runOne() {
+            if (jobs.empty()) {
+                return false;
+            }
+            auto func = std::move(jobs.front());
+            jobs.pop_front();
+            func();
+            return true;
+        }
+        std::deque<Func> jobs;
+    };
+
+    // Cover both a pending cancellation and cancellation during reacquisition.
+    for (bool cancelBeforeResume : {true, false}) {
+        SCOPED_TRACE(cancelBeforeResume);
+        QueueExecutor executor;
+        SpinLock mutex(0);
+        ConditionVariable<SpinLock> cv;
+        auto signal = Signal::create();
+        bool ready = false;
+        bool finished = false;
+        bool returnedNormally = false;
+        std::exception_ptr exception;
+
+        auto consumer = [&]() -> Lazy<> {
+            auto guard = co_await mutex.coScopedLock();
+            co_await cv.wait(mutex, [&] { return ready; });
+            returnedNormally = true;
+        };
+        consumer().setLazyLocal(signal.get()).via(&executor).start(
+            [&](Try<void> result) {
+                if (result.hasError()) {
+                    exception = result.getException();
+                }
+                finished = true;
+            });
+
+        ASSERT_TRUE(executor.runOne()); // Register waiter and release mutex.
+        ASSERT_TRUE(mutex.tryLock());   // Producer acquires mutex.
+        ready = true;
+        if (cancelBeforeResume) {
+            signal->emits(SignalType::Terminate);
+        }
+        cv.notifyOne();
+        ASSERT_TRUE(executor.runOne()); // Consumer starts reacquiring mutex.
+        if (!cancelBeforeResume) {
+            signal->emits(SignalType::Terminate);
+            ASSERT_TRUE(executor.runOne()); // Resume a pending Yield.
+        }
+
+        // Cancellation must not unwind the consumer's guard while the
+        // producer still owns the mutex.
+        EXPECT_FALSE(finished);
+        EXPECT_FALSE(mutex.tryLock());
+        mutex.unlock();
+
+        // Resume the consumer to completion.
+        ASSERT_TRUE(executor.runOne());
+        EXPECT_TRUE(finished);
+        EXPECT_TRUE(executor.jobs.empty());
+        EXPECT_FALSE(returnedNormally);
+        ASSERT_NE(exception, nullptr);
+        try {
+            std::rethrow_exception(exception);
+        } catch (const SignalException& error) {
+            EXPECT_EQ(error.value(), SignalType::Terminate);
+        }
+
+        // After reacquisition, cancellation unwinds the guard and unlocks.
+        EXPECT_TRUE(mutex.tryLock());
+        mutex.unlock();
+    }
+}
 
 TEST_F(ConditionVariableTest, testSingleWait) {
     auto data = 0;
