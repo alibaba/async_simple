@@ -81,25 +81,27 @@ TEST_F(ConditionVariableTest, testCancellationWhileReacquiringLock) {
             co_await cv.wait(mutex, [&] { return ready; });
             returnedNormally = true;
         };
-        consumer().setLazyLocal(signal.get()).via(&executor).start(
-            [&](Try<void> result) {
+        consumer()
+            .setLazyLocal(signal.get())
+            .via(&executor)
+            .start([&](Try<void> result) {
                 if (result.hasError()) {
                     exception = result.getException();
                 }
                 finished = true;
             });
 
-        ASSERT_TRUE(executor.runOne()); // Register waiter and release mutex.
-        ASSERT_TRUE(mutex.tryLock());   // Producer acquires mutex.
+        ASSERT_TRUE(executor.runOne());  // Register waiter and release mutex.
+        ASSERT_TRUE(mutex.tryLock());    // Producer acquires mutex.
         ready = true;
         if (cancelBeforeResume) {
             signal->emits(SignalType::Terminate);
         }
         cv.notifyOne();
-        ASSERT_TRUE(executor.runOne()); // Consumer starts reacquiring mutex.
+        ASSERT_TRUE(executor.runOne());  // Consumer starts reacquiring mutex.
         if (!cancelBeforeResume) {
             signal->emits(SignalType::Terminate);
-            ASSERT_TRUE(executor.runOne()); // Resume a pending Yield.
+            ASSERT_TRUE(executor.runOne());  // Resume a pending Yield.
         }
 
         // Cancellation must not unwind the consumer's guard while the
@@ -374,15 +376,11 @@ TEST_F(ConditionVariableTest, testNotifyOneQueue) {
         EXPECT_LT(i, 5);
     };
     for (int i = 0; i < 2; ++i) {
-        consumer().via(ex).start([&](auto&&){
-            latch--;
-        });
+        consumer().via(ex).start([&](auto&&) { latch--; });
     }
     producer().via(ex).detach();
     for (int i = 2; i < 5; ++i) {
-        consumer().via(ex).start([&](auto&&){
-            latch--;
-        });
+        consumer().via(ex).start([&](auto&&) { latch--; });
     }
 
     while (latch.load(std::memory_order_relaxed))

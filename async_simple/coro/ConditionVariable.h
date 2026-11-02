@@ -86,11 +86,13 @@ private:
 };
 
 template <class Lock>
-inline Lazy<> ConditionVariable<Lock>::reacquireWithoutCancellation(Lock& lock) {
+inline Lazy<> ConditionVariable<Lock>::reacquireWithoutCancellation(
+    Lock& lock) {
     auto* slot = co_await CurrentSlot{};
-    // wait() must restore lock ownership before returning or propagating cancellation.
-    // Mask signals so cancellation cannot interrupt this reacquisition step.
-    // If reacquisition otherwise fails, terminate rather than violate this contract.
+    // wait() must restore lock ownership before returning or propagating
+    // cancellation. Mask signals so cancellation cannot interrupt this
+    // reacquisition step. If reacquisition otherwise fails, terminate rather
+    // than violate this contract.
     try {
         if (slot) {
             auto guard = slot->setScopedFilter(SignalType::None);
