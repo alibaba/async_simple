@@ -47,6 +47,7 @@ public:
 
 private:
     void resumeWaiters(ConditionVariableAwaiter<Lock>* awaiters);
+    static Lazy<> reacquireWithoutCancellation(Lock& lock);
 
 private:
     friend class ConditionVariableAwaiter<Lock>;
@@ -85,11 +86,35 @@ private:
 };
 
 template <class Lock>
+inline Lazy<> ConditionVariable<Lock>::reacquireWithoutCancellation(
+    Lock& lock) {
+    auto* slot = co_await CurrentSlot{};
+    // wait() must restore lock ownership before returning or propagating
+    // cancellation. Mask signals so cancellation cannot interrupt this
+    // reacquisition step. If reacquisition otherwise fails, terminate rather
+    // than violate this contract.
+    try {
+        if (slot) {
+            auto guard = slot->setScopedFilter(SignalType::None);
+            co_await lock.coLock();
+        } else {
+            co_await lock.coLock();
+        }
+    } catch (...) {
+        std::terminate();
+    }
+}
+
+template <class Lock>
 template <class Pred>
 inline Lazy<> ConditionVariable<Lock>::wait(Lock& lock, Pred&& pred) noexcept {
     while (!pred()) {
         co_await ConditionVariableAwaiter<Lock>{this, lock};
-        co_await lock.coLock();
+        co_await reacquireWithoutCancellation(lock);
+        // The filter has been restored and the caller now owns the lock,
+        // so propagating cancellation is safe for its RAII lock guard.
+        auto* slot = co_await CurrentSlot{};
+        signalHelper{SignalType::Terminate}.checkHasCanceled(slot);
     }
     co_return;
 }
